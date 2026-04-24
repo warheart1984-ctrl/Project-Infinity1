@@ -1,0 +1,26 @@
+# AAIS Subsystems
+
+This folder contains subsystem-specific documentation.
+
+Subsystem docs are subordinate to the project spine, runtime docs, and active
+contracts.
+
+## Active Or Documented Packs
+
+- [nova/README.md](./nova/README.md)
+  - active Nova subsystem documentation
+- [storyforge/README.md](./storyforge/README.md)
+  - concept-only placeholder with no live implementation
+- [beatbox/README.md](./beatbox/README.md)
+  - no admitted subsystem docs found in this repo today
+
+## Rule
+
+Subsystem docs do not get to silently redefine project-wide law, runtime
+authority, or governance.
+
+## Read Next
+
+1. [../spine/README.md](../spine/README.md)
+2. [../runtime/AAIS_SUBSYSTEM_SPEC.md](../runtime/AAIS_SUBSYSTEM_SPEC.md)
+3. [../contracts/AAIS_MODULE_GOVERNANCE_PROTOCOL.md](../contracts/AAIS_MODULE_GOVERNANCE_PROTOCOL.md)

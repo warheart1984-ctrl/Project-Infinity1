@@ -1,0 +1,86 @@
+# Runtime / temp
+.runtime/
+.pytest_cache/
+.local/
+tmp/
+temp/
+logs/
+*.log
+*.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+env/
+venv/
+ENV/
+
+# Node
+frontend/node_modules/
+mobile/node_modules/
+node_modules/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Archives / large artifacts
+*.zip
+*.tar
+*.gz
+*.bin
+*.pt
+*.onnx
+*.docx
+
+# Build outputs
+build/
+dist/
+out/
+frontend/build/
+mobile/dist/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Local tooling / editor state
+.expo/
+.expo-shared/
+.vercel/
+.vscode/
+.vs/
+.idea/
+*.swp
+*.swo
+.venv-broken-launcher-backup-*/
+.venv-repair-backup-*/
+.venv-py314-backup/
+
+# Local data artifacts
+data/models/
+data/datasets/
+training/out/
+training/checkpoints/
+training/data/private_messages.jsonl
+training/data/private_messages_*.jsonl
+data/chroma/*
+!data/chroma/README.md
