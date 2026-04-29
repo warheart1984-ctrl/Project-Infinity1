@@ -87,6 +87,16 @@ These are the clearest repo-wide laws in the project.
 
 **Source:** [src/project_infi_law.py](src/project_infi_law.py)
 
+### 6a. Dependency Gate Policy
+
+**What it governs:** dependency admission, version pinning, lockfile evidence,
+and dependency drift rejection.
+
+**Core idea:** dependencies are ingress surfaces. Only pinned, known-good,
+lock-backed dependency state may enter governed runtime truth.
+
+**Source:** [docs/contracts/DEPENDENCY_GATE_POLICY.md](docs/contracts/DEPENDENCY_GATE_POLICY.md)
+
 ## Governing Doctrines And Protocols
 
 These are not always named “law,” but they act as governing contracts for major repo boundaries.
@@ -190,6 +200,7 @@ For quick scanning, these are the main law-bearing files collected in this lawbo
 - [docs/contracts/SEAM_LAW.md](docs/contracts/SEAM_LAW.md)
 - [docs/contracts/EXTERNAL_SUGGESTION_ADMISSION_RULE.md](docs/contracts/EXTERNAL_SUGGESTION_ADMISSION_RULE.md)
 - [docs/contracts/README_LAW_V1.md](docs/contracts/README_LAW_V1.md)
+- [docs/contracts/DEPENDENCY_GATE_POLICY.md](docs/contracts/DEPENDENCY_GATE_POLICY.md)
 - [docs/contracts/AAIS_UL_DOCTRINE.md](docs/contracts/AAIS_UL_DOCTRINE.md)
 - [docs/contracts/AAIS_MODULE_GOVERNANCE_PROTOCOL.md](docs/contracts/AAIS_MODULE_GOVERNANCE_PROTOCOL.md)
 - [docs/contracts/JARVIS_MEMORY_BOARD_DOCTRINE.md](docs/contracts/JARVIS_MEMORY_BOARD_DOCTRINE.md)

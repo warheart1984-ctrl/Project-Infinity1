@@ -4112,9 +4112,20 @@ def _route_session_turn_to_bridge(
     user_message: str,
     request_payload: dict | None,
     response_mode: str,
+    bridge_route: str | None = None,
+    bridge_surface: str | None = None,
 ) -> dict:
     """Route the active user turn through the shared cognitive bridge before work continues."""
     payload = dict(request_payload or {})
+    route_label = str(bridge_route or payload.pop("_bridge_route", "") or "").strip() or "api.chat.sessions.message"
+    surface_label = str(bridge_surface or payload.pop("_bridge_surface", "") or "").strip()
+    if not surface_label:
+        if route_label == "api.chat.sessions.stream":
+            surface_label = "jarvis_chat_stream"
+        elif route_label == "api.jarvis.compat":
+            surface_label = "jarvis_compat"
+        else:
+            surface_label = "jarvis_chat"
     external_details = _extract_external_suggestion_details(payload)
     risk = "medium" if _is_action_approval_message(user_message) or detect_otem(user_message) else "low"
     bridge_result = cognitive_bridge_service.route_to_bridge(
@@ -4133,9 +4144,9 @@ def _route_session_turn_to_bridge(
                 "execution_intent": "respond",
                 "bridge_attestation": build_bridge_attestation(
                     ingress="chat_session",
-                    surface="jarvis_chat",
+                    surface=surface_label,
                     source_id=session.session_id,
-                    route="api.chat.sessions.message",
+                    route=route_label,
                     intent="respond",
                     runtime_context="live_runtime",
                     packet_type="operator_turn",
@@ -10419,6 +10430,54 @@ def get_jarvis_protocol():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/jarvis/cognitive-bridge/detachment-guard", methods=["GET"])
+def get_detachment_guard_status():
+    """Expose the current Jarvis detachment-guard snapshot for operator review."""
+    try:
+        return jsonify({"detachment_guard": cognitive_bridge_service.detachment_guard.snapshot()})
+    except Exception as e:
+        logger.error(f"Error reading Jarvis detachment guard: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/jarvis/cognitive-bridge/detachment-guard/review-holds/<source_id>/clear", methods=["POST"])
+def clear_detachment_guard_review_hold(source_id):
+    """Clear one detachment review hold through an explicit, governed operator action."""
+    try:
+        data = request.get_json(silent=True) or {}
+        actor_id = str(data.get("actor_id") or "").strip()
+        actor_role = str(data.get("actor_role") or "").strip()
+        reason = str(data.get("reason") or "").strip()
+        refreshed_attestation_required = bool(data.get("refreshed_attestation_required", True))
+
+        if not actor_id:
+            return jsonify({"error": "actor_id is required"}), 400
+        if not actor_role:
+            return jsonify({"error": "actor_role is required"}), 400
+        if not reason:
+            return jsonify({"error": "reason is required"}), 400
+
+        result = cognitive_bridge_service.detachment_guard.clear_temporary_hold(
+            source_id,
+            actor_id=actor_id,
+            actor_role=actor_role,
+            reason=reason,
+            refreshed_attestation_required=refreshed_attestation_required,
+        )
+        status_code = 200
+        if not result.get("cleared"):
+            status_code = 403 if result.get("review_required") else 404
+        return jsonify(
+            {
+                "result": result,
+                "detachment_guard": cognitive_bridge_service.detachment_guard.snapshot(),
+            }
+        ), status_code
+    except Exception as e:
+        logger.error(f"Error clearing Jarvis detachment review hold: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/jarvis/blueprint", methods=["GET"])
 def get_aais_blueprint():
     """Expose the live AAIS blueprint so Jarvis can explain how the system fits together."""
@@ -10800,6 +10859,8 @@ def _build_jarvis_compat_message_payload(data: dict | None) -> tuple[dict, dict,
         "provider_mode": context.get("provider_mode"),
         "requested_specialists": context.get("requested_specialists"),
         "requested_specialist_preset": context.get("requested_specialist_preset"),
+        "_bridge_route": "api.jarvis.compat",
+        "_bridge_surface": "jarvis_compat",
     }
     if mode == "think":
         message_payload["response_mode"] = "think"
@@ -11415,6 +11476,8 @@ def chat_message(session_id):
                 user_message=user_message,
                 request_payload=data,
                 response_mode=requested_response_mode,
+                bridge_route=str(data.get("_bridge_route") or "api.chat.sessions.message"),
+                bridge_surface=str(data.get("_bridge_surface") or "jarvis_chat"),
             )
         except CognitiveBridgeValidationError as exc:
             return jsonify({"error": str(exc)}), 400
@@ -11943,6 +12006,8 @@ def chat_message_stream(session_id):
                 user_message=user_message,
                 request_payload=data,
                 response_mode=requested_response_mode,
+                bridge_route=str(data.get("_bridge_route") or "api.chat.sessions.stream"),
+                bridge_surface=str(data.get("_bridge_surface") or "jarvis_chat_stream"),
             )
         except CognitiveBridgeValidationError as exc:
             return jsonify({"error": str(exc)}), 400

@@ -1,6 +1,6 @@
 # AAIS Status Audit
 
-Snapshot date: 2026-04-28
+Snapshot date: 2026-04-29
 
 This file is the working inventory of what is clearly documented, what is intentionally unfinished, and what currently needs repair or cleanup.
 
@@ -10,6 +10,7 @@ It is based on:
 - current runtime code
 - latest verified backend snapshot
 - current frontend test/build snapshot for this documentation pass
+- current mobile typecheck and dependency-audit snapshot for this documentation pass
 
 It intentionally treats `docs/archive/source-docx/` as reference material unless the live markdown/code paths point back to it.
 
@@ -33,6 +34,8 @@ These files currently do a good job of describing the live system or one bounded
   - explains how to trust and rank repo docs
 - [ARIS_RUNTIME_CONTRACT.md](../contracts/ARIS_RUNTIME_CONTRACT.md)
   - admits ARIS as an embedded AAIS runtime profile and carries the canonical non-copy clause
+- [DEPENDENCY_GATE_POLICY.md](../contracts/DEPENDENCY_GATE_POLICY.md)
+  - canonical contract for pinned dependency admission, lockfile evidence, and drift rejection
 - [TINY_NOVA_CANONICAL.md](../subsystems/nova/TINY_NOVA_CANONICAL.md)
   - canonical markdown source for Tiny/Small Nova identity, memory boundaries, growth stages, and the Jarvis authority split
 - [NOVA_HUMAN_GUIDE.md](../subsystems/nova/NOVA_HUMAN_GUIDE.md), [NOVA_AI_OPERATING_CONTRACT.md](../subsystems/nova/NOVA_AI_OPERATING_CONTRACT.md), and [NOVA_STAGE_SPEC.md](../subsystems/nova/NOVA_STAGE_SPEC.md)
@@ -108,6 +111,14 @@ These are not hidden bugs. They are explicit limits in the current design.
 - The Super Nova guarded runtime seam is now repaired and documented.
   - Super Nova is no longer described as dormant or future-only in the active truth surfaces
   - the live boundary now reflects phase gate before execution, explicit activation, watchdog enforcement, bounded immune protocol observation, and Project Infi final-truth admission
+- The dependency hardening pass is now repaired and deterministic.
+  - `api/uv.lock` now resolves `pillow 12.2.0`
+  - `frontend/package-lock.json` now carries exact governed versions for `axios`, `follow-redirects`, `lodash`, and `postcss`
+  - `mobile/package-lock.json` now carries exact governed versions for `axios`, `@xmldom/xmldom`, `follow-redirects`, `postcss`, and `uuid`
+- The detachment governance and ingress identity seams are now repaired.
+  - the detachment guard is exposed through governed read and clear API routes
+  - message, stream, and compat ingress lanes now preserve distinct bridge route and surface attribution
+  - detachment audit labels no longer collapse across API boundaries
 - The workflow shell still carries one bridge-era implementation detail that should be revisited later.
   - [app/main.py](../../app/main.py) is now named as the AAIS workflow shell, but it still mounts the legacy Flask bridge for compatibility.
   - That bridge is intentional for now, but it remains a transition seam worth tracking.
@@ -144,11 +155,14 @@ These are not hidden bugs. They are explicit limits in the current design.
 
 ## 5. Verification Snapshot
 
-- Backend tests: latest verified snapshot is `643 passed`, `12 subtests passed`
+- Backend tests: latest verified snapshot is `668 passed`, `12 subtests passed`
 - Frontend tests: `47 passed`, `0 failed`
 - Frontend production build: passes
+- Frontend dependency audit: `0 vulnerabilities`
+- Mobile dependency audit: `0 vulnerabilities`
+- Mobile typecheck: passes
 - Link sanity for the updated Super Nova truth surfaces: `SUPER_NOVA_DOC_LINKS_OK`
-- The Super Nova governed-runtime truth pass reran the full backend suite, the full frontend test suite, the frontend production build, and a local link sanity check across the touched canonical docs.
+- The dependency hardening and detachment-governance pass reran the full backend suite, the full frontend test suite, the frontend production build, mobile typecheck, and the frontend/mobile dependency audits.
 
 ## 6. Recommended Next Documentation Moves
 

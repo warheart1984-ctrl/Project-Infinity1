@@ -6,6 +6,7 @@ govern AAIS behavior.
 ## What Lives Here
 
 - document protocol and documentation law
+- dependency gate and deterministic lock policy
 - module governance and phase rules
 - cognitive bridge ingress law
 - embedded ARIS runtime and non-copy law

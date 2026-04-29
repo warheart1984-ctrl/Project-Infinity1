@@ -49,5 +49,6 @@ This means:
 * No component should operate outside defined boundaries
 * Failures should be **visible and controlled**, not silent
 * External input must pass **admission and verification rules**
+* Dependencies must be pinned, lock-backed, and reviewed as ingress surfaces
 
 Security is treated as part of system behavior, not an afterthought.

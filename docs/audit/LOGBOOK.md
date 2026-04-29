@@ -266,3 +266,19 @@ Every major entry should name its CISIV stage explicitly.
 - scope: admitted ARIS into AAIS as an embedded runtime contract, added one shared ARIS/non-copy runtime primitive, wired that primitive into the Cognitive Bridge and Project Infi law, and propagated the non-copy clause through the active contract/spec/audit surfaces
 - outcome: AAIS now has `docs/contracts/ARIS_RUNTIME_CONTRACT.md` plus `src/aris_integration.py`, the bridge emits ARIS enforcement at ingress, Project Infi law fails closed on explicit non-copy violations, and the external suggestion plus collective pattern docs now agree on the same canonical non-copy rule
 - verification note: targeted bridge and Project Infi law tests passed after the patch, and the touched canonical docs were checked locally for link integrity
+
+## 2026-04-29
+
+### Dependency Hardening Pass
+
+- CISIV stage: `verification`
+- scope: raised the Pillow floor to `12.2.0`, upgraded `api/uv.lock`, pinned frontend/mobile `axios`, added exact npm overrides for `@xmldom/xmldom`, `follow-redirects`, `postcss`, `lodash`, and `uuid`, and regenerated the affected lockfiles to remove dependency drift
+- outcome: the API, frontend, and mobile lanes now carry deterministic patched dependency state, frontend and mobile both report `0 vulnerabilities` in `npm audit`, and the active Python environment is aligned to `Pillow 12.2.0`
+- verification note: `.venv\Scripts\python.exe -m pytest -q` passed at `668 passed, 12 subtests passed`; `frontend\npm.cmd run test:ci` passed at `47 passed`; `frontend\npm.cmd run build` passed; `mobile\npm.cmd run typecheck` passed; and both `frontend` and `mobile` `npm audit --json` runs reported zero vulnerabilities
+
+### Detachment Governance And Ingress Identity Closure
+
+- CISIV stage: `verification`
+- scope: exposed the detachment guard through governed read and clear API routes, restored distinct bridge route and surface attribution across message, stream, and compat ingress lanes, and added regression coverage for detachment lifecycle control and route identity integrity
+- outcome: the repo no longer carries hidden detachment review state, operator-facing detachment clearance is explicit and bounded, and ingress attribution remains accurate across the governed API boundary
+- verification note: the detachment regression slice in `tests/test_api.py` passed after the patch, and the full backend suite remained green at `668 passed, 12 subtests passed`
