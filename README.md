@@ -170,6 +170,8 @@ See [SECURITY.md](SECURITY.md) for the disclosure policy.
 [Apache 2.0](LICENSE)
 ---
 
+---
+
 ## Points of Interest (for the curious)
 
 This repository contains more than the visible surface suggests.  
@@ -177,20 +179,24 @@ Most of the system is layered, and some components only reveal themselves when e
 
 A few optional areas to investigate:
 
-- **Internal Architecture Layers**  
-  Several subsystems are structured in nested layers.  
-  Some folders contain lineage documents, early doctrine, or internal evolution notes.
+### Internal Architecture Layers
+Several subsystems are structured in nested layers.  
+Some folders contain lineage documents, early doctrine, or internal evolution notes that show how the system’s behavior and philosophy developed over time.
 
-- **Foundation Artifacts**  
-  The engine includes a foundational layer that holds structural invariants and internal markers.  
-  These are not required for normal use, but they provide insight into the system’s design philosophy.
+### Foundation Artifacts
+The `engine/` directory includes a foundational layer that holds structural invariants and internal markers.  
+These are not required for normal operation, but they provide insight into the system’s design principles and long-term stability model.
 
-- **Historical & Lineage Documents**  
-  The `/docs/_archive` tree contains older specifications, prototypes, and conceptual drafts that show how the system evolved over time.
+### Historical & Lineage Documents
+The `docs/_archive/` tree contains older specifications, prototypes, and conceptual drafts.  
+These documents are not authoritative, but they reveal the system’s evolution and the reasoning behind certain design choices.
 
-- **Compiler Behavior**  
-  Certain internal components maintain their own metadata or narrative traces as new subsystems are added.  
-  This is intentional and part of the system’s introspective design.
+### Compiler Behavior
+Certain internal components maintain their own metadata or narrative traces as new subsystems are added.  
+This is intentional and part of the system’s introspective design.
+
+These points are optional and not required for running the demo.  
+They exist for those who enjoy exploring deeper layers of a system’s architecture.
 
 These points are optional and not required for running the demo.  
 They exist for those who enjoy exploring deeper layers of a system’s architecture.
