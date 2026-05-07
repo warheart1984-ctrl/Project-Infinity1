@@ -198,3 +198,11 @@ This is intentional and part of the system’s introspective design.
 These points are optional and not required for running the demo.  
 They exist for those who enjoy exploring deeper layers of a system’s architecture.
 
+---
+
+### A Note for Deep Explorers
+Some structures in this repository serve both functional and protective roles.  
+Most users will never encounter them, but those who explore the deeper layers  
+may notice patterns of separation, guardianship, and intentional design.
+
+This is expected.
