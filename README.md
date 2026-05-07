@@ -198,5 +198,3 @@ This is intentional and part of the system’s introspective design.
 These points are optional and not required for running the demo.  
 They exist for those who enjoy exploring deeper layers of a system’s architecture.
 
-These points are optional and not required for running the demo.  
-They exist for those who enjoy exploring deeper layers of a system’s architecture.
