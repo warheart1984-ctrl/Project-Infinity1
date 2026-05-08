@@ -134,7 +134,10 @@ Only `docs/` (excluding `_archive/` and `_future/`) is authoritative for runtime
 | **OTEM** | Bounded task and memory support |
 | **Workflow shell** | Packaged app route layer |
 | **Evolve engine** | Learns from outcomes — does not alter role definitions |
- 
+ ## Core Cognitive Architecture
+
+**[Cognitive Architecture Signature: Unified Architectural Hyper-Systemizer][(ZENODO_LINK_HERE)](https://zenodo.org/records/20067067)**  
+Formal specification of the cognitive engine behind Project Infinity (May 5, 2026).
 ---
  
 ## What to Read Next
