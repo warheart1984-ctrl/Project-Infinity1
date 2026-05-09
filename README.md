@@ -98,7 +98,64 @@ AAIS_ENABLE_CLAUDE_AUTO_ROUTING=true              # routes eligible turns automa
 To pin Claude instead of auto-routing, start a session with `provider_mode=claude_first` or select it in the Jarvis Console provider controls.
  
 ---
- 
+High‑Level Shape
+
+AAIS is a local‑first assistant runtime built as a governed stack, not a single service.
+Every request moves through a fixed path:
+
+Ingress (Bridge / Jarvis lane)
+
+All input enters through a bridge‑enforced lane.
+
+Requests are classified, checked against project law, and either admitted, downgraded, or blocked.
+
+Every decision is traced and signed.
+
+Dispatch (Forge / OTEM / Workflows)
+
+Admitted work is routed into bounded lanes: normal assistant work, contractor‑style code execution (Forge), or task/memory support (OTEM).
+
+Risky or experimental work is isolated from core authority.
+
+Workflows and app surfaces sit on top of these lanes, not beside them.
+
+Core Runtime (engine/, aais/, evolve_engine/)
+
+The core runtime enforces invariants, turn contracts, and role boundaries.
+
+The evolve engine learns from outcomes but cannot rewrite roles or law; it only adjusts strategies inside allowed bounds.
+
+All turns are evaluated against project law and recorded for continuity.
+
+Memory, Providers, and Subsystems
+
+Memory, tools, and external providers are accessed through governed interfaces with bounded authority.
+
+Subsystems (like Nova) are admitted as packs under explicit contracts in docs/subsystems/.
+
+No subsystem is “just plugged in”—it is documented, traced, and law‑bound.
+
+Surfaces (frontend/, mobile/, api/)
+
+The web app, mobile app, and API are thin surfaces over the governed runtime.
+
+They do not own behavior; they only expose what the runtime has already constrained and traced.
+
+Documentation Spine
+
+docs/spine/ — human reading path and project explanation
+
+docs/runtime/ — runtime maps and system references
+
+docs/contracts/ — laws, protocols, and operating doctrine
+
+docs/subsystems/ — admitted subsystem packs
+
+docs/audit/ — coverage and status records
+
+Only docs/ (excluding _archive/ and _future/) is authoritative for understanding how the system actually behaves. 
+Client → Bridge/Jarvis → Forge/OTEM/Workflows → Core Runtime → Evolve Engine → Storage/Providers
+
 ## Repository Structure
  
 ```
