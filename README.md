@@ -1,3 +1,6 @@
+If you want to understand how my mind works, check out my writing. I’ve published 26 books under two names — my own, Jon Halstead, and my pen name, Adam Wolfe. Jon Halstead is my worldbuilding and systems side. Adam Wolfe is the darker, human edge of those systems. I’m not only an architect — I’m a writer, too.
+
+
 # AAIS — Adaptive Assistant Intelligence System
 
 > **Behavior enforced, not implied.**
