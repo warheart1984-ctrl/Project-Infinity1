@@ -1,223 +1,208 @@
-If you want to understand how my mind works, check out my writing. I’ve published 26 books under two names — my own, Jon Halstead, and my pen name, Adam Wolfe. Jon Halstead is my worldbuilding and systems side. Adam Wolfe is the darker, human edge of those systems. I’m not only an architect — I’m a writer, too.
+# Project Infinity — AAIS
 
+> **Adaptive Authority Intelligence System (AAIS)** — a law-governed Jarvis runtime with inspectable Universal Language (UL) structure, Project Infi admission, and operator-facing surfaces.
 
-# AAIS — Adaptive Assistant Intelligence System
+## What AAIS Is
 
-> **Behavior enforced, not implied.**
+AAIS is not a single chatbot wrapper. It is a **governed cognition runtime** that:
 
-AAIS is a local-first, law-governed assistant runtime. Every request, every decision, every reroute is explicit, visible, and accountable.
+- routes operator turns through **Jarvis** (`src/api.py`, `src/jarvis_operator.py`)
+- adapts every outward payload through **AAIS-UL** (structure + visibility before expansion)
+- enforces **Project Infi law** on chat replies, forge contractors, and repo mutations
+- stages work on the **CISIV** ladder: concept → identity → structure → implementation → verification
+- exposes traces, law enforcement, and UL substrate envelopes on live API responses
 
-Built for environments where **behavior matters more than output**.
+Think of it in three cooperating layers:
 
----
+| Layer | Role | Key modules |
+|---|---|---|
+| **Authority shell** | Sessions, chat, tools, forge handoffs, operator UI | `src/api.py`, `app/main.py`, `aais/launcher.py` |
+| **UL substrate** | Payload adaptation, modular previews, drift/smoke tooling | `src/aais_ul.py`, `src/chat_turn_governance.py`, `src/forge_repo_governance.py` |
+| **Governed law** | Admission, repo change cycles, module governance | `src/project_infi_law.py`, `src/project_infi_state_machine.py` |
 
-## Why AAIS Exists
+Authoritative references:
 
-Most assistant systems optimize for answers. AAIS optimizes for behavior.
+- Subsystem map: [`docs/runtime/AAIS_SUBSYSTEM_SPEC.md`](docs/runtime/AAIS_SUBSYSTEM_SPEC.md)
+- UL doctrine: [`docs/contracts/AAIS_UL_DOCTRINE.md`](docs/contracts/AAIS_UL_DOCTRINE.md)
+- Latest UL/CISIV proof: [`docs/proof/aais-ul/UL_CISIV_PHASES_1_5_PROOF.md`](docs/proof/aais-ul/UL_CISIV_PHASES_1_5_PROOF.md)
 
-- One clear operating contract per turn
-- No silent reroutes or hidden fallbacks
-- Risky and experimental work isolated from normal work
-- Operator control preserved, not abstracted away
-- Every decision leaves a signed, time-bound trace
-
-**Core doctrine: Stabilize and Free.**
-Stability before freedom. The system earns more responsibility by staying inside clear rules, explaining its behavior, and failing in a controlled way. If it cannot do that, it slows down, asks for confirmation, or stops.
-
----
-
-## Architecture
-
-Every request moves through a fixed, law-bound path. Nothing bypasses the chain.
-
-```mermaid
-flowchart TD
-    Client(["Client / Operator"])
-
-    subgraph Ingress ["Ingress Layer"]
-        Bridge["Bridge\n─────────────\nFail-closed by default\nClassifies & checks\nagainst project law\nSigns every decision"]
-        Jarvis["Jarvis\n─────────────\nMain authority lane\nIngress + runtime control\nOperator-facing"]
-    end
-
-    subgraph Dispatch ["Dispatch Layer"]
-        Forge["Forge\n─────────────\nIsolated contractor lane\nCode execution only\nBounded authority"]
-        OTEM["OTEM\n─────────────\nTask + memory support\nBounded execution lane"]
-        Workflows["Workflows\n─────────────\nPackaged app routes"]
-    end
-
-    subgraph Core ["Core Runtime"]
-        Runtime["aais/ engine/\n─────────────\nTurn contracts\nInvariants\nRole boundaries\nTraceability"]
-        Evolve["Evolve Engine\n─────────────\nLearns from outcomes\nCannot rewrite roles\nor law"]
-    end
-
-    subgraph Providers ["Storage & Providers"]
-        Memory["Governed Memory"]
-        LLMs["LLM Providers\n(Claude, etc.)"]
-        APIs["External APIs"]
-    end
-
-    Client --> Bridge
-    Bridge --> Jarvis
-    Jarvis --> Forge
-    Jarvis --> OTEM
-    Jarvis --> Workflows
-    Forge --> Runtime
-    OTEM --> Runtime
-    Workflows --> Runtime
-    Runtime --> Evolve
-    Evolve --> Memory
-    Evolve --> LLMs
-    Evolve --> APIs
-
-    style Ingress fill:#1a1a2e,stroke:#4a4a8a,color:#e0e0ff
-    style Dispatch fill:#0d1117,stroke:#3a5a3a,color:#d0ffd0
-    style Core fill:#1a0d0d,stroke:#8a3a3a,color:#ffd0d0
-    style Providers fill:#0d0d1a,stroke:#5a5a8a,color:#d0d0ff
-```
-
-### Layer Roles
-
-| Layer | Component | Role |
-|-------|-----------|------|
-| **Ingress** | Bridge | Front door and primary safety boundary. Fail-closed. Signs every decision. |
-| **Ingress** | Jarvis | Main authority lane. Operator-facing ingress and runtime control. |
-| **Dispatch** | Forge | Isolated contractor lane. Code execution only. Bounded authority. |
-| **Dispatch** | OTEM | Bounded task and memory support. |
-| **Dispatch** | Workflows | Packaged app route layer. |
-| **Core** | Runtime | Enforces turn contracts, invariants, role boundaries, continuity, traceability. |
-| **Core** | Evolve Engine | Learns from outcomes within bounds. Cannot alter role definitions or law. |
+This repository is also **Project Infi** — constitutional engineering where claims require proof, not intent.
 
 ---
 
-## Quick Start
+## How to Make It Work
+
+### Prerequisites
+
+- **Python 3.10+**
+- **Git**
+- **Node.js 18+** and **npm** — only if you need to rebuild the frontend (`frontend/`)
+- Optional: **Redis** — for Celery background jobs (`make worker`)
+- Optional: provider API keys — OpenAI / Anthropic (local/mock presets work without them)
+
+### 1. Clone and install
 
 ```bash
-pip install -e .
-python -m aais start --data-dir ./.runtime/aais-data
+git clone https://github.com/warheart1984-ctrl/Project-Infinity.git
+cd Project-Infinity
+python -m pip install -e ".[dev]"
 ```
 
-| Surface | URL |
-|---------|-----|
-| App | http://127.0.0.1:8000/app |
-| Jarvis Console | http://127.0.0.1:8000/app/jarvis |
-| Health | http://127.0.0.1:8000/health |
-
-**Optional preflight:**
+Copy environment template and set keys only for routes you use:
 
 ```bash
-python -m aais prepare --force-build --data-dir ./.runtime/aais-data
+cp .env.example .env
+# Edit .env — OPENAI_API_KEY / ANTHROPIC_API_KEY optional for mock or laptop presets
+```
+
+### 2. Prepare runtime data (first run)
+
+```bash
+python -m aais prepare --data-dir ./.runtime/aais-data
 python -m aais doctor --data-dir ./.runtime/aais-data
 ```
 
-**Frontend dev server:**
+`prepare` stages the packaged UI into `app/static/`. A prebuilt bundle ships with the repo; use `--force-build` only after `npm install` in `frontend/`.
+
+### 3. Start AAIS
+
+**Recommended (cross-platform launcher):**
 
 ```bash
-cd frontend
-npm install && npm run dev
+python -m aais start --data-dir ./.runtime/aais-data --preset mock --no-browser
 ```
 
-Surfaces: `localhost:3000/jarvis` · `localhost:3000/workbench` · `localhost:3000/memory`
+Presets (`src/main.py`):
 
----
+| Preset | Use when |
+|---|---|
+| `mock` | No GPU / no API keys — deterministic local replies |
+| `laptop` | Lightweight real local model path |
+| `default` | Full runtime (may load heavier local models) |
 
-## Requirements
-
-Use `requirements.txt` for standard local setup.
-
-| File | Purpose |
-|------|---------|
-| `requirements.txt` | Standard local |
-| `requirements-local.txt` | Local dev extras |
-| `requirements-laptop.txt` | Constrained/laptop env |
-| `requirements-advanced.txt` | Full feature set |
-| `requirements-training.txt` | Training pipeline only |
-
----
-
-## Optional: Claude Provider
+**Developer alternative (uvicorn directly):**
 
 ```bash
-export ANTHROPIC_API_KEY=your_key
-export AAIS_CLAUDE_MODEL=claude-sonnet-4-20250514
-export AAIS_ENABLE_CLAUDE_AUTO_ROUTING=true
+make run
+# equivalent: uvicorn app.main:app --reload
 ```
 
-Or pin Claude via `provider_mode=claude_first` in the Jarvis Console.
+### 4. Open operator surfaces
 
----
+| Surface | URL |
+|---|---|
+| Health | http://127.0.0.1:8000/health |
+| App shell | http://127.0.0.1:8000/app |
+| Jarvis console | http://127.0.0.1:8000/app/jarvis |
+| Legacy Jarvis API (Flask) | mounted at `/legacy_api` via FastAPI bridge |
 
-## Repository Structure
+### 5. Verify it is working
 
-```
-aais/                  Core runtime
-api/                   API surface
-app/                   Packaged shell + workflows
-src/                   Entry points (jarvis_operator.py, api.py)
-docs/
-  spine/               Canonical reading path
-  runtime/             System references
-  contracts/           Laws + doctrine
-  subsystems/          Admitted subsystem packs
-  audit/               Coverage + status
-  _archive/            Lineage — not authoritative
-  _future/             Planned — not live
-engine/                Foundation layer
-forge/                 Bounded contractor lane
-evolve_engine/         Outcome-based adaptation
-evals/                 Evaluation harness
-tests/                 Full test suite
-frontend/              Web app
-mobile/                Expo mobile app
-training/              Training pipeline
+```bash
+curl -fsS http://127.0.0.1:8000/health
 ```
 
-Only `docs/` (excluding `_archive/` and `_future/`) is authoritative for runtime understanding.
+Create a chat session and send a message:
+
+```bash
+curl -fsS -X POST http://127.0.0.1:8000/legacy_api/api/chat/sessions \
+  -H "Content-Type: application/json" \
+  -d "{\"system_prompt\":\"You are Jarvis.\"}"
+
+# Use session_id from response:
+curl -fsS -X POST http://127.0.0.1:8000/legacy_api/api/chat/sessions/<session_id>/message \
+  -H "Content-Type: application/json" \
+  -d "{\"message\":\"Summarize AAIS.\",\"response_mode\":\"operator\"}"
+```
+
+A healthy turn returns `ul_substrate`, `modular_preview`, `law_enforcement`, and `cisiv_stage` on the payload.
+
+**UL governance smoke:**
+
+```bash
+python -m tools.ul.drift
+python -m tools.ul.smoke
+python -m pytest tests/test_cisiv.py tests/test_chat_turn_governance.py tests/test_forge_repo_governance.py -q
+```
+
+### 6. Optional contractor lanes
+
+These are isolated HTTP services — start only when you need forge/evolve features:
+
+| Service | Default port | Env var |
+|---|---|---|
+| Forge contractor | 6060 | `FORGE_BASE_URL` |
+| ForgeEval | 6061 | `FORGE_EVAL_BASE_URL` |
+| EvolveEngine | 6062 | `EVOLVE_BASE_URL` |
+
+Without them, core chat and patch-review paths still work; explicit forge routes return routing errors until the contractor is up.
+
+### Failsafe notes
+
+- Stop foreground runtime with `Ctrl+C`.
+- Do not delete `.runtime/aais-data` during active sessions.
+- Missing proof or constitutional ambiguity is a **stop condition** — see governance section below.
 
 ---
 
-## Documentation
+## Repository Layout (operator view)
 
-| Document | Governs |
-|----------|---------|
-| [AAIS Human Guide](docs/spine/) | System overview |
-| [AAIS AI Operating Contract](docs/contracts/) | Runtime behavior contract |
-| [AAIS Master Spec](docs/spine/) | Full specification |
-| [REPO_LAWBOOK.md](REPO_LAWBOOK.md) | Full repo operating law |
-
-**Project Laws:**
-
-| Document | Governs |
-|----------|---------|
-| README Law v1 | Documentation rules |
-| External Suggestion Admission Rule | How external input enters the system |
-| ARIS Runtime Contract | Embedded repo-intelligence law |
-| Cognitive Bridge Runtime Law | Ingress + attestation rules |
+```
+aais/              Cross-platform launcher (start | prepare | doctor)
+app/               FastAPI workflow shell + packaged static UI
+src/               Jarvis runtime authority (api, operator, UL, law)
+frontend/          React operator UI source (build → app/static)
+forge/             Isolated Forge contractor service
+tools/ul/          UL drift + smoke verification
+docs/              Contracts, subsystem spec, proof packets
+tests/             Pytest suite
+```
 
 ---
 
-## Cognitive Architecture
+## Constitutional Governance
 
-[Unified Architectural Hyper-Systemizer](https://zenodo.org/records/20067067) — Formal specification of the cognitive engine behind Project Infinity (May 5, 2026).
+Behavior is constitutional, not aspirational. No fix, test, or release claim is complete without evidence.
+
+**Precedence:** Law > Blueprint > Contract > Implementation > Pipeline > Tool
+
+Governance references:
+
+- [`META_ARCHITECT_LAWBOOK.md`](META_ARCHITECT_LAWBOOK.md)
+- [`REPO_PROOF_LAW.md`](REPO_PROOF_LAW.md)
+- [`HUMAN_AI_CO_COLLABORATION_CHARTER.md`](HUMAN_AI_CO_COLLABORATION_CHARTER.md)
+- [`docs/TRUST_BUNDLE_SPEC.md`](docs/TRUST_BUNDLE_SPEC.md)
+
+| Role | Responsibility |
+|---|---|
+| **Human** | Define law, approve exceptions, review evidence, hold release authority |
+| **AI / agents** | Execute within law, emit traceable evidence, label claims (`asserted`, `proven`, `rejected`) |
+
+### Doctrine summary (twelve doctrines)
+
+| # | Doctrine | Intent |
+|---|---|---|
+| I | Proof-of-Reality | If it was not proven, it did not occur. |
+| II | Blueprint | Intent documented before or with implementation change. |
+| III | Documentation | Operation without current docs is non-compliant. |
+| IV | Failsafe | Safe defaults, rollback, recovery, stop conditions. |
+| V | Evidence | Claims require traceable proof artifacts. |
+| VI | Debt | Gaps tracked with owner, severity, due date, status. |
+| VII | CI Governance | Governance gates are mandatory acceptance controls. |
+| VIII | Precedence | Higher-order artifacts govern conflicts. |
+| IX | Change-of-Reality | Behavior changes require doc + test + proof updates. |
+| X | Meta Architect Authority | Final constitutional interpretation is binding. |
+| XI | Simple Trust | Evidence-first; trust bundles; human escalation when needed. |
+| XII (MA-12) | Operational Primer | README must include **How to Make It Work** (this section). |
+
+Templates: [`templates/PROOF_BUNDLE_TEMPLATE.md`](templates/PROOF_BUNDLE_TEMPLATE.md), [`templates/PROJECT_BASELINE_CHECKLIST.md`](templates/PROJECT_BASELINE_CHECKLIST.md)
 
 ---
 
-## Points of Interest
+## Contributor Oath
 
-AAIS contains deeper layers for those who explore:
-
-- **Internal architecture layers** — nested subsystems, lineage, early doctrine
-- **Foundation artifacts** — structural invariants, long-term stability markers in `engine/`
-- **Historical documents** — `docs/_archive/` shows the system's evolution
-- **Introspective traces** — certain components maintain narrative metadata as subsystems are added
-
-These are optional and not required for running the system.
-
----
-
-## Security
-
-See [SECURITY.md](SECURITY.md) for the disclosure policy.
-
-## License
-
-Apache 2.0
+1. I will not present unproven claims as complete.
+2. I will attach traceable evidence to significant fix/test/release claims.
+3. I will preserve constitutional precedence and no-bypass governance.
+4. I will track documentation/governance debt instead of hiding it.
+5. I will treat missing evidence as a stop condition, not a paperwork delay.
