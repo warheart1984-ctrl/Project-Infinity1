@@ -43,8 +43,8 @@ This repository is also **Project Infi** — constitutional engineering where cl
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/warheart1984-ctrl/Project-Infinity.git
-cd Project-Infinity
+git clone https://github.com/warheart1984-ctrl/Project-Infinity1.git
+cd Project-Infinity1
 python -m pip install -e ".[dev]"
 ```
 
@@ -143,7 +143,7 @@ Without them, core chat and patch-review paths still work; explicit forge routes
 
 | Item | Location |
 |---|---|
-| Repository | https://github.com/warheart1984-ctrl/Project-Infinity |
+| Repository | https://github.com/warheart1984-ctrl/Project-Infinity1 |
 | Contributing | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 | CI workflows | [`.github/workflows/`](.github/workflows/) |
 | Local-only rules | [`.gitignore`](.gitignore), [`docs/GITHUB.md`](docs/GITHUB.md) |

@@ -14,8 +14,8 @@ Thank you for contributing. This repository is **law-governed**: implementation 
 ## Local setup
 
 ```bash
-git clone https://github.com/warheart1984-ctrl/Project-Infinity.git
-cd Project-Infinity
+git clone https://github.com/warheart1984-ctrl/Project-Infinity1.git
+cd Project-Infinity1
 python -m pip install -e ".[dev]"
 cp .env.example .env
 python -m aais prepare --data-dir ./.runtime/aais-data

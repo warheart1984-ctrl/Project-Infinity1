@@ -4,7 +4,7 @@ This document describes how Project Infinity is prepared for GitHub and what sta
 
 ## Remote
 
-- **Repository:** https://github.com/warheart1984-ctrl/Project-Infinity
+- **Repository:** https://github.com/warheart1984-ctrl/Project-Infinity1
 - **Default branch:** `main`
 
 ## Clean repo principles
