@@ -1,0 +1,7 @@
+# Local Wolf-CoG-OS forge outputs — never commit to GitHub
+output/
+build/
+artifacts/
+payload-iso/
+*.iso
+*.iso.sha256

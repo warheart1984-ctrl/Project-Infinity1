@@ -32,7 +32,7 @@ const WorkflowRuns = lazy(() => import('./pages/WorkflowRuns'));
 const WorkflowRunDetail = lazy(() => import('./pages/WorkflowRunDetail'));
 const WorkflowApprovals = lazy(() => import('./pages/WorkflowApprovals'));
 const WorkflowTemplates = lazy(() => import('./pages/WorkflowTemplates'));
-const Onboarding = lazy(() => import('./pages/Onboarding'));
+const OperatorConsole = lazy(() => import('./pages/OperatorConsole'));
 
 function RouteFallback() {
   return (
@@ -75,6 +75,7 @@ function AppShell() {
             <Route path="/workflows/runs/:runId" element={<WorkflowRunDetail />} />
             <Route path="/workflows/approvals" element={<WorkflowApprovals />} />
             <Route path="/workflows/templates" element={<WorkflowTemplates />} />
+            <Route path="/operator" element={<OperatorConsole />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

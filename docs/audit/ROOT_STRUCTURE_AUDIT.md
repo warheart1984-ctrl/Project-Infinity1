@@ -29,7 +29,7 @@ Use these buckets for root cleanup decisions:
 These are the roots that clearly belong in the visible repo structure now:
 
 - `README.md`
-- `REPO_LAWBOOK.md`
+- `document/law/REPO_LAWBOOK.md`
 - `docs/`
 - `src/`
 - `tests/`
@@ -76,6 +76,11 @@ These items should stay local, generated, or ignored:
 - `env/`
 - `tmp/`
 - `logs/`
+- `*.iso`, `*.iso.sha256`
+- `wolf-cog-os/output/`, `wolf-cog-os/artifacts/`
+- `.cogos-live-safe-work/`, `.cogos-master-boot-work/`, `.ground-up-work/`
+- `ci-artifacts/`, `metal-iso-extract/`, `release/`
+- Duplicate imports: `AAIS-main/`, `Aris--main/`, `Project-Infinity-main/`
 
 These are runtime, cache, package-manager, or machine-specific surfaces.
 

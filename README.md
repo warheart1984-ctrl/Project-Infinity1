@@ -137,6 +137,21 @@ These are isolated HTTP services — start only when you need forge/evolve featu
 
 Without them, core chat and patch-review paths still work; explicit forge routes return routing errors until the contractor is up.
 
+---
+
+## GitHub
+
+| Item | Location |
+|---|---|
+| Repository | https://github.com/warheart1984-ctrl/Project-Infinity |
+| Contributing | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
+| CI workflows | [`.github/workflows/`](.github/workflows/) |
+| Local-only rules | [`.gitignore`](.gitignore), [`docs/GITHUB.md`](docs/GITHUB.md) |
+
+Pull requests to `main` run governance gates (CoGOS CI, documentation baseline, UGR trust bundle, operator console, Forgekeeper). Significant claims in PRs must include proof posture (`asserted` / `proven` / `rejected`) per [`REPO_PROOF_LAW.md`](REPO_PROOF_LAW.md).
+
+**Do not commit:** ISO images, `.runtime/`, `wolf-cog-os/output/`, or duplicate import folders (`*-main/`).
+
 ### Failsafe notes
 
 - Stop foreground runtime with `Ctrl+C`.

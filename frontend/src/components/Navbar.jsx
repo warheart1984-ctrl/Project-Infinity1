@@ -7,7 +7,7 @@ function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const isHomeRoute = location.pathname === '/' || location.pathname.startsWith('/nova');
-  const isJarvisRoute = location.pathname.startsWith('/jarvis');
+  const isJarvisRoute = location.pathname.startsWith('/jarvis') || location.pathname.startsWith('/operator');
   const surface = isJarvisRoute ? 'jarvis' : 'nova';
 
   const toggleMenu = () => setIsOpen(!isOpen);
@@ -16,6 +16,7 @@ function Navbar() {
   const navItems = isJarvisRoute
     ? [
         { type: 'route', to: '/jarvis', label: 'Console' },
+        { type: 'route', to: '/operator', label: 'UGR / Forge' },
         { type: 'route', to: '/jarvis/repo-manager', label: 'Repo Manager' },
         { type: 'route', to: '/memory', label: 'Memory Bank' },
   { type: 'route', to: '/', label: 'Small Nova' },

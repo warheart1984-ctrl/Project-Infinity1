@@ -9,6 +9,10 @@ govern AAIS behavior.
 - dependency gate and deterministic lock policy
 - module governance and phase rules
 - cognitive bridge ingress law
+- unified governed runtime (UGR) and MLCA contract
+- unified pattern ledger schema v0.5
+- UGR cloud mesh contract (Phase 2 Forge lift)
+- UGR governed ingestion contract (Phase 3 senses)
 - embedded ARIS runtime and non-copy law
 - immune protocol and collective pattern ledger law
 - swarm coordination law
@@ -20,6 +24,7 @@ govern AAIS behavior.
 - seam law and seam checklist
 - seam closure records
 - evolve, forge, and capability contracts
+- cloud forge rail scheduler (`cloud-forge-rail-contract.md`)
 
 ## Canonical Rule
 

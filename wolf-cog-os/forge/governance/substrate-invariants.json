@@ -1,0 +1,50 @@
+{
+  "schema_version": "forge-substrate-invariants.v1",
+  "description": "Platform governance invariants for universal substrate replay (Gate F compatible)",
+  "platforms": {
+    "windows": {
+      "substrate_ids": ["windows-installer"],
+      "replay_adapter": "windows-wim-layout",
+      "backend": "winpe-backend",
+      "required_invariants": [
+        "bcd_integrity",
+        "boot_chain_order",
+        "signature_preservation",
+        "ntfs_metadata_normalization"
+      ],
+      "gate_f_checks": [
+        "forge-lineage records replay_adapter and rootfs_backend",
+        "substrate-validation.json records wim paths",
+        "inject manifest hash in lineage when COGOS_INJECT_MANIFEST set"
+      ]
+    },
+    "macos": {
+      "substrate_ids": ["macos-installer"],
+      "replay_adapter": "macos-apfs-layout",
+      "backend": "darwin-backend",
+      "required_invariants": [
+        "apfs_integrity",
+        "sealed_snapshot_verification",
+        "signature_preservation"
+      ],
+      "gate_f_checks": [
+        "forge-lineage records replay_adapter",
+        "APFS volume map captured in substrate-validation.json"
+      ]
+    },
+    "android": {
+      "substrate_ids": ["android-bootable"],
+      "replay_adapter": "android-super-layout",
+      "backend": "android-backend",
+      "required_invariants": [
+        "selinux_label_consistency",
+        "avb_vbmeta_awareness",
+        "ab_slot_metadata"
+      ],
+      "gate_f_checks": [
+        "forge-lineage records replay_adapter",
+        "partition map captured in substrate-validation.json"
+      ]
+    }
+  }
+}

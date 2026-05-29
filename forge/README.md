@@ -13,6 +13,13 @@ authority.
   - contractor service logic
 - [`schemas.py`](./schemas.py)
   - request and response schemas
+- [`forgekeeper.py`](./forgekeeper.py)
+  - Forge Warden dry-run CLI (`observe`, `judge`, `plan`, `status`, `report`, `snapshot`,
+    `snapshot-index`, query modes, `verify`, `chaos-check`, `bundle-export`)
+  - CI gate: `.github/scripts/check-forgekeeper-governance.py`
+  - Ops: `docs/subsystems/bumblebee_forge/OPERATIONAL_RUNBOOK.md`
+  - Weekly: `scripts/forgekeeper/weekly-operator-loop.ps1` / `.sh`
+  - Reconcile: `scripts/forgekeeper/reconcile-artifacts.ps1` / `.sh`
 
 ## External Suggestion Admission
 

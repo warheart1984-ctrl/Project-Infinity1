@@ -1,3 +1,8 @@
+# Forgekeeper cross-machine replay outputs (activation-time only)
+docs/proof/bumblebee-forge/cross_machine/REPLAY_MANIFEST.json
+docs/proof/bumblebee-forge/cross_machine/replay_transcript.txt
+docs/proof/bumblebee-forge/cross_machine/replay_hashes.json
+
 # Runtime / temp
 .runtime/
 .pytest_cache/
@@ -53,6 +58,8 @@ downloads/
 eggs/
 .eggs/
 lib/
+!wolf-cog-os/scripts/lib/
+!wolf-cog-os/scripts/lib/profile-loader.sh
 lib64/
 parts/
 sdist/
@@ -84,3 +91,52 @@ training/data/private_messages.jsonl
 training/data/private_messages_*.jsonl
 data/chroma/*
 !data/chroma/README.md
+
+# --- GitHub / local-only (do not commit) ---
+
+# ISO / installer media
+*.iso
+*.iso.sha256
+*.img
+
+# Wolf-CoG-OS forge outputs (scripts + contracts stay tracked)
+wolf-cog-os/output/
+wolf-cog-os/artifacts/
+wolf-cog-os/payload-iso/
+
+# ISO extract / CI scratch / release drops
+metal-iso-extract/
+ci-artifacts/
+release/
+
+# Local forge worktrees
+.cogos-live-safe-work/
+.cogos-master-boot-work/
+.ground-up-work/
+.tmp-matrix-sweep/
+
+# Duplicate import trees (canonical repo is repo root)
+AAIS-main/
+Aris--main/
+Project-Infinity-main/
+
+# Sidecar copies not in active core layout
+aris/
+aris_launcher.py
+ARIS.spec
+
+# Accidental argv files and download logs
+--*
+wget-log*
+
+# Stray root stubs from broken shell invocations
+/bash
+/python3
+
+# Large local-only docs
+ProjectInfinity_UL_Documentation.pdf
+project_blueprints_infinity.html
+
+# Cursor local session state (rules under .cursor/rules/ are tracked)
+.cursor/projects/
+.cursor/**/*.log

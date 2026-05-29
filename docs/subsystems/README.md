@@ -9,6 +9,8 @@ contracts.
 
 - [nova/README.md](./nova/README.md)
   - active Nova subsystem documentation
+- [bumblebee_forge/README.md](./bumblebee_forge/README.md)
+  - governed Bumblebee Forge roadmap and Stage 0/1 artifacts
 - [storyforge/README.md](./storyforge/README.md)
   - active Story Forge subsystem pack with partial-live runtime truth
 - [beatbox/README.md](./beatbox/README.md)

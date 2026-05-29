@@ -39,9 +39,24 @@ def _cache_key(name: str, value: str) -> str:
     return hashlib.sha256(f"{name}::{value}".encode("utf-8")).hexdigest()
 
 def _get_tool_cache(name: str, value: str):
+    try:
+        from src.cloud_forge.cache_bridge import bridge_l0_get
+
+        bridged = bridge_l0_get(name, value)
+        if bridged is not None:
+            return bridged
+    except Exception:
+        pass
     return _TOOL_CACHE.get(_cache_key(name, value))
 
 def _set_tool_cache(name: str, value: str, result: str):
+    try:
+        from src.cloud_forge.cache_bridge import bridge_l0_set
+
+        if bridge_l0_set(name, value, result) is not None:
+            return
+    except Exception:
+        pass
     _TOOL_CACHE[_cache_key(name, value)] = result
 
 def safe_calculate(expression: str) -> str:
