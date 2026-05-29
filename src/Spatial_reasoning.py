@@ -456,67 +456,92 @@ class SpatialReasoningPlug:
             "reason": reason,
         }
 
+    def _wrap_result(self, payload: dict[str, Any]) -> dict[str, Any]:
+        from src.aais_ul_substrate import wrap_runtime_snapshot
+
+        return wrap_runtime_snapshot(dict(payload))
+
     def query(self, mode: str, **kwargs) -> dict[str, Any]:
         """Universal entrypoint for AAIS tool-calling."""
         normalized_mode = self._require_text(mode, "mode").lower().replace("-", "_")
         if normalized_mode in {"path", "shortest_path"}:
-            return self.shortest_path(kwargs["space_id"], kwargs["from"], kwargs["to"])
+            return self._wrap_result(
+                self.shortest_path(kwargs["space_id"], kwargs["from"], kwargs["to"])
+            )
         if normalized_mode in {"distance", "geo_distance"}:
-            return self.geo_distance(
-                kwargs["space_id"],
-                kwargs["from"],
-                kwargs["to"],
-                kwargs.get("unit", "meters"),
+            return self._wrap_result(
+                self.geo_distance(
+                    kwargs["space_id"],
+                    kwargs["from"],
+                    kwargs["to"],
+                    kwargs.get("unit", "meters"),
+                )
             )
         if normalized_mode in {"bearing", "heading"}:
-            return self.bearing(kwargs["space_id"], kwargs["from"], kwargs["to"])
+            return self._wrap_result(
+                self.bearing(kwargs["space_id"], kwargs["from"], kwargs["to"])
+            )
         if normalized_mode in {"adjacent", "adjacency", "direct_connection"}:
-            return self.adjacent(kwargs["space_id"], kwargs["from"], kwargs["to"])
+            return self._wrap_result(
+                self.adjacent(kwargs["space_id"], kwargs["from"], kwargs["to"])
+            )
         if normalized_mode in {"travel_time", "travel"}:
-            return self.travel_time(
-                kwargs["space_id"],
-                kwargs["from"],
-                kwargs["to"],
-                kwargs.get("speed_kmh", 5.0),
-                kwargs.get("route_mode", "path"),
+            return self._wrap_result(
+                self.travel_time(
+                    kwargs["space_id"],
+                    kwargs["from"],
+                    kwargs["to"],
+                    kwargs.get("speed_kmh", 5.0),
+                    kwargs.get("route_mode", "path"),
+                )
             )
         if normalized_mode in {"visibility", "line_of_sight"}:
-            return self.visibility(
-                kwargs["space_id"],
-                kwargs["from"],
-                kwargs["to"],
-                kwargs.get("line_of_sight", True),
+            return self._wrap_result(
+                self.visibility(
+                    kwargs["space_id"],
+                    kwargs["from"],
+                    kwargs["to"],
+                    kwargs.get("line_of_sight", True),
+                )
             )
         if normalized_mode in {"real_world_visibility", "geo_visibility"}:
-            return self.real_world_visibility(
-                kwargs["space_id"],
-                kwargs["from"],
-                kwargs["to"],
-                kwargs.get("max_distance_meters"),
+            return self._wrap_result(
+                self.real_world_visibility(
+                    kwargs["space_id"],
+                    kwargs["from"],
+                    kwargs["to"],
+                    kwargs.get("max_distance_meters"),
+                )
             )
         if normalized_mode == "place":
-            return self.place_entity(
-                kwargs["entity_id"],
-                kwargs["space_id"],
-                kwargs["node"],
-                **kwargs.get("attrs", {}),
+            return self._wrap_result(
+                self.place_entity(
+                    kwargs["entity_id"],
+                    kwargs["space_id"],
+                    kwargs["node"],
+                    **kwargs.get("attrs", {}),
+                )
             )
         if normalized_mode in {"add_real_world_node", "geo_node"}:
-            return self.add_real_world_node(
-                kwargs["space_id"],
-                kwargs["node_id"],
-                kwargs["lat"],
-                kwargs["lon"],
-                kwargs.get("elevation", kwargs.get("z", 0)),
-                **kwargs.get("attrs", {}),
+            return self._wrap_result(
+                self.add_real_world_node(
+                    kwargs["space_id"],
+                    kwargs["node_id"],
+                    kwargs["lat"],
+                    kwargs["lon"],
+                    kwargs.get("elevation", kwargs.get("z", 0)),
+                    **kwargs.get("attrs", {}),
+                )
             )
         if normalized_mode == "build":
-            return self.build_space(
-                kwargs["space_id"],
-                kwargs.get("nodes", []),
-                kwargs.get("edges", []),
+            return self._wrap_result(
+                self.build_space(
+                    kwargs["space_id"],
+                    kwargs.get("nodes", []),
+                    kwargs.get("edges", []),
+                )
             )
-        return {"error": f"Unknown mode '{normalized_mode}'."}
+        return self._wrap_result({"error": f"Unknown mode '{normalized_mode}'."})
 
     def _space(self, space_id: str) -> dict[str, Any]:
         if space_id not in self.spaces:

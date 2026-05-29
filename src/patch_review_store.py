@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import json
 from pathlib import Path
 import threading
@@ -14,6 +15,12 @@ from src.state_hygiene import (
 
 
 PATCH_REVIEW_FILENAME = "patch-reviews.json"
+
+
+def _wrap_review(review: dict[str, Any]) -> dict[str, Any]:
+    from src.aais_ul_substrate import wrap_runtime_snapshot
+
+    return wrap_runtime_snapshot(dict(review))
 
 
 def _utc_now() -> str:
@@ -233,10 +240,10 @@ class PatchReviewStore:
                 existing["updated_at"] = now
                 payload["reviews"][index] = existing
                 self._save_payload(payload)
-                return dict(existing)
+                return _wrap_review(dict(existing))
             payload["reviews"].append(record)
             self._save_payload(payload)
-        return dict(self._normalize_review(record))
+        return _wrap_review(dict(self._normalize_review(record)))
 
     def list_reviews(
         self,
@@ -288,7 +295,7 @@ class PatchReviewStore:
             return None
         review = self._normalize_review(payload["reviews"][index])
         review["review_targets"] = self._build_review_targets(review.get("patch_plan") or {})
-        return dict(review)
+        return _wrap_review(dict(review))
 
     def record_decision(
         self,
@@ -349,7 +356,7 @@ class PatchReviewStore:
             self._save_payload(payload)
             review = self._normalize_review(record)
             review["review_targets"] = self._build_review_targets(review.get("patch_plan") or {})
-            return dict(review)
+            return _wrap_review(dict(review))
 
     def compact_reviews(self) -> dict[str, Any]:
         """Archive non-live reviews so proposal artifacts stop looking current."""

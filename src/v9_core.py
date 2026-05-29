@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import json
 import os
 from pathlib import Path
@@ -150,21 +151,25 @@ class V9CoreEngine:
         memory["last_characters"] = list(cast)
         self._save_memory(memory)
 
-        return {
-            "status": "completed",
-            "input": prompt,
-            "context": scene_context,
-            "location": location,
-            "characters": cast,
-            "provider": provider["name"],
-            "model": provider["model"],
-            "pipeline": pipeline,
-            "output": current_text,
-            "notes_by_angel": notes_by_angel,
-            "logs": logs,
-            "memory_path": str(self.memory_path),
-            "scene": scene_entry,
-        }
+        from src.aais_ul_substrate import wrap_runtime_snapshot
+
+        return wrap_runtime_snapshot(
+            {
+                "status": "completed",
+                "input": prompt,
+                "context": scene_context,
+                "location": location,
+                "characters": cast,
+                "provider": provider["name"],
+                "model": provider["model"],
+                "pipeline": pipeline,
+                "output": current_text,
+                "notes_by_angel": notes_by_angel,
+                "logs": logs,
+                "memory_path": str(self.memory_path),
+                "scene": scene_entry,
+            }
+        )
 
     def _default_memory(self) -> dict[str, Any]:
         return {

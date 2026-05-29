@@ -7,7 +7,8 @@ structured seam event and appended to the seam log.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import json
 import os
 from pathlib import Path

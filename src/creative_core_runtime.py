@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import json
 import os
 from pathlib import Path
@@ -291,7 +292,9 @@ class CreativeCoreRuntime:
         payload = self.get_runtime_state()
         payload["recent_events"] = self.list_events(limit=limit)
         payload["event_count"] = len(payload["recent_events"]) if payload.get("event_count") is None else payload["event_count"]
-        return payload
+        from src.aais_ul_substrate import wrap_runtime_snapshot
+
+        return wrap_runtime_snapshot(payload)
 
     def get_events(self, limit: int = 100) -> list[dict[str, Any]]:
         return self.list_events(limit=limit)

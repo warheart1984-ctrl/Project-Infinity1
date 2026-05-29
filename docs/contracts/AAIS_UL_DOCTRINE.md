@@ -21,5 +21,13 @@ Only after that stability exists should AAIS free the operator from carrying cor
 Live implementation:
 
 - [src/aais_ul.py](../../src/aais_ul.py)
+- [src/aais_ul_substrate.py](../../src/aais_ul_substrate.py)
 - [src/jarvis_modular.py](../../src/jarvis_modular.py)
 - [src/jarvis_protocol.py](../../src/jarvis_protocol.py)
+- [src/cognitive_bridge.py](../../src/cognitive_bridge.py)
+- [src/governed_direct_pipeline.py](../../src/governed_direct_pipeline.py)
+- [src/jarvis_operator.py](../../src/jarvis_operator.py)
+- [src/ugr/unified_runtime.py](../../src/ugr/unified_runtime.py)
+- [src/capability_service_bridge.py](../../src/capability_service_bridge.py)
+- [src/capability_module.py](../../src/capability_module.py)
+- [src/ugr/operator_console/snapshot.py](../../src/ugr/operator_console/snapshot.py)

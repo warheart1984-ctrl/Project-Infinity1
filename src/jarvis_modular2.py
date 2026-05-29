@@ -27,6 +27,10 @@ Python: 3.10+
 
 from __future__ import annotations
 
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -77,13 +81,13 @@ class ModuleOutput:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_public_dict(self) -> Dict[str, Any]:
-        return {
+        return _wrap_ul_payload({
             "name": self.name,
             "section": self.section,
             "content": self.content,
             "priority": self.priority,
             "metadata": self.metadata,
-        }
+        })
 
 
 @dataclass(slots=True)
@@ -98,12 +102,12 @@ class ProviderPreview:
     module_order: List[str]
 
     def to_public_dict(self) -> Dict[str, Any]:
-        return {
+        return _wrap_ul_payload({
             "model": self.model,
             "provider_messages": self.provider_messages,
             "rendered_sections": self.rendered_sections,
             "module_order": self.module_order,
-        }
+        })
 
 
 @dataclass(slots=True)
@@ -153,12 +157,12 @@ class BuildResult:
     provider_preview: ProviderPreview
 
     def to_protocol_dict(self) -> Dict[str, Any]:
-        return {
+        return _wrap_ul_payload({
             "context_modules": self.context_modules,
             "modules": [m.to_public_dict() for m in self.modules],
             "provider_messages": [m.to_provider_dict() for m in self.provider_messages],
             "provider_preview": self.provider_preview.to_public_dict(),
-        }
+        })
 
 
 # ============================================================================

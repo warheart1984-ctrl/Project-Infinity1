@@ -14,7 +14,8 @@ stack without replacing chat, tools, research, or the God Brain.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import json
 import os
 from pathlib import Path
@@ -173,7 +174,9 @@ class DreamspaceController:
     def snapshot(self, limit_dreams: int = 3) -> dict:
         """Return the current Dreamspace posture plus recent generated entries."""
         with self._lock:
-            return self._snapshot_locked(limit_dreams=limit_dreams)
+            from src.aais_ul_substrate import wrap_runtime_snapshot
+
+            return wrap_runtime_snapshot(self._snapshot_locked(limit_dreams=limit_dreams))
 
     def start(self, reason: str = "Dreamspace started from the Jarvis command deck.") -> dict:
         """Enable autonomous Dreamspace cycles."""

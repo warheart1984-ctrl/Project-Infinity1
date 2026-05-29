@@ -7,8 +7,13 @@ still route through God Brain and Jarvis before reaching Nova.
 
 from __future__ import annotations
 
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from src.datetime_compat import UTC
 import json
 from typing import Any
 
@@ -232,14 +237,14 @@ class RealtimeEventCausePredictor:
         prediction = self.predict(observation)
         packets = build_prediction_packets(prediction)
         validation = validate_prediction_trace(packets)
-        return {
+        return _wrap_ul_payload({
             "module_id": MODULE_ID,
             "version": MODULE_VERSION,
             "summary": "Realtime predictor emitted bounded event/cause packets on the rt channel.",
             "prediction": prediction,
             **packets,
             "validation": validation,
-        }
+        })
 
     def interpret_signal_feed(
         self,
@@ -253,7 +258,7 @@ class RealtimeEventCausePredictor:
         phase_gate = self._evaluate_phase_gate(normalized_context)
         supporting_signals = self._supporting_signals(feed)
         if phase_gate["decision"] == "BLOCK":
-            return {
+            return _wrap_ul_payload({
                 "module_id": MODULE_ID,
                 "version": MODULE_VERSION,
                 "status": INTERPRETED_STATUS_PHASE_BLOCKED,
@@ -268,7 +273,7 @@ class RealtimeEventCausePredictor:
                 "signal_count": int(feed.get("signal_count") or 0),
                 "phase_gate": phase_gate,
                 "advisory_only": True,
-            }
+            })
 
         conflict_flags = self._detect_conflict_flags(feed)
         data_sufficiency = self._data_sufficiency(feed, conflict_flags)
@@ -337,18 +342,18 @@ class RealtimeEventCausePredictor:
         try:
             assert_executable(PREDICTOR_COMPONENT_ID, normalized_context)
         except PhaseViolationError as exc:
-            return {
+            return _wrap_ul_payload({
                 "decision": "BLOCK",
                 "reason": str(exc),
                 "runtime_context": normalized_context,
                 "component": phase_state,
-            }
-        return {
+            })
+        return _wrap_ul_payload({
             "decision": "ALLOW",
             "reason": None,
             "runtime_context": normalized_context,
             "component": phase_state,
-        }
+        })
 
     def _normalize_signal_feed(self, signal_feed: dict[str, Any] | None) -> dict[str, Any]:
         feed = dict(signal_feed or {})
@@ -367,7 +372,7 @@ class RealtimeEventCausePredictor:
                     "attributes": dict(raw_signal.get("attributes") or {}),
                 }
             )
-        return {
+        return _wrap_ul_payload({
             "source_pipeline_id": str(feed.get("source_pipeline_id") or "").strip() or None,
             "runtime_context": _normalize_runtime_context(feed.get("runtime_context")),
             "active_lane": _normalize_mode(feed.get("active_lane"), DIRECT_COGNITIVE_LANE),
@@ -381,7 +386,7 @@ class RealtimeEventCausePredictor:
             "delta": dict(feed.get("delta") or {}),
             "validation": dict(feed.get("validation") or {}),
             "system_state": dict(feed.get("system_state") or {}),
-        }
+        })
 
     def _supporting_signals(self, feed: dict[str, Any]) -> list[str]:
         return [
@@ -472,37 +477,37 @@ class RealtimeEventCausePredictor:
 
         if immune_signal:
             immune_response = str(immune_signal.get("attributes", {}).get("response") or feed.get("immune_response") or "ALLOW").strip().upper()
-            return {
+            return _wrap_ul_payload({
                 "status": INTERPRETED_STATUS_BOUNDED,
                 "cause_class": "immune_guard_intervention",
                 "confidence": 0.95 if immune_response in {"REJECT", "QUARANTINE"} else 0.88,
                 "recommended_state": "pause" if immune_response in {"REJECT", "QUARANTINE"} else "degrade_safe",
-            }
+            })
 
         if data_sufficiency == "insufficient":
-            return {
+            return _wrap_ul_payload({
                 "status": INTERPRETED_STATUS_INSUFFICIENT,
                 "cause_class": "insufficient_signal",
                 "confidence": 0.18,
                 "recommended_state": "pause",
-            }
+            })
         if conflict_flags:
-            return {
+            return _wrap_ul_payload({
                 "status": INTERPRETED_STATUS_BOUNDED,
                 "cause_class": "conflicting_signal_state",
                 "confidence": 0.34,
                 "recommended_state": "degrade_safe",
-            }
+            })
 
         risk_level = _normalize_mode(system_state.get("risk_level"), "low")
         system_mode = _normalize_mode(system_state.get("system_mode"), "stable")
         if risk_level != "low" or system_mode in SYSTEM_STRAIN_MODES:
-            return {
+            return _wrap_ul_payload({
                 "status": INTERPRETED_STATUS_BOUNDED,
                 "cause_class": "system_posture_shift",
                 "confidence": 0.82,
                 "recommended_state": "degrade_safe",
-            }
+            })
 
         if (
             runtime_signal
@@ -511,44 +516,44 @@ class RealtimeEventCausePredictor:
             and runtime_signal.get("signal_class") == "operator_runtime_active"
             and lane_signal.get("signal_class") == "service_lane_active"
         ):
-            return {
+            return _wrap_ul_payload({
                 "status": INTERPRETED_STATUS_BOUNDED,
                 "cause_class": "operator_service_request",
                 "confidence": 0.91,
                 "recommended_state": "proceed",
-            }
+            })
 
         if lane_signal and tool_signal and lane_signal.get("signal_class") == "service_lane_active":
-            return {
+            return _wrap_ul_payload({
                 "status": INTERPRETED_STATUS_BOUNDED,
                 "cause_class": "service_lane_request",
                 "confidence": 0.84 if data_sufficiency == "sufficient" else 0.61,
                 "recommended_state": "proceed" if data_sufficiency == "sufficient" else "observe",
-            }
+            })
 
         if turn_delta_signal and turn_delta_signal.get("signal_class") == "turn_shift_detected":
             change_count = int(delta.get("change_count") or 0)
-            return {
+            return _wrap_ul_payload({
                 "status": INTERPRETED_STATUS_BOUNDED,
                 "cause_class": "pipeline_transition",
                 "confidence": _round_confidence(0.58 + min(change_count, 5) * 0.05),
                 "recommended_state": "observe" if change_count <= 3 else "pause",
-            }
+            })
 
         if turn_delta_signal and turn_delta_signal.get("signal_class") in {"turn_state_stable", "baseline_only"}:
-            return {
+            return _wrap_ul_payload({
                 "status": INTERPRETED_STATUS_BOUNDED,
                 "cause_class": "steady_state",
                 "confidence": 0.87 if turn_delta_signal.get("signal_class") == "turn_state_stable" else 0.72,
                 "recommended_state": "observe" if turn_delta_signal.get("signal_class") == "baseline_only" else "proceed",
-            }
+            })
 
-        return {
+        return _wrap_ul_payload({
             "status": INTERPRETED_STATUS_BOUNDED,
             "cause_class": "unknown_state",
             "confidence": 0.31 if data_sufficiency == "partial" else 0.27,
             "recommended_state": "pause",
-        }
+        })
 
     def _normalize_observation(self, observation: dict[str, Any] | None) -> Observation:
         source = dict(observation or {})
@@ -686,20 +691,20 @@ def _risk_level(prediction: dict[str, Any]) -> str:
 
 
 def _shared_state(prediction: dict[str, Any]) -> dict[str, str]:
-    return {
+    return _wrap_ul_payload({
         "user_mode": _normalize_mode(prediction.get("user_mode"), "normal"),
         "system_mode": _normalize_mode(prediction.get("system_mode"), "stable"),
         "risk_level": _risk_level(prediction),
-    }
+    })
 
 
 def _base_compact_payload(prediction: dict[str, Any]) -> dict[str, Any]:
-    return {
+    return _wrap_ul_payload({
         "ev": int(prediction["event_code"]),
         "ts": int(prediction["event_timestamp"]),
         "conf": int(prediction["confidence"]),
         "horiz": int(prediction["horizon_ms"]),
-    }
+    })
 
 
 def _event_payload(prediction: dict[str, Any]) -> dict[str, Any]:
@@ -860,12 +865,12 @@ def build_prediction_packets(prediction: dict[str, Any]) -> dict[str, Any]:
             ref=event_ref,
         ),
     ]
-    return {
+    return _wrap_ul_payload({
         "active_lane": DIRECT_COGNITIVE_LANE,
         "channel": REALTIME_CHANNEL,
         "forward_packets": forward_packets,
         "return_packets": return_packets,
-    }
+    })
 
 
 def _compact_packet_size(packet: dict[str, Any]) -> int:
@@ -883,7 +888,7 @@ def validate_prediction_trace(trace: dict[str, Any]) -> dict[str, Any]:
     ]
     packet_sizes = {packet["packet_id"]: _compact_packet_size(packet) for packet in all_packets}
 
-    return {
+    return _wrap_ul_payload({
         "god_brain_in_path": any(
             packet.get("source") == "gb" or packet.get("target") == "gb" for packet in all_packets
         ),
@@ -897,7 +902,7 @@ def validate_prediction_trace(trace: dict[str, Any]) -> dict[str, Any]:
         "explicit_horizon": all((packet.get("compact") or {}).get("pl", {}).get("horiz") is not None for packet in prediction_packets),
         "packet_size_under_limit": all(size < PACKET_SIZE_LIMIT_BYTES for size in packet_sizes.values()),
         "packet_sizes": packet_sizes,
-    }
+    })
 
 
 def assert_valid_prediction_trace(trace: dict[str, Any]) -> None:
@@ -915,7 +920,7 @@ def validate_interpreted_event_state(state: dict[str, Any]) -> dict[str, bool]:
     supporting_signals = list(payload.get("supporting_signals") or [])
     conflict_flags = list(payload.get("conflict_flags") or [])
     phase_gate = dict(payload.get("phase_gate") or {})
-    return {
+    return _wrap_ul_payload({
         "status_known": payload.get("status") in {
             INTERPRETED_STATUS_BOUNDED,
             INTERPRETED_STATUS_INSUFFICIENT,
@@ -931,7 +936,7 @@ def validate_interpreted_event_state(state: dict[str, Any]) -> dict[str, bool]:
         "phase_gate_present": phase_gate.get("decision") in {"ALLOW", "BLOCK"},
         "advisory_only_true": payload.get("advisory_only") is True,
         "runtime_context_explicit": bool(str(payload.get("runtime_context") or "").strip()),
-    }
+    })
 
 
 def assert_valid_interpreted_event_state(state: dict[str, Any]) -> None:

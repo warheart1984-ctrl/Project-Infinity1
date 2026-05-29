@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import json
 from pathlib import Path
 import threading
@@ -26,6 +27,12 @@ CISIV_LOGBOOK_STAGES = {
 
 def _utc_now() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _wrap_run_record(run: dict[str, Any]) -> dict[str, Any]:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(run))
 
 
 def _normalize_cisiv_stage(value: Any, *, default: str = "implementation") -> str:
@@ -187,7 +194,7 @@ class RunLedger:
             payload["runs"].append(run)
             payload["session_active_runs"][session_id] = run["id"]
             self._save_payload(payload)
-        return dict(run)
+        return _wrap_run_record(dict(run))
 
     def ensure_run(
         self,
@@ -205,7 +212,7 @@ class RunLedger:
                 if run_index is not None:
                     run = payload["runs"][run_index]
                     if str(run.get("status") or "") == "open":
-                        return dict(run)
+                        return _wrap_run_record(dict(run))
             created_at = _utc_now()
             normalized_meta = dict(meta or {})
             cisiv_stage = _normalize_cisiv_stage(normalized_meta.get("cisiv_stage"), default="implementation")
@@ -232,7 +239,7 @@ class RunLedger:
             payload["runs"].append(run)
             payload["session_active_runs"][session_id] = run["id"]
             self._save_payload(payload)
-            return dict(run)
+            return _wrap_run_record(dict(run))
 
     def append_step(self, run_id: str, step: dict[str, Any]) -> dict[str, Any]:
         created_at = str(step.get("created_at") or _utc_now())
@@ -305,7 +312,7 @@ class RunLedger:
             if payload.get("session_active_runs", {}).get(run.get("session_id")) == run_id:
                 payload["session_active_runs"].pop(run.get("session_id"), None)
             self._save_payload(payload)
-            return dict(self._normalize_run(run))
+            return _wrap_run_record(dict(self._normalize_run(run)))
 
     def get_run(self, run_id: str) -> dict[str, Any] | None:
         with self._lock:
@@ -313,7 +320,7 @@ class RunLedger:
         index = self._find_run_index(payload, run_id)
         if index is None:
             return None
-        return dict(self._normalize_run(payload["runs"][index]))
+        return _wrap_run_record(dict(self._normalize_run(payload["runs"][index])))
 
     def list_runs(
         self,

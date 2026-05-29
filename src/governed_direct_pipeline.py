@@ -8,7 +8,8 @@ the fast lane.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 from typing import Any
 from uuid import uuid4
 
@@ -1026,6 +1027,7 @@ def build_governed_turn_pipeline(
     runtime_context: str = "live_runtime",
     previous_pipeline: dict[str, Any] | None = None,
     operator_text: str | None = None,
+    cloud_forge_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build the governed direct pipeline trace for one turn."""
     normalized_mode = str(response_mode or "fast").strip().lower() or "fast"
@@ -1306,4 +1308,10 @@ def build_governed_turn_pipeline(
         "capability": dict((tool_result or {}).get("capability") or {}) or None,
     }
     pipeline["continuity_witness_input"] = build_continuity_witness_input(pipeline)
-    return pipeline
+    if cloud_forge_context:
+        from src.cloud_forge.rails import attach_cloud_forge_to_pipeline
+
+        pipeline = attach_cloud_forge_to_pipeline(pipeline, cloud_forge_context)
+    from src.aais_ul_substrate import wrap_pipeline
+
+    return wrap_pipeline(pipeline)

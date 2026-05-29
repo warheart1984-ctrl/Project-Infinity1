@@ -6,7 +6,8 @@ callers while the newer governed bridge continues to use ``src.capability_module
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 from pathlib import Path
 from typing import Any
 import uuid
@@ -76,16 +77,18 @@ class AAISCapabilityModule:
             "trace_id": trace_id,
             "result_size": len(payload),
         }
-        return {
-            "ok": True,
-            "module": self.module_name,
-            "action": action,
-            "data": payload,
-            "meta": meta,
-            "provider": self.provider,
-            "model": self.model,
-            "trace_id": trace_id,
-        }
+        return self._attach_ul_substrate(
+            {
+                "ok": True,
+                "module": self.module_name,
+                "action": action,
+                "data": payload,
+                "meta": meta,
+                "provider": self.provider,
+                "model": self.model,
+                "trace_id": trace_id,
+            }
+        )
 
     def _err(
         self,
@@ -99,22 +102,24 @@ class AAISCapabilityModule:
         normalized_error = error_type if error_type in ERROR_TAXONOMY else "UnknownError"
         trace_id = self._trace_id()
         normalized_message = _clean_text(message, normalized_error)
-        return {
-            "ok": False,
-            "module": self.module_name,
-            "action": action,
-            "error_type": normalized_error,
-            "message": normalized_message,
-            "details": {
-                key: value
-                for key, value in details.items()
-                if value is not None
-            },
-            "provider": self.provider,
-            "model": self.model,
-            "trace_id": trace_id,
-            "retryable": bool(retryable),
-        }
+        return self._attach_ul_substrate(
+            {
+                "ok": False,
+                "module": self.module_name,
+                "action": action,
+                "error_type": normalized_error,
+                "message": normalized_message,
+                "details": {
+                    key: value
+                    for key, value in details.items()
+                    if value is not None
+                },
+                "provider": self.provider,
+                "model": self.model,
+                "trace_id": trace_id,
+                "retryable": bool(retryable),
+            }
+        )
 
     def _map_exception(self, exc: Exception) -> tuple[str, str, bool]:
         if isinstance(exc, TimeoutError):
@@ -183,6 +188,11 @@ class AAISCapabilityModule:
             )
 
         return self._ok(action, normalized_result)
+
+    def _attach_ul_substrate(self, result: dict[str, object]) -> dict[str, object]:
+        from src.aais_ul_substrate import wrap_capability_result
+
+        return wrap_capability_result(dict(result))
 
 
 class AAISImageModule(AAISCapabilityModule):

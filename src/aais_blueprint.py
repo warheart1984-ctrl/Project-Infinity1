@@ -160,16 +160,33 @@ def _module_admission_entries() -> list[dict[str, Any]]:
         {
             "id": "invariant_engine",
             "label": "Invariant Engine",
-            "normalized_status": "present but not admitted",
-            "summary": "Invariant calculations exist as a tested deterministic library, but they are not a live AAIS lane yet.",
+            "normalized_status": "admitted",
+            "summary": "Invariant engine is live on the Cognitive Bridge deliberation and generation path.",
             "reason": (
-                "The engine is available through a compatibility shim and tests, but the blueprint does "
-                "not currently expose a live runtime boundary that depends on it."
+                "Bridge packets of type deliberation_request and generation_request pass through "
+                "InvariantEngine.validate_bridge_packet before ARIS enforcement and governed LLM routing."
             ),
             "live_files": [
                 _file("src/invariant_engine.py"),
-                _file("src/invariants_calculator.py"),
+                _file("src/cognitive_bridge.py"),
                 _file("tests/test_invariant_engine.py"),
+            ],
+        },
+        {
+            "id": "ugr_runtime",
+            "label": "Unified Governed Runtime (UGR)",
+            "normalized_status": "admitted",
+            "summary": "UGR orchestrates governed multi-lane deliberation behind the Cognitive Bridge.",
+            "reason": (
+                "Phase 2 lifts UGR to a decomposed HTTP mesh (policy, ledger, lanes, convergence, "
+                "orchestrator) with Forge pipeline ugr-cloud-cluster and make ugr-cloud-gate."
+            ),
+            "live_files": [
+                _file("src/ugr/unified_runtime.py"),
+                _file("src/ugr/cloud/distributed_runtime.py"),
+                _file("src/ugr/cloud/services.py"),
+                _file("deploy/ugr/mesh.local.json"),
+                _file("docs/contracts/UGR_CLOUD_MESH_CONTRACT.md"),
             ],
         },
         {
@@ -248,7 +265,7 @@ def build_aais_blueprint(
             ],
             "source_files": [
                 _file("archive/legacy_root/god_dashboard.py"),
-                _file("REPO_LAWBOOK.md"),
+                _file("document/law/REPO_LAWBOOK.md"),
             ],
         },
         {
@@ -317,6 +334,45 @@ def build_aais_blueprint(
             ),
             "live_files": [
                 _file("src/aais_ul.py"),
+                _file("src/aais_ul_substrate.py"),
+                _file("tools/ul/probe.py"),
+                _file("tools/ul/scan.py"),
+                _file("tools/ul/drift.py"),
+                _file("tools/ul/smoke.py"),
+                _file("src/patchforge.py"),
+                _file("src/patch_review_store.py"),
+                _file("src/v9_core.py"),
+                _file("src/v10_core.py"),
+                _file("src/v9_runtime.py"),
+                _file("src/v10_runtime.py"),
+                _file("src/mystic_engine.py"),
+                _file("src/ugr/cloud_forge_bridge.py"),
+                _file("src/forge_client.py"),
+                _file("src/forge_eval_client.py"),
+                _file("src/evolve_client.py"),
+                _file("src/cloud_forge/integration.py"),
+                _file("src/capability_service_bridge.py"),
+                _file("src/capability_module.py"),
+                _file("src/ugr/operator_console/snapshot.py"),
+                _file("src/ugr/operator_console/forge_platform.py"),
+                _file("src/ugr/operator_console/trace_viewer.py"),
+                _file("src/Spatial_reasoning.py"),
+                _file("src/corrigibility.py"),
+                _file("src/operator_health_sentinel.py"),
+                _file("src/run_ledger.py"),
+                _file("src/memory_smith.py"),
+                _file("src/knowledge_authority.py"),
+                _file("src/specialist_registry.py"),
+                _file("src/realtime_event_cause_predictor.py"),
+                _file("src/invariant_engine.py"),
+                _file("src/reasoning_exchange_protocol.py"),
+                _file("src/jarvis_reasoning_protocol.py"),
+                _file("src/jarvis_detachment_guard.py"),
+                _file("src/governed_event_chain.py"),
+                _file("src/otem_runtime.py"),
+                _file("src/evolving_workbench.py"),
+                _file("src/conversation_memory.py"),
+                _file("src/ugr/cloud/services.py"),
                 _file("src/jarvis_modular.py"),
                 _file("src/writers_3_rules.py"),
                 _file("src/angels_and_wards.py"),
@@ -325,7 +381,7 @@ def build_aais_blueprint(
             "source_files": [
                 _file("docs/contracts/AAIS_UL_DOCTRINE.md"),
                 _file("docs/contracts/JARVIS_REASONING_PROTOCOL.md"),
-                _file("REPO_LAWBOOK.md"),
+                _file("document/law/REPO_LAWBOOK.md"),
             ],
         },
         {
@@ -350,7 +406,7 @@ def build_aais_blueprint(
                 _file("tools/ops/hooks.py"),
                 _file("tools/ops/killswitch_init.py"),
                 _file("tools/ops/killswitch_gui.py"),
-                _file("REPO_LAWBOOK.md"),
+                _file("document/law/REPO_LAWBOOK.md"),
             ],
         },
         {
@@ -400,7 +456,7 @@ def build_aais_blueprint(
             ],
             "source_files": [
                 _file("docs/contracts/AAIS_MODULE_GOVERNANCE_PROTOCOL.md"),
-                _file("REPO_LAWBOOK.md"),
+                _file("document/law/REPO_LAWBOOK.md"),
             ],
         },
         {
@@ -469,7 +525,7 @@ def build_aais_blueprint(
                 _file("src/ui_vision.py"),
             ],
             "source_files": [
-                _file("REPO_LAWBOOK.md"),
+                _file("document/law/REPO_LAWBOOK.md"),
                 _file("README.md"),
             ],
         },
@@ -487,7 +543,7 @@ def build_aais_blueprint(
                 _file("frontend/src/pages/JarvisConsole.jsx"),
             ],
             "source_files": [
-                _file("REPO_LAWBOOK.md"),
+                _file("document/law/REPO_LAWBOOK.md"),
             ],
         },
         {
@@ -510,7 +566,32 @@ def build_aais_blueprint(
             ],
             "source_files": [
                 _file("docs/contracts/EVOLVE_ENGINE_CONTRACT.md"),
-                _file("REPO_LAWBOOK.md"),
+                _file("document/law/REPO_LAWBOOK.md"),
+            ],
+        },
+        {
+            "id": "ugr_runtime",
+            "label": "Unified Governed Runtime",
+            "status": "active",
+            "summary": (
+                "UGR is the governed multi-lane cognitive orchestrator: bridge-first ingress, "
+                "parallel lanes, deterministic convergence, and unified pattern ledger v0.5."
+            ),
+            "detail": (
+                "Phase 3 adds governed ingestion: curated arXiv/GitHub/RSS sources, sanitize/extract "
+                "pipeline, invariant gate, and ledger proposals without model I/O."
+            ),
+            "live_files": [
+                _file("src/ugr/ingestion/pipeline.py"),
+                _file("deploy/ugr/ingestion.sources.json"),
+                _file("src/ugr/cloud/services.py"),
+                _file("src/api.py"),
+            ],
+            "source_files": [
+                _file("docs/programs/UGR_CLOUD_PROGRAM.md"),
+                _file("docs/contracts/UGR_RUNTIME_CONTRACT.md"),
+                _file("docs/contracts/UGR_CLOUD_MESH_CONTRACT.md"),
+                _file("wolf-cog-os/forge/pipelines/ugr-cloud-cluster.yaml"),
             ],
         },
         {
@@ -554,7 +635,7 @@ def build_aais_blueprint(
                 _file("src/api.py"),
             ],
             "source_files": [
-                _file("REPO_LAWBOOK.md"),
+                _file("document/law/REPO_LAWBOOK.md"),
             ],
         },
     ]
@@ -603,7 +684,7 @@ def build_aais_blueprint(
             "sources": [
                 _file("docs/contracts/AAIS_UL_DOCTRINE.md"),
                 _file("docs/contracts/JARVIS_REASONING_PROTOCOL.md"),
-                _file("REPO_LAWBOOK.md"),
+                _file("document/law/REPO_LAWBOOK.md"),
             ],
             "targets": [
                 _file("src/aais_ul.py"),

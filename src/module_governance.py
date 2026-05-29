@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import json
 import os
 from pathlib import Path
@@ -516,47 +517,51 @@ class ModuleGovernanceController:
             status = str(module.get("status") or "").strip().lower()
             if status in counts:
                 counts[status] += 1
-        return {
-            "id": PROTOCOL_ID,
-            "version": PROTOCOL_VERSION,
-            "summary": (
-                "Admission law for AAIS modules. A module must prove privacy, boundary, logging, "
-                "and CISIV stage compliance before it is allowed to exist in the system."
-            ),
-            "admission_rule": (
-                "A module may only be installed if it proves compliance with AAIS Governance Law "
-                "and passes CISIV: Concept -> Identity -> Structure -> Implementation -> Verification."
-            ),
-            "immune_principle": "Governance violations are treated as system threats.",
-            "integration_rule": "Governance Law defines limits, the protocol controls admission, and the immune system enforces behavior.",
-            "cisiv_stage_sequence": list(CISIV_STAGE_SEQUENCE),
-            "cisiv_gate": {
-                "implementation_prerequisites": ["concept", "identity", "structure"],
-                "completion_requires_verification": True,
-                "logbook_rule": "Logbook entries must reference the CISIV stage they belong to.",
-            },
-            "module_counts": counts,
-            "active_modules": [
-                dict(module)
-                for module in modules
-                if str(module.get("status") or "").strip().lower() in {"admitted", "isolated", "quarantined"}
-            ][: max(0, int(limit_modules or 0))],
-            "blacklisted_modules": [dict(item) for item in blacklist[: max(0, int(limit_modules or 0))]],
-            "recent_events": events,
-            "mandatory_checks": [
-                {
-                    "id": check["id"],
-                    "label": check["label"],
-                    "law": check["law"],
-                }
-                for check in MANDATORY_CHECKS
-            ],
-            "immune_response_sequence": list(IMMUNE_RESPONSE_SEQUENCE),
-            "core_lines": list(CORE_LINES),
-            "event_count": len(self._events),
-            "module_count": len(self._modules),
-            "blacklist_count": len(self._blacklist),
-        }
+        from src.aais_ul_substrate import wrap_runtime_snapshot
+
+        return wrap_runtime_snapshot(
+            {
+                "id": PROTOCOL_ID,
+                "version": PROTOCOL_VERSION,
+                "summary": (
+                    "Admission law for AAIS modules. A module must prove privacy, boundary, logging, "
+                    "and CISIV stage compliance before it is allowed to exist in the system."
+                ),
+                "admission_rule": (
+                    "A module may only be installed if it proves compliance with AAIS Governance Law "
+                    "and passes CISIV: Concept -> Identity -> Structure -> Implementation -> Verification."
+                ),
+                "immune_principle": "Governance violations are treated as system threats.",
+                "integration_rule": "Governance Law defines limits, the protocol controls admission, and the immune system enforces behavior.",
+                "cisiv_stage_sequence": list(CISIV_STAGE_SEQUENCE),
+                "cisiv_gate": {
+                    "implementation_prerequisites": ["concept", "identity", "structure"],
+                    "completion_requires_verification": True,
+                    "logbook_rule": "Logbook entries must reference the CISIV stage they belong to.",
+                },
+                "module_counts": counts,
+                "active_modules": [
+                    dict(module)
+                    for module in modules
+                    if str(module.get("status") or "").strip().lower() in {"admitted", "isolated", "quarantined"}
+                ][: max(0, int(limit_modules or 0))],
+                "blacklisted_modules": [dict(item) for item in blacklist[: max(0, int(limit_modules or 0))]],
+                "recent_events": events,
+                "mandatory_checks": [
+                    {
+                        "id": check["id"],
+                        "label": check["label"],
+                        "law": check["law"],
+                    }
+                    for check in MANDATORY_CHECKS
+                ],
+                "immune_response_sequence": list(IMMUNE_RESPONSE_SEQUENCE),
+                "core_lines": list(CORE_LINES),
+                "event_count": len(self._events),
+                "module_count": len(self._modules),
+                "blacklist_count": len(self._blacklist),
+            }
+        )
 
     def evaluate_module_spec(self, spec: dict[str, Any]) -> dict[str, Any]:
         normalized_spec = self._normalize_module_spec(spec)

@@ -96,7 +96,9 @@ class ForgeEvalClient:
 
         if normalized is None:
             raise RuntimeError("ForgeEval returned an invalid response contract.")
-        return normalized
+        from src.aais_ul_substrate import wrap_contractor_payload
+
+        return wrap_contractor_payload(normalized)
 
 
 forge_eval_client = ForgeEvalClient()

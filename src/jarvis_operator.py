@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import fnmatch
 import json
 import os
@@ -2331,7 +2332,9 @@ class JarvisMemoryStore:
         snapshot["classified_record_count"] = sum(counts.values())
         snapshot["truth_scope"] = normalize_truth_scope(truth_scope)
         snapshot["governance"] = self._board_governance_summary(limit=12)
-        return snapshot
+        from src.aais_ul_substrate import wrap_runtime_snapshot
+
+        return wrap_runtime_snapshot(snapshot)
 
     def install_memory_module(
         self,
@@ -2640,18 +2643,22 @@ class JarvisMemoryStore:
             truth_scope="live",
             _enforcer_authority=_enforcer_authority,
         )
-        return {
-            "merge_suggestions": merge_suggestions,
-            "conflicts": conflicts,
-            "why_gaps": why_gaps,
-            "archive_review": archive_review,
-            "counts": {
-                "merge_suggestions": len(merge_suggestions),
-                "conflicts": len(conflicts),
-                "why_gaps": len(why_gaps),
-                "archive_review": len(archive_review),
-            },
-        }
+        from src.aais_ul_substrate import wrap_runtime_snapshot
+
+        return wrap_runtime_snapshot(
+            {
+                "merge_suggestions": merge_suggestions,
+                "conflicts": conflicts,
+                "why_gaps": why_gaps,
+                "archive_review": archive_review,
+                "counts": {
+                    "merge_suggestions": len(merge_suggestions),
+                    "conflicts": len(conflicts),
+                    "why_gaps": len(why_gaps),
+                    "archive_review": len(archive_review),
+                },
+            }
+        )
 
     def get_relevant_memories(
         self,
@@ -3570,7 +3577,9 @@ class JarvisOperator:
         if normalized_denylist:
             payload["explicit_denylist"] = normalized_denylist
         payload["no_execution_without_handoff"] = bool(no_execution_without_handoff)
-        return payload
+        from src.aais_ul_substrate import wrap_runtime_snapshot
+
+        return wrap_runtime_snapshot(payload)
 
     def summarize_forge_context(self, forge_context: dict | None):
         """Return a UI-safe Forge context summary without raw file contents."""
@@ -3653,16 +3662,20 @@ class JarvisOperator:
             context=forge_context,
             task_id=task_id,
         )
-        return {
-            "task_id": task_id,
-            "task": " ".join(str(task or "").split()).strip(),
-            "kind": cleaned_kind,
-            "result": result,
-            "auto_approve": auto_approve_forge_result(result),
-            "forge_context": forge_context,
-            "law_enforcement": dict(result.get("law_enforcement") or {}),
-            "ul_snapshot": dict(result.get("ul_snapshot") or {}),
-        }
+        from src.aais_ul_substrate import attach_ul_substrate
+
+        return attach_ul_substrate(
+            {
+                "task_id": task_id,
+                "task": " ".join(str(task or "").split()).strip(),
+                "kind": cleaned_kind,
+                "result": result,
+                "auto_approve": auto_approve_forge_result(result),
+                "forge_context": forge_context,
+                "law_enforcement": dict(result.get("law_enforcement") or {}),
+                "ul_snapshot": dict(result.get("ul_snapshot") or {}),
+            }
+        )
 
     def request_forge_repo_manager(
         self,
@@ -3726,11 +3739,15 @@ class JarvisOperator:
             payload=dict(payload or {}),
             task_id=resolved_task_id,
         )
-        return {
-            "task_id": resolved_task_id,
-            "mode": normalized_mode,
-            "result": result,
-        }
+        from src.aais_ul_substrate import attach_ul_substrate
+
+        return attach_ul_substrate(
+            {
+                "task_id": resolved_task_id,
+                "mode": normalized_mode,
+                "result": result,
+            }
+        )
 
     def request_evolution_job(
         self,
@@ -3788,15 +3805,19 @@ class JarvisOperator:
             job_id=job_id,
             jarvis_run_id=jarvis_run_id,
         )
-        return {
-            "job_id": result.get("job_id"),
-            "task": cleaned_task,
-            "preset": normalized_preset,
-            "config": resolved_config,
-            "evaluation": resolved_evaluation,
-            "constraints": resolved_constraints,
-            "result": result,
-        }
+        from src.aais_ul_substrate import attach_ul_substrate
+
+        return attach_ul_substrate(
+            {
+                "job_id": result.get("job_id"),
+                "task": cleaned_task,
+                "preset": normalized_preset,
+                "config": resolved_config,
+                "evaluation": resolved_evaluation,
+                "constraints": resolved_constraints,
+                "result": result,
+            }
+        )
 
     def get_evolution_job_trace(self, job_id: str):
         """Return one evolve job trace from the isolated evolve lane."""
@@ -4962,10 +4983,14 @@ class JarvisOperator:
             f"Exit code: {result['exit_code']}"
         )
 
-        return {
-            "response": response,
-            "tool_result": {"type": "action_result", **result},
-        }
+        from src.aais_ul_substrate import wrap_operator_action
+
+        return wrap_operator_action(
+            {
+                "response": response,
+                "tool_result": {"type": "action_result", **result},
+            }
+        )
 
     def build_workspace_context(
         self,
@@ -5119,20 +5144,24 @@ class JarvisOperator:
             + (f" from {', '.join(projects)}." if projects else ".")
         )
 
-        return {
-            "auto_attached": auto_attached,
-            "reason": reason,
-            "query": query,
-            "project_scope": scoped_project,
-            "summary": summary,
-            "projects": projects,
-            "results": results[:4],
-            "files": files,
-            "project_profile": project_profile,
-            "symbol_hits": symbol_hits,
-            "repo_map": repo_map,
-            "prompt_block": "\n".join(prompt_sections).strip(),
-        }
+        from src.aais_ul_substrate import wrap_runtime_snapshot
+
+        return wrap_runtime_snapshot(
+            {
+                "auto_attached": auto_attached,
+                "reason": reason,
+                "query": query,
+                "project_scope": scoped_project,
+                "summary": summary,
+                "projects": projects,
+                "results": results[:4],
+                "files": files,
+                "project_profile": project_profile,
+                "symbol_hits": symbol_hits,
+                "repo_map": repo_map,
+                "prompt_block": "\n".join(prompt_sections).strip(),
+            }
+        )
 
     def _detect_visual_debug_signals(self, text: str):
         """Extract likely debugging signals from OCR or screenshot text."""

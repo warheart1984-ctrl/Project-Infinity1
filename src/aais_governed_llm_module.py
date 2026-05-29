@@ -484,31 +484,35 @@ def propose_governed_llm_envelope(
         {"stage": "verification_gate", "value": dict(verification_gate)},
         {"stage": "proposal_commit", "value": "PROPOSED"},
     ]
-    return {
-        "module_id": GOVERNED_LLM_MODULE_ID,
-        "version": GOVERNED_LLM_MODULE_VERSION,
-        "status": "PROPOSED",
-        "reason": "bounded_provider_proposal_ready",
-        "proposal_only": True,
-        "execution_authority": "none",
-        "mutation_authority": "none",
-        "bounded_envelope": True,
-        "runtime_context": runtime_context,
-        "bridge_decision": bridge_decision,
-        "packet_type": packet_type,
-        "requested_provider": preferred_provider,
-        "requested_provider_mode": normalized_requested_provider_mode,
-        "provider_resolution": provider_resolution,
-        "provider_request": provider_request,
-        "phase_gate": phase_gate,
-        "module_governance": module_governance_gate,
-        "verification_gate": verification_gate,
-        "allowed_output_shape": list(GOVERNED_LLM_ALLOWED_OUTPUT_SHAPE),
-        "declared_transitions": list(GOVERNED_LLM_DECLARED_TRANSITIONS),
-        "notes": notes,
-        "trace": trace,
-        "bridge_result_fingerprint": _fingerprint(payload),
-    }
+    from src.aais_ul_substrate import wrap_runtime_snapshot
+
+    return wrap_runtime_snapshot(
+        {
+            "module_id": GOVERNED_LLM_MODULE_ID,
+            "version": GOVERNED_LLM_MODULE_VERSION,
+            "status": "PROPOSED",
+            "reason": "bounded_provider_proposal_ready",
+            "proposal_only": True,
+            "execution_authority": "none",
+            "mutation_authority": "none",
+            "bounded_envelope": True,
+            "runtime_context": runtime_context,
+            "bridge_decision": bridge_decision,
+            "packet_type": packet_type,
+            "requested_provider": preferred_provider,
+            "requested_provider_mode": normalized_requested_provider_mode,
+            "provider_resolution": provider_resolution,
+            "provider_request": provider_request,
+            "phase_gate": phase_gate,
+            "module_governance": module_governance_gate,
+            "verification_gate": verification_gate,
+            "allowed_output_shape": list(GOVERNED_LLM_ALLOWED_OUTPUT_SHAPE),
+            "declared_transitions": list(GOVERNED_LLM_DECLARED_TRANSITIONS),
+            "notes": notes,
+            "trace": trace,
+            "bridge_result_fingerprint": _fingerprint(payload),
+        }
+    )
 
 
 def validate_governed_llm_envelope(payload: dict[str, Any] | None) -> bool:

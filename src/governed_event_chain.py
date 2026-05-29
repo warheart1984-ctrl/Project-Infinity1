@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
 from typing import Any
 
 from src.immune_system import ImmuneSystemController, immune_system
@@ -97,18 +101,18 @@ def _evaluate_phase_gate(runtime_context: str) -> dict[str, Any]:
     try:
         assert_executable(CHAIN_COMPONENT_ID, normalized_context)
     except PhaseViolationError as exc:
-        return {
+        return _wrap_ul_payload({
             "decision": CHAIN_DECISION_BLOCK,
             "reason": str(exc),
             "runtime_context": normalized_context,
             "component": phase_state,
-        }
-    return {
+        })
+    return _wrap_ul_payload({
         "decision": CHAIN_DECISION_ALLOW,
         "reason": None,
         "runtime_context": normalized_context,
         "component": phase_state,
-    }
+    })
 
 
 def _severity_for_failed_invariants(failed_invariants: list[str]) -> str:
@@ -191,7 +195,7 @@ def governed_event(
                 "event": event_payload,
             },
         )
-        return {
+        return _wrap_ul_payload({
             "module_id": MODULE_ID,
             "version": MODULE_VERSION,
             "runtime_context": event_payload["runtime_context"],
@@ -203,7 +207,7 @@ def governed_event(
             "immune_action": immune_action,
             "phase_gate": phase_gate,
             "advisory_only": True,
-        }
+        })
 
     prediction_payload = dict(
         prediction
@@ -232,7 +236,7 @@ def governed_event(
         decision = CHAIN_DECISION_BLOCK
         status = CHAIN_STATUS_BLOCKED
 
-    return {
+    return _wrap_ul_payload({
         "module_id": MODULE_ID,
         "version": MODULE_VERSION,
         "runtime_context": event_payload["runtime_context"],
@@ -244,7 +248,7 @@ def governed_event(
         "immune_action": immune_action,
         "phase_gate": phase_gate,
         "advisory_only": True,
-    }
+    })
 
 
 def validate_governed_event_result(result: dict[str, Any] | None) -> dict[str, bool]:
@@ -253,7 +257,7 @@ def validate_governed_event_result(result: dict[str, Any] | None) -> dict[str, b
     decision = payload.get("decision")
     prediction = payload.get("prediction")
     immune_action = payload.get("immune_action")
-    return {
+    return _wrap_ul_payload({
         "decision_known": decision in {CHAIN_DECISION_ALLOW, CHAIN_DECISION_BLOCK},
         "status_known": payload.get("status") in {CHAIN_STATUS_PROCEED, CHAIN_STATUS_BLOCKED},
         "event_present": isinstance(payload.get("event"), dict),
@@ -278,4 +282,4 @@ def validate_governed_event_result(result: dict[str, Any] | None) -> dict[str, b
         in {CHAIN_DECISION_ALLOW, CHAIN_DECISION_BLOCK},
         "advisory_only_true": payload.get("advisory_only") is True,
         "runtime_context_explicit": bool(str(payload.get("runtime_context") or "").strip()),
-    }
+    })

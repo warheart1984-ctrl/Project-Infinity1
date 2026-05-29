@@ -7,7 +7,8 @@ linked back to an active chat session.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import json
 import os
 from pathlib import Path
@@ -287,7 +288,9 @@ class MissionBoardController:
 
     def snapshot(self, session_id: str | None = None, limit: int = 24) -> dict:
         with self._lock:
-            return self._snapshot_locked(session_id=session_id, limit=limit)
+            from src.aais_ul_substrate import wrap_runtime_snapshot
+
+            return wrap_runtime_snapshot(self._snapshot_locked(session_id=session_id, limit=limit))
 
     def list_presets(self) -> list[dict]:
         return [dict(preset) for preset in MISSION_PRESETS.values()]

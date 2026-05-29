@@ -119,6 +119,51 @@ class TestInvariantEngine(unittest.TestCase):
         self.assertEqual(result["status"], "fail")
         self.assertIn("conflict_safe_state", result["failed_invariants"])
 
+    def test_validate_bridge_packet_accepts_governed_deliberation(self):
+        normalized = {
+            "source": "ugr_runtime",
+            "type": "deliberation_request",
+            "payload": {
+                "question": "Why is latency high?",
+                "execution_intent": "observe",
+                "runtime_context": "live_runtime",
+                "bridge_attestation": {"signature": "test"},
+            },
+            "effectful": False,
+        }
+        governance = {
+            "packet_type": "deliberation_request",
+            "runtime_context": "live_runtime",
+            "execution_intent": "observe",
+            "effectful": False,
+            "source": "ugr_runtime",
+        }
+        result = InvariantEngine.validate_bridge_packet(normalized, governance)
+        self.assertTrue(result["allows"])
+        self.assertEqual(result["module_id"], "aais.invariant_engine.bridge_guard")
+
+    def test_validate_bridge_packet_blocks_missing_attestation(self):
+        normalized = {
+            "source": "ugr_runtime",
+            "type": "deliberation_request",
+            "payload": {
+                "question": "Why is latency high?",
+                "execution_intent": "observe",
+                "runtime_context": "live_runtime",
+            },
+            "effectful": False,
+        }
+        governance = {
+            "packet_type": "deliberation_request",
+            "runtime_context": "live_runtime",
+            "execution_intent": "observe",
+            "effectful": False,
+            "source": "ugr_runtime",
+        }
+        result = InvariantEngine.validate_bridge_packet(normalized, governance)
+        self.assertFalse(result["allows"])
+        self.assertIn("bridge_attestation_present", result["failed_invariants"])
+
 
 if __name__ == "__main__":
     unittest.main()

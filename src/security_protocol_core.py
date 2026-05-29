@@ -8,7 +8,8 @@ one policy table, and one event stream that higher layers can consult.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 from enum import Enum
 import json
 import os
@@ -262,13 +263,17 @@ class SecurityProtocolCore:
             decision = event.get("decision")
             if decision in counts:
                 counts[decision] += 1
-        return {
-            "summary": "Unified policy brain for memory, tools, APIs, outputs, configs, and system operations.",
-            "event_count": len(events),
-            "decision_counts": counts,
-            "last_event_at": events[-1]["timestamp"] if events else None,
-            "recent_events": [dict(event) for event in events[-max(0, int(limit_events or 0)):]],
-        }
+        from src.aais_ul_substrate import wrap_runtime_snapshot
+
+        return wrap_runtime_snapshot(
+            {
+                "summary": "Unified policy brain for memory, tools, APIs, outputs, configs, and system operations.",
+                "event_count": len(events),
+                "decision_counts": counts,
+                "last_event_at": events[-1]["timestamp"] if events else None,
+                "recent_events": [dict(event) for event in events[-max(0, int(limit_events or 0)):]],
+            }
+        )
 
     def check_action(
         self,

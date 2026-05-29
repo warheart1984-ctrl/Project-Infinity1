@@ -96,7 +96,9 @@ class EvolveClient:
 
         if normalized is None:
             raise RuntimeError("EvolveEngine returned an invalid response contract.")
-        return normalized
+        from src.aais_ul_substrate import wrap_runtime_snapshot
+
+        return wrap_runtime_snapshot(normalized)
 
     def get_job_trace(self, job_id: str) -> dict[str, Any]:
         return self._get_json(f"/traces/jobs/{job_id}")

@@ -8,7 +8,8 @@ authority.
 from __future__ import annotations
 
 import re
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 from typing import Any
 
 from src.jarvis_reasoning_protocol import DIRECT_CHALLENGE_FALLBACK, looks_like_direct_challenge

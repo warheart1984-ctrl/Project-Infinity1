@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
+from datetime import datetime, timedelta
+from src.datetime_compat import UTC
 import hashlib
 import hmac
 import json
@@ -295,7 +300,7 @@ class JarvisDetachmentGuard:
                 if value
             }
         deny_rules.sort(key=lambda item: str(item.get("updated_at") or item.get("created_at") or ""), reverse=True)
-        return {
+        return _wrap_ul_payload({
             "component_id": DETACHMENT_GUARD_COMPONENT_ID,
             "version": DETACHMENT_GUARD_VERSION,
             "summary": (
@@ -316,7 +321,7 @@ class JarvisDetachmentGuard:
                 "allowed_roles": sorted(READMISSION_ALLOWED_ROLES),
                 "refreshed_attestation_required": True,
             },
-        }
+        })
 
     def evaluate(
         self,
@@ -380,7 +385,7 @@ class JarvisDetachmentGuard:
                 )
 
         if not reason_codes:
-            return {
+            return _wrap_ul_payload({
                 "decision": "ALLOW",
                 "status": "clear",
                 "component_id": DETACHMENT_GUARD_COMPONENT_ID,
@@ -394,7 +399,7 @@ class JarvisDetachmentGuard:
                 "explicit_flags": explicit_flags,
                 "temporary_deny_active": False,
                 "review_required": False,
-            }
+            })
 
         with self._lock:
             attempt_state = self._record_attempt_locked(
@@ -476,7 +481,7 @@ class JarvisDetachmentGuard:
             hold_seconds=hold_seconds,
             decision="blocked",
         )
-        return {
+        return _wrap_ul_payload({
             "decision": "BLOCK",
             "status": "blocked",
             "component_id": DETACHMENT_GUARD_COMPONENT_ID,
@@ -496,7 +501,7 @@ class JarvisDetachmentGuard:
             "immune_update": immune_update,
             "pattern_ledger_entry": pattern_entry,
             "attempt_state": attempt_state,
-        }
+        })
 
     def clear_temporary_hold(
         self,
@@ -512,14 +517,14 @@ class JarvisDetachmentGuard:
         normalized_actor_id = _clean_text(actor_id, limit=120) or "unknown_actor"
         normalized_actor_role = _normalize_name(actor_role, default="unknown_role")
         if normalized_actor_role not in READMISSION_ALLOWED_ROLES:
-            return {
+            return _wrap_ul_payload({
                 "cleared": False,
                 "source_id": normalized_source,
                 "review_required": True,
                 "reason": "Actor role is not allowed to clear Jarvis detachment review holds.",
                 "actor_id": normalized_actor_id,
                 "actor_role": normalized_actor_role,
-            }
+            })
 
         with self._lock:
             self._prune_expired_locked()
@@ -527,14 +532,14 @@ class JarvisDetachmentGuard:
             self._persist_locked()
 
         if not existing:
-            return {
+            return _wrap_ul_payload({
                 "cleared": False,
                 "source_id": normalized_source,
                 "review_required": False,
                 "reason": "No active detachment review hold exists for this source.",
                 "actor_id": normalized_actor_id,
                 "actor_role": normalized_actor_role,
-            }
+            })
 
         summary = (
             "Manual review cleared the temporary Jarvis detachment hold. "
@@ -572,7 +577,7 @@ class JarvisDetachmentGuard:
             hold_seconds=0,
             decision="readmitted",
         )
-        return {
+        return _wrap_ul_payload({
             "cleared": True,
             "source_id": normalized_source,
             "actor_id": normalized_actor_id,
@@ -582,7 +587,7 @@ class JarvisDetachmentGuard:
             "seam_event": seam_event,
             "pattern_ledger_entry": pattern_entry,
             "summary": summary,
-        }
+        })
 
     def _ensure_phase_component_registered(self) -> None:
         try:
@@ -606,7 +611,7 @@ class JarvisDetachmentGuard:
     def _normalize_attestation(self, payload: dict[str, Any]) -> dict[str, Any]:
         raw = payload.get("bridge_attestation")
         if not isinstance(raw, dict):
-            return {
+            return _wrap_ul_payload({
                 "present": False,
                 "version": "",
                 "aais_boundary": None,
@@ -621,8 +626,8 @@ class JarvisDetachmentGuard:
                 "issued_at": "",
                 "nonce": "",
                 "signature": "",
-            }
-        return {
+            })
+        return _wrap_ul_payload({
             "present": True,
             "version": _clean_text(raw.get("version"), limit=40),
             "aais_boundary": _coerce_bool(raw.get("aais_boundary")),
@@ -637,7 +642,7 @@ class JarvisDetachmentGuard:
             "issued_at": _clean_text(raw.get("issued_at"), limit=80),
             "nonce": _clean_text(raw.get("nonce"), limit=80),
             "signature": _clean_text(raw.get("signature"), limit=200),
-        }
+        })
 
     def _verify_attestation(
         self,
@@ -704,12 +709,12 @@ class JarvisDetachmentGuard:
             with self._lock:
                 self._nonce_cache[attestation["nonce"]] = _utc_now_iso()
                 self._persist_locked()
-            return {
+            return _wrap_ul_payload({
                 "valid": True,
                 "reason_codes": [],
                 "vector": None,
                 "severity": "low",
-            }
+            })
 
         if any(code in reason_codes for code in ("bridge_attestation_replayed",)):
             vector = SEAM_VECTOR_REPLAY_ATTEMPT
@@ -719,12 +724,12 @@ class JarvisDetachmentGuard:
         elif any(code.startswith("bridge_attestation_missing_") for code in reason_codes):
             severity = "high"
 
-        return {
+        return _wrap_ul_payload({
             "valid": False,
             "reason_codes": reason_codes,
             "vector": vector,
             "severity": severity,
-        }
+        })
 
     def _signature_matches(self, attestation: dict[str, Any]) -> bool:
         signature = str(attestation.get("signature") or "").strip()
@@ -800,11 +805,11 @@ class JarvisDetachmentGuard:
             if self._event_age_seconds(item.get("timestamp")) <= ATTEMPT_WINDOW_SECONDS
         )
         self._persist_locked()
-        return {
+        return _wrap_ul_payload({
             "attempts_in_window": attempts_in_window,
             "history_count": len(attempts),
             "window_seconds": ATTEMPT_WINDOW_SECONDS,
-        }
+        })
 
     def _escalate_severity(self, *, base_severity: str, attempts_in_window: int, vector: str) -> str:
         normalized = str(base_severity or "high").strip().lower() or "high"
@@ -889,9 +894,10 @@ class JarvisDetachmentGuard:
             "hold_seconds": int(hold_seconds),
             "signature_only": True,
         }
-        self._pattern_ledger_path.parent.mkdir(parents=True, exist_ok=True)
-        with self._pattern_ledger_path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(entry, ensure_ascii=True) + "\n")
+        from src.ugr.pattern_ledger import PatternLedgerStore
+
+        ledger = PatternLedgerStore(runtime_dir=self.runtime_dir.parent)
+        ledger.append_pattern_event(entry, mirror_legacy=True)
         return entry
 
     def _rule_is_active(self, rule: dict[str, Any]) -> bool:

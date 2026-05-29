@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import json
 import os
 from pathlib import Path
@@ -84,7 +89,7 @@ def _default_runtime_dir():
 
 def default_policy_status():
     """Return a clean baseline policy posture for a new session."""
-    return {
+    return _wrap_ul_payload({
         "status": "allow",
         "allowed": True,
         "posture": "nominal",
@@ -93,7 +98,7 @@ def default_policy_status():
         "guidance": [],
         "checked_at": _utc_now_iso(),
         "target": "session",
-    }
+    })
 
 
 def derive_policy_posture(session) -> str:
@@ -224,7 +229,7 @@ class PolicyDecision:
     checked_at: str = field(default_factory=_utc_now_iso)
 
     def to_dict(self):
-        return {
+        return _wrap_ul_payload({
             "allowed": self.allowed,
             "status": self.status,
             "posture": self.posture,
@@ -233,7 +238,7 @@ class PolicyDecision:
             "violations": list(self.violations),
             "guidance": list(self.guidance),
             "checked_at": self.checked_at,
-        }
+        })
 
 
 class V8PolicyEngine:

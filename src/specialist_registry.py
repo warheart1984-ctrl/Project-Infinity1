@@ -7,6 +7,10 @@ specialist contracts instead of loading a separate model for each role.
 
 from __future__ import annotations
 
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
 from src.jarvis_reasoning_protocol import looks_like_direct_challenge
 
 
@@ -540,7 +544,7 @@ def get_specialist_preset(preset_id: str | None) -> dict | None:
     if not normalized:
         return None
     preset = SPECIALIST_PRESETS[normalized]
-    return {
+    return _wrap_ul_payload({
         "id": normalized,
         "label": preset["label"],
         "summary": preset["summary"],
@@ -556,7 +560,7 @@ def get_specialist_preset(preset_id: str | None) -> dict | None:
             for specialist_id in preset.get("specialists", ())
             if specialist_id in SPECIALIST_DEFINITIONS
         ],
-    }
+    })
 
 
 def list_specialist_catalog() -> list[dict]:
@@ -750,7 +754,7 @@ def detect_specialist_profile(text: str, current_mode: str | None = None) -> dic
         f"{normalized_mode.title()} mode."
     )
 
-    return {
+    return _wrap_ul_payload({
         "domain": domain_id,
         "domain_label": domain["label"],
         "focus": primary["focus"],
@@ -765,7 +769,7 @@ def detect_specialist_profile(text: str, current_mode: str | None = None) -> dic
         "domain_strength": domain_strengths.get(domain_id, primary["matched_count"]),
         "selection_source": "auto",
         "requested_specialists": [],
-    }
+    })
 
 
 def merge_requested_specialists(
@@ -848,7 +852,7 @@ def merge_requested_specialists(
             f"{normalized_mode.title()} mode."
         )
 
-    return {
+    return _wrap_ul_payload({
         "domain": domain_id,
         "domain_label": domain_label,
         "focus": focus,
@@ -863,7 +867,7 @@ def merge_requested_specialists(
         "domain_strength": auto_profile.get("domain_strength", 0) if auto_profile else len(requested_ids),
         "selection_source": selection_source,
         "requested_specialists": requested_ids,
-    }
+    })
 
 
 def detect_writing_focus(text: str, current_mode: str | None = None) -> dict | None:
@@ -872,23 +876,23 @@ def detect_writing_focus(text: str, current_mode: str | None = None) -> dict | N
     if not profile or profile.get("domain") != "writing":
         return None
 
-    return {
+    return _wrap_ul_payload({
         "focus": profile["focus"],
         "focuses": profile["focuses"],
         "summary": profile["summary"],
         "directive": profile["directive"],
         "lenses": profile["specialists"],
-    }
+    })
 
 
 def profile_to_writing_focus(profile: dict | None) -> dict | None:
     """Convert a general specialist profile into the legacy writing-focus shape when possible."""
     if not profile or profile.get("domain") != "writing":
         return None
-    return {
+    return _wrap_ul_payload({
         "focus": profile.get("focus"),
         "focuses": list(profile.get("focuses") or []),
         "summary": profile.get("summary"),
         "directive": profile.get("directive"),
         "lenses": list(profile.get("specialists") or []),
-    }
+    })

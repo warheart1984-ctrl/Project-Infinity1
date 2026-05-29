@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from collections import Counter
 from copy import deepcopy
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import json
 import math
 import os
@@ -24,6 +25,12 @@ WATCH_THRESHOLD = 0.18
 DRIFTING_THRESHOLD = 0.32
 CRITICAL_THRESHOLD = 0.52
 OBSERVATION_CONFIDENCE_FLOOR = 0.35
+
+
+def _with_ul_observation(payload: dict[str, Any]) -> dict[str, Any]:
+    from src.aais_ul_substrate import wrap_runtime_snapshot
+
+    return wrap_runtime_snapshot(payload)
 
 
 def _utc_now_iso() -> str:
@@ -622,7 +629,9 @@ class ContinuityWitnessStore:
 
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
-            return deepcopy(self._state)
+            from src.aais_ul_substrate import wrap_runtime_snapshot
+
+            return wrap_runtime_snapshot(deepcopy(self._state))
 
     def observe(
         self,
@@ -633,20 +642,22 @@ class ContinuityWitnessStore:
     ) -> dict[str, Any]:
         governed_pipeline = dict(governed_pipeline or {})
         if not governed_pipeline:
-            return {
-                "module_id": MODULE_ID,
-                "version": MODULE_VERSION,
-                "trajectory_status": "STABLE",
-                "risk_level": "low",
-                "dominant_drift_factors": [],
-                "confidence": OBSERVATION_CONFIDENCE_FLOOR,
-                "identity_distance": 0.0,
-                "trajectory_velocity": 0.0,
-                "direction": "steady",
-                "projected_crossing_turns": None,
-                "observation_only": True,
-                "signals_only": True,
-            }
+            return _with_ul_observation(
+                {
+                    "module_id": MODULE_ID,
+                    "version": MODULE_VERSION,
+                    "trajectory_status": "STABLE",
+                    "risk_level": "low",
+                    "dominant_drift_factors": [],
+                    "confidence": OBSERVATION_CONFIDENCE_FLOOR,
+                    "identity_distance": 0.0,
+                    "trajectory_velocity": 0.0,
+                    "direction": "steady",
+                    "projected_crossing_turns": None,
+                    "observation_only": True,
+                    "signals_only": True,
+                }
+            )
 
         with self._lock:
             seed = governed_pipeline.get("continuity_witness_input")
@@ -654,7 +665,7 @@ class ContinuityWitnessStore:
                 seed = build_continuity_witness_input(governed_pipeline)
             pipeline_id = _normalize_text(seed.get("pipeline_id") or governed_pipeline.get("pipeline_id"))
             if pipeline_id and pipeline_id in self._observation_cache:
-                return deepcopy(self._observation_cache[pipeline_id])
+                return _with_ul_observation(deepcopy(self._observation_cache[pipeline_id]))
 
             subsystem = _normalize_text(seed.get("subsystem") or _subsystem_for_pipeline(governed_pipeline))
             subsystem_key = subsystem or "JARVIS"
@@ -743,7 +754,7 @@ class ContinuityWitnessStore:
                     stale_key = next(iter(self._observation_cache))
                     self._observation_cache.pop(stale_key, None)
             self._persist_locked()
-            return deepcopy(observation)
+            return _with_ul_observation(deepcopy(observation))
 
     def _load(self) -> None:
         self.runtime_dir.mkdir(parents=True, exist_ok=True)

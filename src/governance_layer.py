@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from src.datetime_compat import UTC
 import json
 import os
 from pathlib import Path
@@ -173,22 +174,26 @@ class GovernanceLayer:
                 source_type="governance_state",
             )
             break_glass.pop("_state_hygiene_kind", None)
-            return {
-                "roles": GOVERNANCE_ROLES,
-                "active_break_glass": break_glass,
-                "open_policy_requests": [
-                    request for request in requests
-                    if request.get("status") in {"draft", "staged", "blocked"}
-                ],
-                "recent_events": [dict(event) for event in events],
-                "request_count": len(self._policy_requests),
-                "event_count": len(self._events),
-                "truth_scope": scope,
-                "state_hygiene": {
-                    "requests": summarize_records([self._project_request(item) for item in self._policy_requests]),
-                    "events": summarize_records([self._project_event(item) for item in self._events]),
-                },
-            }
+            from src.aais_ul_substrate import wrap_runtime_snapshot
+
+            return wrap_runtime_snapshot(
+                {
+                    "roles": GOVERNANCE_ROLES,
+                    "active_break_glass": break_glass,
+                    "open_policy_requests": [
+                        request for request in requests
+                        if request.get("status") in {"draft", "staged", "blocked"}
+                    ],
+                    "recent_events": [dict(event) for event in events],
+                    "request_count": len(self._policy_requests),
+                    "event_count": len(self._events),
+                    "truth_scope": scope,
+                    "state_hygiene": {
+                        "requests": summarize_records([self._project_request(item) for item in self._policy_requests]),
+                        "events": summarize_records([self._project_event(item) for item in self._events]),
+                    },
+                }
+            )
 
     def list_policy_requests(
         self,

@@ -7,7 +7,8 @@ and returns a compact judgment that the Mission Board can store and surface.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import re
 
 from src.logger import get_logger

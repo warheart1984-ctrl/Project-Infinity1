@@ -25,6 +25,7 @@ import {
 import { Link } from 'react-router-dom';
 import { apiDelete, apiGet, apiPatch, apiPost, apiPostStream, getApiErrorMessage } from '../lib/api';
 import { NetworkStatusCard } from '../components/network-status/NetworkStatusCard';
+import { UGRCloudForgeConsoleCard } from '../components/operator/UGRCloudForgeConsoleCard';
 import { buildNetworkStatusData } from '../components/network-status/networkStatusLogic';
 import { addHistoryEntry } from '../lib/history';
 import {
@@ -1178,6 +1179,38 @@ function SystemGuardCard({ systemGuard, busy, onAction }) {
   );
 }
 
+function UlTraceBlock({ ulTrace, ulSubstrate, label = 'AAIS-UL Trace' }) {
+  if (!ulTrace?.count) {
+    return null;
+  }
+
+  return (
+    <div className="aais-blueprint-guardrail-block">
+      <span>{label}</span>
+      <strong>
+        {ulTrace.count || 0} payload{ulTrace.count === 1 ? '' : 's'} adapted
+      </strong>
+      {ulSubstrate?.contract_version ? (
+        <div className="jarvis-inline-meta">
+          <span className="inline-meta-chip">
+            substrate {ulSubstrate.contract_version}
+          </span>
+          {ulSubstrate.primary ? (
+            <span className="inline-meta-chip success">primary</span>
+          ) : null}
+        </div>
+      ) : null}
+      <div className="aais-blueprint-file-row">
+        {(ulTrace.sections || []).map((section) => (
+          <span key={`ul-${section}`} className="spiral-chip">
+            {String(section).replace(/_/g, ' ')}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function SecurityProtocolCard({ securityProtocol }) {
   const recentEvents = securityProtocol?.recent_events || [];
   const counts = securityProtocol?.decision_counts || {};
@@ -1233,6 +1266,10 @@ function SecurityProtocolCard({ securityProtocol }) {
               ))}
             </div>
           )}
+          <UlTraceBlock
+            ulTrace={securityProtocol?.ul_trace}
+            ulSubstrate={securityProtocol?.ul_substrate}
+          />
         </div>
       </details>
     </div>
@@ -1300,6 +1337,10 @@ function ImmuneSystemCard({ immuneSystem }) {
               ))}
             </div>
           )}
+          <UlTraceBlock
+            ulTrace={immuneSystem?.ul_trace}
+            ulSubstrate={immuneSystem?.ul_substrate}
+          />
         </div>
       </details>
     </div>
@@ -1367,6 +1408,10 @@ function GovernanceCard({ governance }) {
           ) : (
             <p className="session-empty">No governance events recorded yet.</p>
           )}
+          <UlTraceBlock
+            ulTrace={governance?.ul_trace}
+            ulSubstrate={governance?.ul_substrate}
+          />
         </div>
       </details>
     </div>
@@ -1457,6 +1502,10 @@ function ModuleGovernanceCard({ moduleGovernance }) {
               <p>{coreLines[0]}</p>
             </div>
           )}
+          <UlTraceBlock
+            ulTrace={moduleGovernance?.ul_trace}
+            ulSubstrate={moduleGovernance?.ul_substrate}
+          />
         </div>
       </details>
     </div>
@@ -1695,6 +1744,12 @@ function EvolveEngineCard({
           </div>
         )}
 
+        <UlTraceBlock
+          ulTrace={snapshot?.ul_trace}
+          ulSubstrate={snapshot?.ul_substrate}
+          label="Evolve UL Trace"
+        />
+
         <div className="evolve-hall-grid">
           <div className="evolve-hall-column fame">
             <div className="evolve-hall-head">
@@ -1891,6 +1946,10 @@ function CorrigibilityCard({ corrigibility, onAppendDraftContext }) {
         ) : (
           <p className="session-empty">No corrections recorded in this session yet.</p>
         )}
+        <UlTraceBlock
+          ulTrace={corrigibility?.ul_trace}
+          ulSubstrate={corrigibility?.ul_substrate}
+        />
       </div>
     </div>
   );
@@ -2162,6 +2221,10 @@ function PatchReviewCard({
           </div>
         </div>
       ) : null}
+      <UlTraceBlock
+        ulTrace={preview?.ul_trace || reviews?.[0]?.ul_trace}
+        ulSubstrate={preview?.ul_substrate || reviews?.[0]?.ul_substrate}
+      />
     </div>
   );
 }
@@ -2345,6 +2408,10 @@ function ToolResultCard({
             Review Rewound Answer
           </button>
         ) : null}
+        <UlTraceBlock
+          ulTrace={toolResult?.ul_trace}
+          ulSubstrate={toolResult?.ul_substrate}
+        />
       </div>
     );
   }
@@ -2475,6 +2542,10 @@ function ToolResultCard({
           </div>
         ) : null}
         {renderCapabilityMeta()}
+        <UlTraceBlock
+          ulTrace={toolResult?.ul_trace}
+          ulSubstrate={toolResult?.ul_substrate}
+        />
       </div>
     );
   }
@@ -3305,6 +3376,11 @@ function CapabilityBridgeConsoleCard({
               {latestExecution.response_trace ? (
                 <ResponseTraceCard responseTrace={latestExecution.response_trace} />
               ) : null}
+              <UlTraceBlock
+                ulTrace={latestExecution?.ul_trace}
+                ulSubstrate={latestExecution?.ul_substrate}
+                label="Capability UL Trace"
+              />
             </div>
           ) : null}
 
@@ -3434,6 +3510,11 @@ function MysticConsoleCard({
               onRunAction={onRunAction}
               actionBusyId={actionBusyId}
             />
+            <UlTraceBlock
+              ulTrace={latestToolResult?.ul_trace}
+              ulSubstrate={latestToolResult?.ul_substrate}
+              label="Mystic UL Trace"
+            />
           </div>
         ) : (
           <p className="session-empty">
@@ -3539,6 +3620,11 @@ function V10CoreConsoleCard({
               onRunAction={onRunAction}
               actionBusyId={actionBusyId}
             />
+            <UlTraceBlock
+              ulTrace={latestToolResult?.ul_trace}
+              ulSubstrate={latestToolResult?.ul_substrate}
+              label="V10 UL Trace"
+            />
           </div>
         ) : (
           <p className="session-empty">
@@ -3615,6 +3701,12 @@ function CreativeRuntimeCard({ label, runtime, formatRelativeTime }) {
               ))}
             </div>
           )}
+
+          <UlTraceBlock
+            ulTrace={runtime?.ul_trace}
+            ulSubstrate={runtime?.ul_substrate}
+            label={`${label} UL Trace`}
+          />
         </div>
       </details>
     </div>
@@ -3633,6 +3725,7 @@ function AAISBlueprintCard({
   const providers = blueprint?.providers || [];
   const guardrailState = protocolSession?.guardrail_state || null;
   const ulTrace = protocolSession?.ul_trace || null;
+  const ulSubstrate = protocolSession?.ul_substrate || null;
   const doctrine = protocolSession?.doctrine || null;
   const guardrailEvaluation = protocolSession?.guardrail_evaluation
     || protocolSession?.canonical_guardrail_evaluation
@@ -3922,6 +4015,16 @@ function AAISBlueprintCard({
                         <strong>
                           {ulTrace.count || 0} payload{ulTrace.count === 1 ? '' : 's'} adapted
                         </strong>
+                        {ulSubstrate?.contract_version ? (
+                          <div className="jarvis-inline-meta">
+                            <span className="inline-meta-chip">
+                              substrate {ulSubstrate.contract_version}
+                            </span>
+                            {ulSubstrate.primary ? (
+                              <span className="inline-meta-chip success">primary</span>
+                            ) : null}
+                          </div>
+                        ) : null}
                         <div className="aais-blueprint-file-row">
                           {(ulTrace.sections || []).map((section) => (
                             <span key={`ul-${section}`} className="spiral-chip">
@@ -7262,6 +7365,8 @@ function JarvisConsole() {
       setPatchPreview({
         reviewId,
         ...(response.data.preview || {}),
+        ul_trace: response.data.ul_trace,
+        ul_substrate: response.data.ul_substrate,
       });
     } catch (error) {
       toast.error(`Could not preview patch review: ${getApiErrorMessage(error)}`);
@@ -8607,6 +8712,10 @@ function JarvisConsole() {
           <GovernanceCard
             governance={governance}
           />
+          )}
+
+          {showOperatorPanel && (
+          <UGRCloudForgeConsoleCard />
           )}
 
           {showOperatorPanel && (

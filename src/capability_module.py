@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 from pathlib import Path
 from typing import Any, Callable
 import uuid
@@ -68,7 +69,7 @@ class AAISCapabilityModule:
             "meta": self._trace_meta(action, payload),
         }
         output["meta"].update({key: value for key, value in meta.items() if value is not None})
-        return output
+        return self._attach_ul_substrate(output)
 
     def _err(self, action: str, error_type: str, message: str, **details):
         normalized_error = error_type if error_type in ERROR_TAXONOMY else "UnknownError"
@@ -83,7 +84,13 @@ class AAISCapabilityModule:
         output["details"].setdefault("provider", self.provider_name)
         output["details"].setdefault("timestamp", self._timestamp())
         output["details"].setdefault("trace_id", f"{self.module_name}_{action}_{uuid.uuid4().hex}")
-        return output
+        return self._attach_ul_substrate(output)
+
+    @staticmethod
+    def _attach_ul_substrate(result: dict[str, Any]) -> dict[str, Any]:
+        from src.aais_ul_substrate import wrap_capability_result
+
+        return wrap_capability_result(dict(result))
 
     def _validate_input(self, action: str, payload: dict[str, Any] | None):
         if action not in self.supported_actions:

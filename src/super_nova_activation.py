@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 from threading import Lock
 from typing import Callable, TypeVar
 from uuid import uuid4

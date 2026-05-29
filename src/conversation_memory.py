@@ -2,7 +2,8 @@
 
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from src.datetime_compat import UTC
 import re
 import threading
 import uuid
@@ -32,6 +33,13 @@ from src.specialist_registry import (
     detect_writing_focus,
 )
 from src.v8_runtime import SessionLifecycle, default_policy_status
+
+
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
+
 
 logger = get_logger(__name__)
 
@@ -2126,7 +2134,7 @@ class ConversationSession:
 
     def to_dict(self):
         """Serialize a conversation session with Spiral-inspired runtime data."""
-        return {
+        return _wrap_ul_payload({
             "session_id": self.session_id,
             "turns": [t.to_dict() for t in self.turns],
             "created_at": self.created_at.isoformat(),
@@ -2199,7 +2207,7 @@ class ConversationSession:
             "action_lifecycle": self.metadata.get("action_lifecycle"),
             "corrigibility": dict(self.metadata.get("corrigibility") or default_corrigibility_state()),
             "jarvis_protocol": self.protocol_summary(),
-        }
+        })
 
 
 class ConversationMemory:

@@ -12,6 +12,10 @@ mutation, run creation, or durable memory writes are allowed.
 
 from __future__ import annotations
 
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
 import re
 from typing import Any
 
@@ -513,7 +517,7 @@ def build_otem_catalog_snapshot(actions: list[dict[str, Any]] | None) -> dict[st
     """Build the read-only OTEM catalog for operator UI surfaces."""
     workflow_templates = load_workflow_template_catalog()
     tool_registry = build_tool_registry(actions)
-    return {
+    return _wrap_ul_payload({
         "version_ceiling": get_frozen_otem_version(),
         "workflow_catalog": workflow_templates,
         "tool_registry": tool_registry,
@@ -524,7 +528,7 @@ def build_otem_catalog_snapshot(actions: list[dict[str, Any]] | None) -> dict[st
             "no tool execution",
             "session-scoped only",
         ],
-    }
+    })
 
 
 def enrich_otem_result(
@@ -580,4 +584,4 @@ def enrich_otem_result(
             "tool_awareness": tool_awareness,
         }
     )
-    return result
+    return _wrap_ul_payload(result)

@@ -1,6 +1,7 @@
 """Tests for the realtime event-and-cause prediction module."""
 
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import unittest
 
 from src.governed_direct_pipeline import OPERATION_CODES, build_pipeline_packet

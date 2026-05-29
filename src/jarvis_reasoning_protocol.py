@@ -11,6 +11,10 @@ identity collapse.
 
 from __future__ import annotations
 
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
 from dataclasses import dataclass, field
 import re
 from typing import Any
@@ -187,12 +191,12 @@ def _latest_user_message(messages: list[dict[str, Any]] | None) -> str:
 def analyze_relational_question(user_input: str) -> dict[str, Any]:
     cleaned = " ".join(str(user_input or "").split()).strip()
     if not cleaned:
-        return {
+        return _wrap_ul_payload({
             "detected": False,
             "matched_pattern": None,
             "addressed_target": None,
             "reason": "No user input was available for relational analysis.",
-        }
+        })
 
     has_jarvis_address = bool(re.search(r"\bjarvis\b", cleaned, re.IGNORECASE))
     has_second_person = bool(re.search(r"\byou\b", cleaned, re.IGNORECASE))
@@ -215,19 +219,19 @@ def analyze_relational_question(user_input: str) -> dict[str, Any]:
         if not addressed_target:
             continue
 
-        return {
+        return _wrap_ul_payload({
             "detected": True,
             "matched_pattern": pattern_id,
             "addressed_target": addressed_target,
             "reason": "Jarvis-directed feeling wording should stay on a relational lane.",
-        }
+        })
 
-    return {
+    return _wrap_ul_payload({
         "detected": False,
         "matched_pattern": None,
         "addressed_target": None,
         "reason": "No Jarvis-directed feeling-state wording was detected.",
-    }
+    })
 
 
 def _find_otem_invocation(text: str) -> tuple[re.Match[str], str] | None:
@@ -340,25 +344,25 @@ def _extract_otem_proximity(clauses: list[str]) -> str | None:
 def analyze_otem_request(user_input: str) -> dict[str, Any]:
     cleaned = " ".join(str(user_input or "").split()).strip()
     if not cleaned:
-        return {
+        return _wrap_ul_payload({
             "explicit_trigger": False,
             "matched_trigger": None,
             "task": "",
             "task_clauses": [],
             "signal_clauses": [],
             "operator_signals": {},
-        }
+        })
 
     invocation = _find_otem_invocation(cleaned)
     if not invocation:
-        return {
+        return _wrap_ul_payload({
             "explicit_trigger": False,
             "matched_trigger": None,
             "task": "",
             "task_clauses": [],
             "signal_clauses": [],
             "operator_signals": {},
-        }
+        })
 
     match, matched_trigger = invocation
     stripped = f"{cleaned[: match.start()]} {cleaned[match.end() :]}"
@@ -392,14 +396,14 @@ def analyze_otem_request(user_input: str) -> dict[str, Any]:
     if re.search(r"\b(?:i think|i feel|i suspect|it feels|feels like|felt signal)\b", signal_text, re.IGNORECASE):
         operator_signals["felt_signal"] = True
 
-    return {
+    return _wrap_ul_payload({
         "explicit_trigger": True,
         "matched_trigger": matched_trigger,
         "task": task,
         "task_clauses": task_clauses,
         "signal_clauses": signal_clauses,
         "operator_signals": operator_signals,
-    }
+    })
 
 
 def looks_like_direct_challenge(user_input: str) -> bool:
@@ -462,34 +466,34 @@ def evaluate_otem_viability(task: str) -> dict[str, Any]:
     normalized_task = " ".join(str(task or "").split()).strip().lower()
 
     if not normalized_task or len(normalized_task) < 10:
-        return {
+        return _wrap_ul_payload({
             "status": "rejected",
             "reason": "Task is too vague to produce a deterministic plan.",
             "allowed_alternative": "Provide a specific, outcome-focused task.",
-        }
+        })
 
     if _starts_with_blocked_otem_verb(task, _OTEM_IMPERATIVE_BLOCKERS["persistence"]) or _OTEM_PERSISTENCE_DIRECT_OBJECT_RE.search(normalized_task):
-        return {
+        return _wrap_ul_payload({
             "status": "rejected",
             "reason": "OTEM v1-v5 forbids memory or persistence.",
             "allowed_alternative": "Reframe as a reasoning-only task.",
-        }
+        })
 
     if _starts_with_blocked_otem_verb(task, _OTEM_IMPERATIVE_BLOCKERS["execution"]) or _OTEM_EXECUTION_DIRECT_OBJECT_RE.search(normalized_task):
-        return {
+        return _wrap_ul_payload({
             "status": "rejected",
             "reason": "OTEM is reason-only (no execution allowed).",
             "allowed_alternative": "Request a plan or use workflow lane.",
-        }
+        })
 
     if _starts_with_blocked_otem_verb(task, _OTEM_IMPERATIVE_BLOCKERS["workflow"]) or _OTEM_WORKFLOW_DIRECT_OBJECT_RE.search(normalized_task):
-        return {
+        return _wrap_ul_payload({
             "status": "rejected",
             "reason": "This is a workflow request, not OTEM.",
             "allowed_alternative": "Use workflow builder or handoff.",
-        }
+        })
 
-    return {"status": "active"}
+    return _wrap_ul_payload({"status": "active"})
 
 
 def build_otem_rejection_response(turn_contract: dict[str, Any]) -> str:
@@ -647,7 +651,7 @@ def build_otem_result(user_input: str) -> dict[str, Any]:
             "otem_allowed_alternative": viability["allowed_alternative"],
             "otem_plan": [],
         }
-        return {
+        return _wrap_ul_payload({
             "task": raw_task,
             "restated_task": restated_task,
             "task_clauses": list(analysis.get("task_clauses") or []),
@@ -663,10 +667,10 @@ def build_otem_result(user_input: str) -> dict[str, Any]:
             "rejection_reason": viability["reason"],
             "allowed_alternative": viability["allowed_alternative"],
             "answer": build_otem_rejection_response(rejection_contract),
-        }
+        })
 
     plan = build_otem_plan(restated_task)
-    return {
+    return _wrap_ul_payload({
         "task": raw_task,
         "restated_task": restated_task,
         "task_clauses": list(analysis.get("task_clauses") or []),
@@ -682,7 +686,7 @@ def build_otem_result(user_input: str) -> dict[str, Any]:
         "rejection_reason": None,
         "allowed_alternative": None,
         "answer": generate_otem_reason_only_answer(restated_task, plan),
-    }
+    })
 
 
 def resolve_debug_selector(
@@ -697,7 +701,7 @@ def resolve_debug_selector(
     truth_scope_matches = [term for term in OPERATOR_SCOPE_TERMS if term in text]
 
     if anti_debug_trigger:
-        return {
+        return _wrap_ul_payload({
             "scope": "operator_task",
             "matched_trigger": anti_debug_trigger,
             "reason": "Operator explicitly asked to stay out of debugging mode for this turn.",
@@ -706,10 +710,10 @@ def resolve_debug_selector(
             "truth_scope_override": bool(truth_scope_matches),
             "lockout_applied": False,
             "signals": ["anti_debug_override"],
-        }
+        })
 
     if truth_scope_matches:
-        return {
+        return _wrap_ul_payload({
             "scope": "operator_task",
             "matched_trigger": truth_scope_matches[0],
             "reason": "Truth-scope and memory-governance language stays in the operator task lane.",
@@ -718,10 +722,10 @@ def resolve_debug_selector(
             "truth_scope_override": True,
             "lockout_applied": False,
             "signals": ["truth_scope_override"],
-        }
+        })
 
     if explicit_trigger:
-        return {
+        return _wrap_ul_payload({
             "scope": "debugging",
             "matched_trigger": explicit_trigger,
             "reason": "Operator explicitly reported a UI/backend mismatch or asked to inspect a trace.",
@@ -730,10 +734,10 @@ def resolve_debug_selector(
             "truth_scope_override": False,
             "lockout_applied": False,
             "signals": ["explicit_debug_trigger"],
-        }
+        })
 
     if previous_turn_was_debugging:
-        return {
+        return _wrap_ul_payload({
             "scope": "operator_task",
             "matched_trigger": None,
             "reason": "Debugging mode is locked out for one turn unless the operator explicitly re-triggers it.",
@@ -742,9 +746,9 @@ def resolve_debug_selector(
             "truth_scope_override": False,
             "lockout_applied": True,
             "signals": ["debug_lockout"],
-        }
+        })
 
-    return {
+    return _wrap_ul_payload({
         "scope": "operator_task",
         "matched_trigger": None,
         "reason": "No explicit debugging trigger was present for this turn.",
@@ -753,7 +757,7 @@ def resolve_debug_selector(
         "truth_scope_override": False,
         "lockout_applied": False,
         "signals": ["operator_default"],
-    }
+    })
 
 
 def should_enter_debug_mode(
@@ -1257,11 +1261,11 @@ class VerificationTarget:
     reason: str
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        return _wrap_ul_payload({
             "target": self.target,
             "kind": self.kind,
             "reason": _clip_text(self.reason, limit=180),
-        }
+        })
 
 
 @dataclass(slots=True)
@@ -1282,7 +1286,7 @@ class ReasoningPacket:
     summary: str = ""
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        return _wrap_ul_payload({
             "stage": self.stage,
             "goal": self.goal,
             "mode": self.mode,
@@ -1297,11 +1301,11 @@ class ReasoningPacket:
             "output_contract": self.output_contract.to_dict(),
             "metadata": dict(self.metadata or {}),
             "summary": _clip_text(self.summary, limit=220),
-        }
+        })
 
 
 def reasoning_protocol_spec() -> dict[str, Any]:
-    return {
+    return _wrap_ul_payload({
         "id": REASONING_PROTOCOL_ID,
         "version": REASONING_PROTOCOL_VERSION,
         "summary": (
@@ -1340,7 +1344,7 @@ def reasoning_protocol_spec() -> dict[str, Any]:
                 "shape": build_output_contract("handle_direct_challenge").to_dict(),
             },
         },
-    }
+    })
 
 
 def build_reasoning_packet(
@@ -1547,4 +1551,4 @@ def build_reasoning_packet(
         ),
         summary=" ".join(summary_parts).strip() or "Reasoning state is aligned with the current turn.",
     )
-    return packet.to_dict()
+    return _wrap_ul_payload(packet.to_dict())

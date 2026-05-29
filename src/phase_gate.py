@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 from enum import Enum
 from threading import RLock
 from typing import Any

@@ -1,6 +1,7 @@
 """Focused tests for the narrowed Project Infi runtime loop."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
+from src.datetime_compat import UTC
 import unittest
 from unittest.mock import patch
 

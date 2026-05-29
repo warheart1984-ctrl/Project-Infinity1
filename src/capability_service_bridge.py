@@ -634,41 +634,45 @@ class CapabilityServiceBridge:
         """Expose governed capability bridge state for runtime inspection."""
         self._ensure_phase_gate_components()
         available_capabilities = self._grouped_capabilities()
-        return {
-            "bridge_id": BRIDGE_ID,
-            "version": BRIDGE_VERSION,
-            "path": "capability_service_bridge",
-            "service_lane": "service_tools",
-            "registry": {
-                capability["id"]: [action["id"] for action in capability["actions"]]
-                for capability in available_capabilities
-            },
-            "registered_tools": [
-                {
-                    "tool": spec["tool"],
-                    "module": spec["module"].module_name,
-                    "action": spec["action"],
-                    "capability": spec["capability_id"],
-                    "aliases": list(spec["aliases"]),
-                }
-                for spec in self._route_specs
-            ],
-            "available_capabilities": available_capabilities,
-            "module_health": self._module_health_snapshot(),
-            "phase_gate": {
-                "bridge": self._phase_component_state(BRIDGE_COMPONENT_ID, OPERATOR_PHASE_CONTEXT),
-                "capabilities": {
-                    spec["capability_id"]: self._phase_component_state(
-                        self._phase_component_id(spec),
-                        OPERATOR_PHASE_CONTEXT,
-                    )
-                    for spec in self._route_specs
+        from src.aais_ul_substrate import wrap_runtime_snapshot
+
+        return wrap_runtime_snapshot(
+            {
+                "bridge_id": BRIDGE_ID,
+                "version": BRIDGE_VERSION,
+                "path": "capability_service_bridge",
+                "service_lane": "service_tools",
+                "registry": {
+                    capability["id"]: [action["id"] for action in capability["actions"]]
+                    for capability in available_capabilities
                 },
-                "recent_events": self._phase_gate_recent_events(limit=10),
-            },
-            "event_count": len(self._events),
-            "recent_events": list(self._events[-10:]),
-        }
+                "registered_tools": [
+                    {
+                        "tool": spec["tool"],
+                        "module": spec["module"].module_name,
+                        "action": spec["action"],
+                        "capability": spec["capability_id"],
+                        "aliases": list(spec["aliases"]),
+                    }
+                    for spec in self._route_specs
+                ],
+                "available_capabilities": available_capabilities,
+                "module_health": self._module_health_snapshot(),
+                "phase_gate": {
+                    "bridge": self._phase_component_state(BRIDGE_COMPONENT_ID, OPERATOR_PHASE_CONTEXT),
+                    "capabilities": {
+                        spec["capability_id"]: self._phase_component_state(
+                            self._phase_component_id(spec),
+                            OPERATOR_PHASE_CONTEXT,
+                        )
+                        for spec in self._route_specs
+                    },
+                    "recent_events": self._phase_gate_recent_events(limit=10),
+                },
+                "event_count": len(self._events),
+                "recent_events": list(self._events[-10:]),
+            }
+        )
 
     def handle_tool_request(
         self,
@@ -718,7 +722,11 @@ class CapabilityServiceBridge:
         spec = self._selection_routes.get((_normalize_name(capability_id), _normalize_name(action)))
         if spec is None:
             raise ValueError("Unsupported capability or action selection.")
-        return self._build_execution_preview(spec, execution_profile)
+        from src.aais_ul_substrate import wrap_runtime_snapshot
+
+        return wrap_runtime_snapshot(
+            self._build_execution_preview(spec, execution_profile)
+        )
 
     def _prepare_args_for_selection(self, spec: dict[str, Any], args: dict[str, Any]) -> dict[str, Any]:
         capability_id = spec["capability_id"]
@@ -916,17 +924,21 @@ class CapabilityServiceBridge:
             result=result_payload,
             phase_gate=phase_gate,
         )
-        return {
-            "response": response,
-            "tool_result": finalized_tool_result,
-            "execution_preview": self._build_execution_preview(
-                spec,
-                execution_profile,
-                runtime_context=(phase_gate or {}).get("runtime_context", OPERATOR_PHASE_CONTEXT),
-                phase_gate=phase_gate,
-            ),
-            "phase_gate": dict(phase_gate or {}),
-        }
+        from src.aais_ul_substrate import wrap_service_bridge_result
+
+        return wrap_service_bridge_result(
+            {
+                "response": response,
+                "tool_result": finalized_tool_result,
+                "execution_preview": self._build_execution_preview(
+                    spec,
+                    execution_profile,
+                    runtime_context=(phase_gate or {}).get("runtime_context", OPERATOR_PHASE_CONTEXT),
+                    phase_gate=phase_gate,
+                ),
+                "phase_gate": dict(phase_gate or {}),
+            }
+        )
 
     def _handle_spatial_reason(
         self,

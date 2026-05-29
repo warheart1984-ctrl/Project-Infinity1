@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
 from typing import Any
 
 from src.jarvis_protocol import JarvisMessage
@@ -41,13 +45,13 @@ def _estimate_openai_compatible_prompt_tokens(
         prompt_tokens += _estimate_text_tokens(payload.get("content"))
         if message.name:
             prompt_tokens += _estimate_text_tokens(message.name)
-    return {
+    return _wrap_ul_payload({
         "provider": provider_id,
         "prompt_tokens": int(prompt_tokens),
         "estimator": "openai_compatible_message_heuristic",
         "exact": False,
         "message_count": len(messages),
-    }
+    })
 
 
 def _estimate_claude_prompt_tokens(messages: list[JarvisMessage]) -> dict[str, Any]:
@@ -67,14 +71,14 @@ def _estimate_claude_prompt_tokens(messages: list[JarvisMessage]) -> dict[str, A
         prompt_tokens += 3
         prompt_tokens += _estimate_text_tokens(message.get("content"))
 
-    return {
+    return _wrap_ul_payload({
         "provider": "claude",
         "prompt_tokens": int(prompt_tokens),
         "estimator": "anthropic_message_heuristic",
         "exact": False,
         "message_count": len(messages),
         "system_message_count": len(system_chunks),
-    }
+    })
 
 
 def estimate_provider_prompt_tokens(
@@ -92,7 +96,7 @@ def estimate_provider_prompt_tokens(
     else:
         report = _estimate_openai_compatible_prompt_tokens(normalized_provider, normalized_messages)
     report["provider_model"] = str(provider_model or "").strip() or None
-    return report
+    return _wrap_ul_payload(report)
 
 
 def resolve_remote_output_budget(
@@ -117,7 +121,7 @@ def resolve_remote_output_budget(
     prompt_tokens_estimate = int(estimate.get("prompt_tokens") or 0)
     prompt_overflow_tokens = max(0, prompt_tokens_estimate - prompt_token_budget)
     effective_output_budget = max(32, requested_output_budget - prompt_overflow_tokens)
-    return {
+    return _wrap_ul_payload({
         "resolved_provider": _normalize_provider(provider_id),
         "provider_model": str(provider_model or "").strip() or None,
         "prompt_tokens_estimate": prompt_tokens_estimate,
@@ -131,4 +135,4 @@ def resolve_remote_output_budget(
         "reply_budget_floor": reply_budget_floor,
         "reply_floor_preserved": bool(effective_output_budget >= reply_budget_floor),
         "output_budget_clamped": bool(effective_output_budget < requested_output_budget),
-    }
+    })

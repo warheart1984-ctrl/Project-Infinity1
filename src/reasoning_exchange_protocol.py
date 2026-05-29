@@ -8,7 +8,12 @@ rejection, and any downstream use remain local decisions.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
+from datetime import datetime
+from src.datetime_compat import UTC
 from typing import Any
 from uuid import UUID
 
@@ -201,7 +206,7 @@ def normalize_reasoning_exchange_packet(raw: Any) -> dict[str, Any]:
             limit=MAX_DOMAIN_LENGTH,
         )
 
-    return {
+    return _wrap_ul_payload({
         "version": _normalize_bounded_string(
             packet.get("version"),
             field_name="version",
@@ -237,14 +242,14 @@ def normalize_reasoning_exchange_packet(raw: Any) -> dict[str, Any]:
             "domain": domain,
             "tags": _normalize_tags(meta.get("tags") or []),
         },
-    }
+    })
 
 
 def build_reasoning_exchange_module_spec(
     module_id: str = REASONING_EXCHANGE_COMPONENT_ID,
 ) -> dict[str, Any]:
     """Return the AAIS module-governance admission spec for the exchange boundary."""
-    return {
+    return _wrap_ul_payload({
         "module_id": module_id,
         "label": "Reasoning Exchange Protocol",
         "lane": "external_reasoning_ingress",
@@ -314,7 +319,7 @@ def build_reasoning_exchange_module_spec(
             "hidden_logging": False,
             "exfiltrates_data": False,
         },
-    }
+    })
 
 
 def build_reasoning_exchange_reject_response(
@@ -324,7 +329,7 @@ def build_reasoning_exchange_reject_response(
     notes: list[str] | None = None,
 ) -> dict[str, Any]:
     """Return a bounded reject handshake without touching local governance."""
-    return {
+    return _wrap_ul_payload({
         "protocol_id": REASONING_EXCHANGE_PROTOCOL_ID,
         "protocol_version": REASONING_EXCHANGE_PROTOCOL_VERSION,
         "status": "REJECT",
@@ -345,7 +350,7 @@ def build_reasoning_exchange_reject_response(
             "status": "not_evaluated",
             "reason": "Packet was rejected before governed execution.",
         },
-    }
+    })
 
 
 class ReasoningExchangeProtocol:
@@ -375,7 +380,7 @@ class ReasoningExchangeProtocol:
 
         phase_gate_payload = self._phase_gate_allow_payload(runtime_context=context)
         if phase_gate_payload["decision"] == "BLOCK":
-            return {
+            return _wrap_ul_payload({
                 "protocol_id": REASONING_EXCHANGE_PROTOCOL_ID,
                 "protocol_version": REASONING_EXCHANGE_PROTOCOL_VERSION,
                 "status": "REJECT",
@@ -393,11 +398,11 @@ class ReasoningExchangeProtocol:
                 },
                 "immune_update": None,
                 "immune_system": self.immune_controller.snapshot(limit_events=6, limit_incidents=3),
-            }
+            })
 
         module_payload = self._module_governance_payload()
         if module_payload["decision"] == "BLOCK":
-            return {
+            return _wrap_ul_payload({
                 "protocol_id": REASONING_EXCHANGE_PROTOCOL_ID,
                 "protocol_version": REASONING_EXCHANGE_PROTOCOL_VERSION,
                 "status": "REJECT",
@@ -410,7 +415,7 @@ class ReasoningExchangeProtocol:
                 "module_governance": module_payload,
                 "immune_update": None,
                 "immune_system": self.immune_controller.snapshot(limit_events=6, limit_incidents=3),
-            }
+            })
 
         verification = self._verification_payload(packet)
         if verification["decision"] == "BLOCK":
@@ -422,7 +427,7 @@ class ReasoningExchangeProtocol:
                 packet=packet,
                 decision="REJECT",
             )
-            return {
+            return _wrap_ul_payload({
                 "protocol_id": REASONING_EXCHANGE_PROTOCOL_ID,
                 "protocol_version": REASONING_EXCHANGE_PROTOCOL_VERSION,
                 "status": "REJECT",
@@ -435,7 +440,7 @@ class ReasoningExchangeProtocol:
                 "module_governance": module_payload,
                 "immune_update": immune_update,
                 "immune_system": self.immune_controller.snapshot(limit_events=6, limit_incidents=3),
-            }
+            })
 
         handshake = self._admission_handshake(packet)
         immune_update = None
@@ -458,7 +463,7 @@ class ReasoningExchangeProtocol:
                 decision="REJECT",
             )
 
-        return {
+        return _wrap_ul_payload({
             "protocol_id": REASONING_EXCHANGE_PROTOCOL_ID,
             "protocol_version": REASONING_EXCHANGE_PROTOCOL_VERSION,
             **handshake,
@@ -468,7 +473,7 @@ class ReasoningExchangeProtocol:
             "module_governance": module_payload,
             "immune_update": immune_update,
             "immune_system": self.immune_controller.snapshot(limit_events=6, limit_incidents=3),
-        }
+        })
 
     def _admission_handshake(self, packet: dict[str, Any]) -> dict[str, Any]:
         confidence = float((packet.get("payload") or {}).get("confidence") or 0.0)
@@ -502,12 +507,12 @@ class ReasoningExchangeProtocol:
             reason = "insufficient_confidence_for_admission"
             notes.append("low_confidence")
 
-        return {
+        return _wrap_ul_payload({
             "status": status,
             "reason": reason,
             "confidence_adjustment": rounded_adjustment,
             "notes": notes,
-        }
+        })
 
     def _phase_gate_allow_payload(self, *, runtime_context: str) -> dict[str, Any]:
         try:
@@ -530,22 +535,22 @@ class ReasoningExchangeProtocol:
             assert_routable(self.component_id, runtime_context)
             assert_executable(self.component_id, runtime_context)
         except PhaseViolationError as exc:
-            return {
+            return _wrap_ul_payload({
                 "decision": "BLOCK",
                 "component_id": component.component_id,
                 "phase": component.phase.value,
                 "runtime_context": runtime_context,
                 "reason": str(exc),
-            }
+            })
 
-        return {
+        return _wrap_ul_payload({
             "decision": "ALLOW",
             "component_id": component.component_id,
             "phase": component.phase.value,
             "runtime_context": runtime_context,
             "allowed_contexts": list(component.allowed_contexts),
             "reason": "Phase gate allows reasoning exchange evaluation.",
-        }
+        })
 
     def _module_governance_payload(self) -> dict[str, Any]:
         record = self.module_governance_controller.get_module(self.component_id)
@@ -561,7 +566,7 @@ class ReasoningExchangeProtocol:
 
         status = str(record.get("status") or "").strip().lower() or "unknown"
         allowed = status == "admitted"
-        return {
+        return _wrap_ul_payload({
             "decision": "ALLOW" if allowed else "BLOCK",
             "module_id": self.component_id,
             "status": status,
@@ -570,7 +575,7 @@ class ReasoningExchangeProtocol:
                 if allowed
                 else f"Module governance status '{status}' blocks reasoning exchange evaluation."
             ),
-        }
+        })
 
     def _verification_payload(self, packet: dict[str, Any]) -> dict[str, Any]:
         result = VerificationTestResult(
@@ -584,11 +589,11 @@ class ReasoningExchangeProtocol:
             is_repeat_test=False,
         )
         evaluation = evaluate_verification_gate([result])
-        return {
+        return _wrap_ul_payload({
             "decision": evaluation.decision.value,
             "reasons": list(evaluation.reasons),
             "failed_tests": list(evaluation.failed_tests),
-        }
+        })
 
     def observe_boundary_signal(
         self,

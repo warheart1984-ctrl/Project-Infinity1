@@ -9,7 +9,8 @@ The guard supports graded safety posture:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import json
 import os
 from pathlib import Path
@@ -114,7 +115,9 @@ class SystemGuardController:
                 dict(event)
                 for event in reversed(self._events[-max(0, int(limit_events or 0)):])
             ]
-            return payload
+            from src.aais_ul_substrate import wrap_runtime_snapshot
+
+            return wrap_runtime_snapshot(payload)
 
     def pause(self, reason: str = "", actor: str = "operator") -> dict:
         return self._set_state(

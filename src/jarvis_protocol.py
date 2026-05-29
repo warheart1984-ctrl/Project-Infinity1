@@ -8,6 +8,10 @@ runtime, tools, specialists, and model backends.
 
 from __future__ import annotations
 
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -80,10 +84,10 @@ class ProtocolMessage:
 
     def to_provider_message(self) -> dict[str, str]:
         payload = self.to_dict()
-        return {
+        return _wrap_ul_payload({
             "role": payload["role"],
             "content": payload["content"],
-        }
+        })
 
 
 @dataclass(slots=True)
@@ -107,10 +111,10 @@ class JarvisMessage(ProtocolMessage):
             role = "user"
         if role == "tool":
             role = "assistant"
-        return {
+        return _wrap_ul_payload({
             "role": role if role in {"user", "assistant"} else "user",
             "content": str(self.content or ""),
-        }
+        })
 
 
 @dataclass(slots=True)
@@ -125,14 +129,14 @@ class ToolResult:
     kind: str = "tool_call"
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        return _wrap_ul_payload({
             "id": self.id,
             "name": self.name,
             "arguments": dict(self.arguments or {}),
             "output": self.output,
             "provider": self.provider,
             "kind": self.kind,
-        }
+        })
 
     @classmethod
     def from_claude(cls, block: Any) -> "ToolResult":
@@ -172,7 +176,7 @@ class ProviderResponse:
     raw: Any = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        return _wrap_ul_payload({
             "content": self.content,
             "tool_calls": [tool.to_dict() for tool in self.tool_calls or []],
             "provider": self.provider,
@@ -181,12 +185,12 @@ class ProviderResponse:
             "finish_reason": self.finish_reason,
             "input_tokens": self.input_tokens,
             "output_tokens": self.output_tokens,
-        }
+        })
 
 
 def protocol_spec() -> dict[str, Any]:
     """Return the stable AAIS Jarvis protocol contract."""
-    return {
+    return _wrap_ul_payload({
         "id": PROTOCOL_ID,
         "version": PROTOCOL_VERSION,
         "summary": (
@@ -222,7 +226,7 @@ def protocol_spec() -> dict[str, Any]:
             ],
         },
         "reasoning_protocol": reasoning_protocol_spec(),
-    }
+    })
 
 
 def normalize_messages(messages: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
@@ -263,7 +267,7 @@ def summarize_protocol(
         if channel and channel not in channels:
             channels.append(channel)
 
-    return {
+    return _wrap_ul_payload({
         "id": PROTOCOL_ID,
         "version": PROTOCOL_VERSION,
         "session_id": session_id,
@@ -274,7 +278,7 @@ def summarize_protocol(
         "persona_mode": persona_mode,
         "tool_active": bool(tool_result),
         "tool_type": (tool_result or {}).get("type"),
-    }
+    })
 
 
 def build_turn_envelope(
@@ -296,7 +300,7 @@ def build_turn_envelope(
         }
         for message in normalized
     ]
-    return {
+    return _wrap_ul_payload({
         "protocol": {
             "id": PROTOCOL_ID,
             "version": PROTOCOL_VERSION,
@@ -311,7 +315,7 @@ def build_turn_envelope(
         "provider_messages": provider_messages,
         "tool_result": tool_result,
         "metadata": dict(metadata or {}),
-    }
+    })
 
 
 def build_provider_payload(
@@ -327,7 +331,7 @@ def build_provider_payload(
 ) -> dict[str, Any]:
     """Build a provider-facing payload from the internal Jarvis protocol envelope."""
     normalized = normalize_messages(messages)
-    return {
+    return _wrap_ul_payload({
         "model": model,
         "messages": [
             {
@@ -346,7 +350,7 @@ def build_provider_payload(
             "protocol_version": PROTOCOL_VERSION,
             **dict(metadata or {}),
         },
-    }
+    })
 
 
 def describe_protocol_use(
@@ -366,7 +370,7 @@ def describe_protocol_use(
         persona_mode=persona_mode,
         tool_result=tool_result,
     )
-    return {
+    return _wrap_ul_payload({
         **summary,
         "summary": (
             f"Jarvis is using {PROTOCOL_ID}/{PROTOCOL_VERSION} with "
@@ -374,4 +378,4 @@ def describe_protocol_use(
             f"{', '.join(summary['channels']) or 'dialogue'}."
         ),
         "current_goal": _clip_text(current_goal, limit=160),
-    }
+    })

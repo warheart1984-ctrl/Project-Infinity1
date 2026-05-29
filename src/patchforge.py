@@ -133,7 +133,9 @@ class PatchForge:
         plan.hunk_count = len(plan.hunks)
         plan.review_complete = len(plan.hunks) == 0
         plan.unified_diff = self.render_unified_diff(plan.to_dict())
-        return plan.to_dict()
+        from src.aais_ul_substrate import wrap_runtime_snapshot
+
+        return wrap_runtime_snapshot(plan.to_dict())
 
     def render_unified_diff(self, plan: dict[str, Any]) -> str:
         """Render an honest proposal diff preview without mutating files."""

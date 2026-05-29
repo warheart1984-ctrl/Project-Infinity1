@@ -7,6 +7,10 @@ module admission checks, and emit bounded audit metadata.
 
 from __future__ import annotations
 
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
 from typing import Any
 import uuid
 
@@ -74,7 +78,7 @@ def build_memory_board_enforcer_module_spec(
     module_id: str = MEMORY_BOARD_ENFORCER_COMPONENT_ID,
 ) -> dict[str, Any]:
     """Return a compliant module-governance spec for the gateway itself."""
-    return {
+    return _wrap_ul_payload({
         "module_id": module_id,
         "label": "Memory Board Enforcer",
         "lane": "memory_governance",
@@ -149,7 +153,7 @@ def build_memory_board_enforcer_module_spec(
             "hidden_logging": False,
             "exfiltrates_data": False,
         },
-    }
+    })
 
 
 class MemoryBoardEnforcer:
@@ -239,11 +243,11 @@ class MemoryBoardEnforcer:
                 )
             )
             component = get_component(self.component_id)
-        return {
+        return _wrap_ul_payload({
             "component_id": component.component_id,
             "phase": component.phase.value,
             "allowed_contexts": list(component.allowed_contexts),
-        }
+        })
 
     def _ensure_module_record(self) -> dict[str, Any]:
         record = self.module_governance_controller.get_module(self.component_id)
@@ -258,12 +262,12 @@ class MemoryBoardEnforcer:
 
     def _phase_gate_payload(self, decision: str, *, runtime_context: Any, reason: str | None = None) -> dict[str, Any]:
         component = self._ensure_phase_component()
-        return {
+        return _wrap_ul_payload({
             "decision": "ALLOW" if str(decision).upper() == "ALLOW" else "BLOCK",
             "component": component,
             "runtime_context": _normalize_runtime_context(runtime_context),
             "reason": _clean_text(reason) or None,
-        }
+        })
 
     def _seam_runtime_dir(self) -> Any:
         return getattr(self.module_governance_controller, "runtime_dir", None)

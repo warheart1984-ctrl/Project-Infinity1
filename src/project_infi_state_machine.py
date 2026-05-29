@@ -22,7 +22,12 @@ carryover state.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
+from datetime import datetime, timedelta
+from src.datetime_compat import UTC
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Tuple, Literal, Dict, Any
@@ -344,7 +349,7 @@ class ProjectInfiStateMachine:
         ctx.pending_mutations = 0
         ctx.wait_count += 1
         mode_after = self._sync_mode(ctx)
-        return {
+        return _wrap_ul_payload({
             "mode_before": mode_before,
             "mode_after": mode_after,
             "risk_delta": risk_delta,
@@ -352,7 +357,7 @@ class ProjectInfiStateMachine:
             "debt_paid": debt_paid,
             "debt_total": int(ctx.debt.total),
             "wait_count": int(ctx.wait_count),
-        }
+        })
 
     def schedule_recheck(
         self,
@@ -753,7 +758,7 @@ class ProjectInfiStateMachine:
                 debt_total=ctx.debt.total,
                 risk_profile=ctx.risk_profile,
             )
-            return {
+            return _wrap_ul_payload({
                 "legitimacy": None,
                 "l1": l1,
                 "j1010": j1010,
@@ -761,7 +766,7 @@ class ProjectInfiStateMachine:
                 "final_truth": final_truth,
                 "status": CycleDisposition.REJECTED_NO_ADMISSION.value,
                 "event_log": list(ctx.event_log),
-            }
+            })
 
         ctx.debt = debt_assessment.record.copy()
         burden_before = self.assess_burden(ctx.debt, ctx.risk_profile)
@@ -775,7 +780,7 @@ class ProjectInfiStateMachine:
                 disposition=legitimacy.disposition.value,
             )
         if not legitimacy.allowed:
-            return {
+            return _wrap_ul_payload({
                 "legitimacy": legitimacy,
                 "l1": l1,
                 "j1010": j1010,
@@ -784,7 +789,7 @@ class ProjectInfiStateMachine:
                 "status": legitimacy.disposition.value,
                 "reason": legitimacy.reason,
                 "event_log": list(ctx.event_log),
-            }
+            })
 
         ttl, scores = self.compute_adaptive_ttl(ctx, request, l1, j1010, debt_assessment, final_truth, legitimacy)
         ready_at = submitted_at + ttl
@@ -810,7 +815,7 @@ class ProjectInfiStateMachine:
                 recheck_count=int(request.recheck_count or 0),
                 mode=ctx.mode,
             )
-            return {
+            return _wrap_ul_payload({
                 "legitimacy": legitimacy,
                 "l1": l1,
                 "j1010": j1010,
@@ -822,7 +827,7 @@ class ProjectInfiStateMachine:
                 "next_check_at": next_check_at.isoformat(),
                 "scores": scores,
                 "event_log": list(ctx.event_log),
-            }
+            })
 
         admitted = self.admit(ctx, final_truth, debt_assessment.record)
         ctx.current_state = admitted.state
@@ -862,7 +867,7 @@ class ProjectInfiStateMachine:
             debt_total=ctx.debt.total,
         )
 
-        return {
+        return _wrap_ul_payload({
             "legitimacy": legitimacy,
             "l1": l1,
             "j1010": j1010,
@@ -876,7 +881,7 @@ class ProjectInfiStateMachine:
             "strength_bonus": strength_bonus,
             "burden": burden_after,
             "event_log": list(ctx.event_log),
-        }
+        })
 
 
 if __name__ == "__main__":

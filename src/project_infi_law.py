@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 from typing import Any
 
 from src.aris_integration import ARIS_CONTRACT_VERSION, build_aris_enforcement

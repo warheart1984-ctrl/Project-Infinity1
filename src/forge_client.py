@@ -130,7 +130,9 @@ class ForgeClient:
 
         if normalized is None:
             raise RuntimeError("Forge contractor returned an invalid response contract.")
-        return normalized
+        from src.aais_ul_substrate import wrap_contractor_payload
+
+        return wrap_contractor_payload(normalized)
 
     def run_code_task(
         self,

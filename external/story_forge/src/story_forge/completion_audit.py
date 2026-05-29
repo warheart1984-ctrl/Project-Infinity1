@@ -148,7 +148,7 @@ def run_command(
 
 
 def check_law_alignment(root: Path) -> AuditCheck:
-    lawbook_path = root / "REPO_LAWBOOK.md"
+    lawbook_path = root / "document/law/REPO_LAWBOOK.md"
     project_laws_path = root / "PROJECT_LAWS.md"
     details: list[str] = []
     passed = True
@@ -157,16 +157,16 @@ def check_law_alignment(root: Path) -> AuditCheck:
         return AuditCheck(
             name="Law alignment",
             passed=False,
-            details=["REPO_LAWBOOK.md is missing."],
+            details=["document/law/REPO_LAWBOOK.md is missing."],
         )
 
     lawbook_text = _read_text(lawbook_path)
     if "## Completion Audit Law" not in lawbook_text:
         passed = False
-        details.append("REPO_LAWBOOK.md does not contain the Completion Audit Law.")
+        details.append("document/law/REPO_LAWBOOK.md does not contain the Completion Audit Law.")
     if "fail closed" not in lawbook_text.lower():
         passed = False
-        details.append("REPO_LAWBOOK.md does not describe fail-closed enforcement.")
+        details.append("document/law/REPO_LAWBOOK.md does not describe fail-closed enforcement.")
 
     if not project_laws_path.exists():
         passed = False
@@ -363,7 +363,7 @@ def render_audit_markdown(report: AuditReport) -> str:
         "",
         f"Audit date: {report.generated_at[:10]}",
         f"Scope: {report.scope}",
-        "Primary law source: `REPO_LAWBOOK.md`",
+        "Primary law source: `document/law/REPO_LAWBOOK.md`",
         f"Audit mode: `{report.mode}`",
         "",
         "## Summary",

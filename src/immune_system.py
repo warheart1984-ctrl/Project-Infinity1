@@ -7,7 +7,8 @@ persists a compact audit trail of what changed and why.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import json
 import os
 from pathlib import Path
@@ -119,7 +120,9 @@ class ImmuneSystemController:
                     None,
                 )
             state["active_incident"] = dict(active_incident) if active_incident else None
-            return state
+            from src.aais_ul_substrate import wrap_runtime_snapshot
+
+            return wrap_runtime_snapshot(state)
 
     def list_events(self, limit: int = 25) -> list[dict[str, Any]]:
         normalized_limit = max(1, min(int(limit or 25), 250))

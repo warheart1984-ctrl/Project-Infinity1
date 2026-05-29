@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
 import ast
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import json
 import os
 from pathlib import Path
@@ -331,14 +336,14 @@ class EvolvingWorkspaceIntel:
                 reverse=True,
             )
             records = [record for *_, record in ranked]
-        return {
+        return _wrap_ul_payload({
             "ok": True,
             "query": normalized_query,
             "path_prefix": self._scope_prefix(self._iter_visible_files(), path_prefix),
             "limit": capped_limit,
             "symbol_count": len(records[:capped_limit]),
             "symbols": [record.payload() for record in records[:capped_limit]],
-        }
+        })
 
     def read_symbol(
         self,
@@ -381,7 +386,7 @@ class EvolvingWorkspaceIntel:
             record.content.lower(),
         ):
             raise FileNotFoundError(f"Symbol `{symbol}` was not found.")
-        return {"ok": True, "symbol": record.payload(include_content=True)}
+        return _wrap_ul_payload({"ok": True, "symbol": record.payload(include_content=True)})
 
     def inspect_repo_map(
         self,
@@ -494,7 +499,7 @@ class EvolvingWorkspaceIntel:
             summary_parts.append(f"Related: {', '.join(_unique_preserving_order(related_paths, limit=4))}.")
         if likely_test_files:
             summary_parts.append(f"Likely tests: {', '.join(likely_test_files[:3])}.")
-        return {
+        return _wrap_ul_payload({
             "ok": True,
             "scope_prefix": scope_prefix,
             "goal": " ".join(str(goal or "").split()),
@@ -506,7 +511,7 @@ class EvolvingWorkspaceIntel:
             "edge_count": len(edges),
             "nodes": nodes,
             "edges": edges,
-        }
+        })
 
     def detect_project_profile(self, *, path_prefix: str | None = None) -> dict[str, Any]:
         files = self._iter_visible_files()
@@ -574,7 +579,7 @@ class EvolvingWorkspaceIntel:
             if "frontend/package.json" in lower_files:
                 entrypoints.append(lower_files["frontend/package.json"])
 
-        return {
+        return _wrap_ul_payload({
             "ok": True,
             "scope_prefix": scope_prefix,
             "languages": _unique_preserving_order(languages),
@@ -587,7 +592,7 @@ class EvolvingWorkspaceIntel:
             "entrypoints": _unique_preserving_order(entrypoints),
             "signals": _unique_preserving_order(signals, limit=10),
             "file_count": len(scoped_files),
-        }
+        })
 
 
 class EvolvingApprovalAuditStore:
@@ -611,18 +616,18 @@ class EvolvingApprovalAuditStore:
     def _load_payload(self) -> dict[str, Any]:
         path = self._resolve_path()
         if not path.exists():
-            return {"entries": [], "sessions": {}}
+            return _wrap_ul_payload({"entries": [], "sessions": {}})
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
-            return {"entries": [], "sessions": {}}
+            return _wrap_ul_payload({"entries": [], "sessions": {}})
         if isinstance(payload, list):
-            return {
+            return _wrap_ul_payload({
                 "entries": [entry for entry in payload if isinstance(entry, dict)],
                 "sessions": {},
-            }
+            })
         if not isinstance(payload, dict):
-            return {"entries": [], "sessions": {}}
+            return _wrap_ul_payload({"entries": [], "sessions": {}})
         entries = payload.get("entries")
         if not isinstance(entries, list):
             entries = []
@@ -646,10 +651,10 @@ class EvolvingApprovalAuditStore:
                 ),
                 "updated_at": str(snapshot.get("updated_at") or ""),
             }
-        return {
+        return _wrap_ul_payload({
             "entries": [entry for entry in entries if isinstance(entry, dict)],
             "sessions": normalized_sessions,
-        }
+        })
 
     def _load_entries(self) -> list[dict[str, Any]]:
         return self._load_payload().get("entries", [])
@@ -923,21 +928,21 @@ def _resolve_script_path_candidates(raw: str, source_dir: Path, available_paths:
 
 def _parse_json(content: str | None) -> dict[str, Any]:
     if not content:
-        return {}
+        return _wrap_ul_payload({})
     try:
         payload = json.loads(content)
     except json.JSONDecodeError:
-        return {}
+        return _wrap_ul_payload({})
     return payload if isinstance(payload, dict) else {}
 
 
 def _parse_toml(content: str | None) -> dict[str, Any]:
     if not content:
-        return {}
+        return _wrap_ul_payload({})
     try:
         payload = tomllib.loads(content)
     except tomllib.TOMLDecodeError:
-        return {}
+        return _wrap_ul_payload({})
     return payload if isinstance(payload, dict) else {}
 
 

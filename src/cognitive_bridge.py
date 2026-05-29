@@ -14,6 +14,7 @@ from typing import Any
 
 from src.aris_integration import build_aris_enforcement
 from src.governed_event_chain import governed_event
+from src.invariant_engine import InvariantEngine
 from src.immune_system import ImmuneSystemController, immune_system
 from src.jarvis_detachment_guard import JarvisDetachmentGuard, jarvis_detachment_guard
 
@@ -33,6 +34,7 @@ EFFECTFUL_PACKET_TYPES = {
     "capability_execution",
 }
 MODEL_ONLY_SOURCES = {"llm", "predictor", "swarm"}
+BRIDGE_INVARIANT_PACKET_TYPES = frozenset({"deliberation_request", "generation_request"})
 RISK_LEVELS = {"low", "medium", "high", "critical"}
 DECISION_ALLOW = "ALLOW"
 DECISION_DEGRADE = "DEGRADE"
@@ -437,6 +439,63 @@ def _build_governed_event_feed(packet: dict[str, Any], governance: GovernancePac
     }
 
 
+def _finalize_bridge_result(result: dict[str, Any]) -> dict[str, Any]:
+    from src.aais_ul_substrate import wrap_bridge_result
+
+    return wrap_bridge_result(result)
+
+
+def _build_bridge_invariant_block_result(
+    normalized: dict[str, Any],
+    governance: GovernancePacket,
+    detachment: dict[str, Any],
+    bridge_invariant: dict[str, Any],
+) -> dict[str, Any]:
+    summary = str(
+        bridge_invariant.get("summary")
+        or "Cognitive Bridge blocked execution because the invariant engine rejected the packet."
+    )
+    return _finalize_bridge_result(
+        {
+            "bridge_id": BRIDGE_ID,
+            "version": BRIDGE_VERSION,
+            "decision": DECISION_BLOCK,
+            "status": "blocked",
+            "summary": summary,
+            "execution_allowed": False,
+            "runtime_context": governance.runtime_context,
+            "requires_approval": governance.requires_approval,
+            "approval_granted": governance.approval_granted,
+            "risk": governance.risk,
+            "normalized_input": normalized,
+            "governance_packet": asdict(governance),
+            "doctrine_path": list(governance.doctrine_path),
+            "invariants": list(governance.invariants),
+            "detachment_guard": detachment,
+            "bridge_invariant": bridge_invariant,
+            "aris_enforcement": {
+                "status": "skipped",
+                "reason": "bridge_invariant_blocked",
+            },
+            "event_feed": None,
+            "governed_event": None,
+            "reason_codes": [
+                "bridge_invariant_blocked",
+                *list(bridge_invariant.get("reason_codes") or []),
+            ],
+            "notes": ["invariant_engine_live_gate"],
+            "trace": [
+                {"stage": "intent", "value": governance.intent},
+                {"stage": "doctrine", "value": list(governance.doctrine_path)},
+                {"stage": "invariants", "value": list(governance.invariants)},
+                {"stage": "detachment_guard", "value": detachment},
+                {"stage": "bridge_invariant", "value": bridge_invariant},
+                {"stage": "decision", "value": DECISION_BLOCK},
+            ],
+        }
+    )
+
+
 def _build_governance_packet(packet: dict[str, Any]) -> GovernancePacket:
     fingerprint_payload = _payload_for_governance_fingerprint(packet["payload"])
     doctrine_path = _derive_doctrine_path(
@@ -528,38 +587,50 @@ class CognitiveBridgeService:
                 detachment.get("summary")
                 or "Cognitive Bridge blocked execution because Jarvis must remain inside AAIS."
             )
-            return {
-                "bridge_id": BRIDGE_ID,
-                "version": BRIDGE_VERSION,
-                "decision": DECISION_BLOCK,
-                "status": "blocked",
-                "summary": summary,
-                "execution_allowed": False,
-                "runtime_context": governance.runtime_context,
-                "requires_approval": governance.requires_approval,
-                "approval_granted": governance.approval_granted,
-                "risk": governance.risk,
-                "normalized_input": normalized,
-                "governance_packet": asdict(governance),
-                "doctrine_path": list(governance.doctrine_path),
-                "invariants": list(governance.invariants),
-                "detachment_guard": detachment,
-                "aris_enforcement": {
-                    "status": "skipped",
-                    "reason": "detachment_guard_blocked",
-                },
-                "event_feed": None,
-                "governed_event": None,
-                "reason_codes": ["jarvis_detachment_guard_blocked", *list(detachment.get("reason_codes") or [])],
-                "notes": ["jarvis_containment_preserved"],
-                "trace": [
-                    {"stage": "intent", "value": governance.intent},
-                    {"stage": "doctrine", "value": list(governance.doctrine_path)},
-                    {"stage": "invariants", "value": list(governance.invariants)},
-                    {"stage": "detachment_guard", "value": detachment},
-                    {"stage": "decision", "value": DECISION_BLOCK},
-                ],
-            }
+            return _finalize_bridge_result(
+                {
+                    "bridge_id": BRIDGE_ID,
+                    "version": BRIDGE_VERSION,
+                    "decision": DECISION_BLOCK,
+                    "status": "blocked",
+                    "summary": summary,
+                    "execution_allowed": False,
+                    "runtime_context": governance.runtime_context,
+                    "requires_approval": governance.requires_approval,
+                    "approval_granted": governance.approval_granted,
+                    "risk": governance.risk,
+                    "normalized_input": normalized,
+                    "governance_packet": asdict(governance),
+                    "doctrine_path": list(governance.doctrine_path),
+                    "invariants": list(governance.invariants),
+                    "detachment_guard": detachment,
+                    "aris_enforcement": {
+                        "status": "skipped",
+                        "reason": "detachment_guard_blocked",
+                    },
+                    "event_feed": None,
+                    "governed_event": None,
+                    "reason_codes": ["jarvis_detachment_guard_blocked", *list(detachment.get("reason_codes") or [])],
+                    "notes": ["jarvis_containment_preserved"],
+                    "trace": [
+                        {"stage": "intent", "value": governance.intent},
+                        {"stage": "doctrine", "value": list(governance.doctrine_path)},
+                        {"stage": "invariants", "value": list(governance.invariants)},
+                        {"stage": "detachment_guard", "value": detachment},
+                        {"stage": "decision", "value": DECISION_BLOCK},
+                    ],
+                }
+            )
+        bridge_invariant = None
+        if governance.packet_type in BRIDGE_INVARIANT_PACKET_TYPES:
+            bridge_invariant = InvariantEngine.validate_bridge_packet(normalized, asdict(governance))
+            if not bridge_invariant["allows"]:
+                return _build_bridge_invariant_block_result(
+                    normalized,
+                    governance,
+                    detachment,
+                    bridge_invariant,
+                )
         aris_enforcement = build_aris_enforcement(
             details=normalized["payload"],
             runtime_context=governance.runtime_context,
@@ -647,6 +718,7 @@ class CognitiveBridgeService:
             "doctrine_path": list(governance.doctrine_path),
             "invariants": list(governance.invariants),
             "detachment_guard": detachment,
+            "bridge_invariant": bridge_invariant,
             "aris_enforcement": aris_enforcement,
             "event_feed": event_feed,
             "governed_event": governed,
@@ -657,6 +729,11 @@ class CognitiveBridgeService:
                 {"stage": "doctrine", "value": list(governance.doctrine_path)},
                 {"stage": "invariants", "value": list(governance.invariants)},
                 {"stage": "detachment_guard", "value": detachment},
+                *(
+                    [{"stage": "bridge_invariant", "value": bridge_invariant}]
+                    if bridge_invariant is not None
+                    else []
+                ),
                 {"stage": "aris", "value": aris_enforcement},
                 {"stage": "governance_packet", "value": asdict(governance)},
                 {"stage": "decision", "value": decision},
@@ -689,7 +766,7 @@ class CognitiveBridgeService:
             else:
                 result["notes"] = [*result["notes"], "governed_llm_proposal_ready"]
             result["trace"].append({"stage": "final_decision", "value": result["decision"]})
-        return result
+        return _finalize_bridge_result(result)
 
 
 def route_to_bridge(

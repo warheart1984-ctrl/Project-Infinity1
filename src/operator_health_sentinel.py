@@ -317,7 +317,8 @@ class OperatorHealthSentinel:
         )
 
         scores = observed_metrics["scores"]
-        return {
+        return self._wrap_snapshot(
+            {
             "module_id": MODULE_ID,
             "version": MODULE_VERSION,
             "status": SNAPSHOT_STATUS_ADVISORY,
@@ -352,7 +353,14 @@ class OperatorHealthSentinel:
             "advisory_only": True,
             "execution_rights": "none",
             "mutation_rights": "none",
-        }
+            }
+        )
+
+    @staticmethod
+    def _wrap_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
+        from src.aais_ul_substrate import attach_ul_substrate
+
+        return attach_ul_substrate(dict(snapshot))
 
     def _ensure_phase_component(self) -> dict[str, Any]:
         try:
@@ -424,7 +432,8 @@ class OperatorHealthSentinel:
         phase_gate: dict[str, Any],
         module_governance_payload: dict[str, Any],
     ) -> dict[str, Any]:
-        return {
+        return self._wrap_snapshot(
+            {
             "module_id": MODULE_ID,
             "version": MODULE_VERSION,
             "status": SNAPSHOT_STATUS_BLOCKED,
@@ -459,7 +468,8 @@ class OperatorHealthSentinel:
             "advisory_only": True,
             "execution_rights": "none",
             "mutation_rights": "none",
-        }
+            }
+        )
 
     def _marker_counts(self, operator_text: str | None) -> dict[str, int]:
         normalized_text = _clean_text(operator_text, limit=1200).lower()

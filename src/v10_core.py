@@ -126,24 +126,28 @@ class V10CoreEngine(V9CoreEngine):
         memory["last_quality_report"] = quality_report
         self._save_memory(memory)
 
-        return {
-            "status": "completed",
-            "version": "v10",
-            "input": prompt,
-            "context": scene_context,
-            "location": location,
-            "characters": cast,
-            "provider": provider["name"],
-            "model": provider["model"],
-            "scene_brief": scene_brief,
-            "pipeline": pipeline,
-            "output": current_text,
-            "notes_by_stage": notes_by_stage,
-            "quality_report": quality_report,
-            "logs": logs,
-            "memory_path": str(self.memory_path),
-            "scene": scene_entry,
-        }
+        from src.aais_ul_substrate import wrap_runtime_snapshot
+
+        return wrap_runtime_snapshot(
+            {
+                "status": "completed",
+                "version": "v10",
+                "input": prompt,
+                "context": scene_context,
+                "location": location,
+                "characters": cast,
+                "provider": provider["name"],
+                "model": provider["model"],
+                "scene_brief": scene_brief,
+                "pipeline": pipeline,
+                "output": current_text,
+                "notes_by_stage": notes_by_stage,
+                "quality_report": quality_report,
+                "logs": logs,
+                "memory_path": str(self.memory_path),
+                "scene": scene_entry,
+            }
+        )
 
     def _build_scene_brief(
         self,

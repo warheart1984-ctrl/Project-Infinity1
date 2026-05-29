@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
+from datetime import datetime
+from src.datetime_compat import UTC
 import json
 from pathlib import Path
 import threading
@@ -99,7 +104,7 @@ class MemorySmith:
             project_summary["summary"] = "Latest known verification state is green."
         elif latest_test_status == "failed":
             project_summary["summary"] = "Latest known verification state still has failures."
-        return project_summary
+        return _wrap_ul_payload(project_summary)
 
     def _normalize_review_targets(self, context: dict[str, Any]) -> tuple[list[str], list[str]]:
         """Return explicit expiry targets supplied by the caller, when present."""
@@ -208,7 +213,7 @@ class MemorySmith:
             payload["expired"].extend(expired)
             payload["durable"].extend(durable)
             self._save_payload(payload)
-        return review
+        return _wrap_ul_payload(review)
 
     def observe_lifecycle(self, session_id: str, lifecycle: dict[str, Any]) -> dict[str, Any] | None:
         action_id = str(lifecycle.get("action_id") or "").strip().lower()
@@ -231,9 +236,9 @@ class MemorySmith:
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
             payload = self._load_payload()
-        return {
+        return _wrap_ul_payload({
             "review_count": len(payload.get("reviews") or []),
             "durable_count": len(payload.get("durable") or []),
             "expired_count": len(payload.get("expired") or []),
             "project_summary": dict(payload.get("project_summary") or {}),
-        }
+        })

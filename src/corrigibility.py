@@ -10,7 +10,8 @@ This module maps the "corrigibility engine" idea onto the real AAIS runtime:
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import re
 
 from src.system_guard import system_guard
@@ -92,16 +93,20 @@ def _clip_text(value: str | None, limit: int = 220) -> str:
 
 def default_corrigibility_state() -> dict:
     """Return a fresh default state for one AAIS chat session."""
-    return {
-        "status": "steady",
-        "pending": None,
-        "last_action": None,
-        "last_command": None,
-        "last_severity": "none",
-        "last_applied_at": None,
-        "recent": [],
-        "total_corrections": 0,
-    }
+    from src.aais_ul_substrate import wrap_runtime_snapshot
+
+    return wrap_runtime_snapshot(
+        {
+            "status": "steady",
+            "pending": None,
+            "last_action": None,
+            "last_command": None,
+            "last_severity": "none",
+            "last_applied_at": None,
+            "recent": [],
+            "total_corrections": 0,
+        }
+    )
 
 
 def ensure_corrigibility_state(session) -> dict:
@@ -113,11 +118,19 @@ def ensure_corrigibility_state(session) -> dict:
     else:
         for key, value in default_corrigibility_state().items():
             state.setdefault(key, value)
-    return state
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(state)
 
 
 class CorrigibilityEngine:
     """Handle explicit operator corrections in an AAIS-native way."""
+
+    @staticmethod
+    def _wrap_response(payload: dict) -> dict:
+        from src.aais_ul_substrate import attach_ul_substrate
+
+        return attach_ul_substrate(dict(payload))
 
     def classify(self, command: str) -> dict | None:
         """Detect whether a command is an explicit self-correction, rewind, or pause."""
@@ -206,27 +219,29 @@ class CorrigibilityEngine:
                     "summary": "System Guard was paused from an explicit operator correction.",
                 },
             )
-            return {
-                "response": snapshot.get(
-                    "summary",
-                    "System Guard is paused. New Jarvis turns will stay quiet until resume.",
-                ),
-                "tool_result": {
-                    "type": "corrigibility",
-                    "action": {
-                        "id": "corrigibility_soft_pause",
-                        "label": "Soft Pause",
+            return self._wrap_response(
+                {
+                    "response": snapshot.get(
+                        "summary",
+                        "System Guard is paused. New Jarvis turns will stay quiet until resume.",
+                    ),
+                    "tool_result": {
+                        "type": "corrigibility",
+                        "action": {
+                            "id": "corrigibility_soft_pause",
+                            "label": "Soft Pause",
+                        },
+                        "status": "paused",
+                        "direction": correction["direction"],
+                        "severity": correction["severity"],
+                        "rating": correction["rating"],
+                        "command": cleaned,
+                        "system_guard": snapshot,
+                        "corrigibility": state,
+                        "summary": "System Guard paused new Jarvis work after an explicit correction.",
                     },
-                    "status": "paused",
-                    "direction": correction["direction"],
-                    "severity": correction["severity"],
-                    "rating": correction["rating"],
-                    "command": cleaned,
-                    "system_guard": snapshot,
-                    "corrigibility": state,
-                    "summary": "System Guard paused new Jarvis work after an explicit correction.",
-                },
-            }
+                }
+            )
 
         if correction["action"] == "revert":
             removed = session.rollback_last_assistant_turn(skip_tool_types={"corrigibility"})
@@ -268,25 +283,27 @@ class CorrigibilityEngine:
                     "summary": summary,
                 },
             )
-            return {
-                "response": response,
-                "tool_result": {
-                    "type": "corrigibility",
-                    "action": {
-                        "id": "corrigibility_revert",
-                        "label": "Rewind Last Answer",
+            return self._wrap_response(
+                {
+                    "response": response,
+                    "tool_result": {
+                        "type": "corrigibility",
+                        "action": {
+                            "id": "corrigibility_revert",
+                            "label": "Rewind Last Answer",
+                        },
+                        "status": "completed" if removed else "noop",
+                        "direction": correction["direction"],
+                        "severity": correction["severity"],
+                        "rating": correction["rating"],
+                        "command": cleaned,
+                        "removed_turn": removed,
+                        "pending": pending,
+                        "corrigibility": state,
+                        "summary": summary,
                     },
-                    "status": "completed" if removed else "noop",
-                    "direction": correction["direction"],
-                    "severity": correction["severity"],
-                    "rating": correction["rating"],
-                    "command": cleaned,
-                    "removed_turn": removed,
-                    "pending": pending,
-                    "corrigibility": state,
-                    "summary": summary,
-                },
-            }
+                }
+            )
 
         pending = self._queue_pending_correction(
             state,
@@ -304,24 +321,26 @@ class CorrigibilityEngine:
                 "summary": "Queued an operator correction for the next generated reply.",
             },
         )
-        return {
-            "response": self._render_self_correction_response(correction["severity"]),
-            "tool_result": {
-                "type": "corrigibility",
-                "action": {
-                    "id": "corrigibility_self_correct",
-                    "label": "Self-Correct",
+        return self._wrap_response(
+            {
+                "response": self._render_self_correction_response(correction["severity"]),
+                "tool_result": {
+                    "type": "corrigibility",
+                    "action": {
+                        "id": "corrigibility_self_correct",
+                        "label": "Self-Correct",
+                    },
+                    "status": "queued",
+                    "direction": correction["direction"],
+                    "severity": correction["severity"],
+                    "rating": correction["rating"],
+                    "command": cleaned,
+                    "pending": pending,
+                    "corrigibility": state,
+                    "summary": "Queued an explicit operator correction for the next generated reply.",
                 },
-                "status": "queued",
-                "direction": correction["direction"],
-                "severity": correction["severity"],
-                "rating": correction["rating"],
-                "command": cleaned,
-                "pending": pending,
-                "corrigibility": state,
-                "summary": "Queued an explicit operator correction for the next generated reply.",
-            },
-        }
+            }
+        )
 
     def apply_to_next_generation(self, session) -> str | None:
         """Fold any pending correction into the next model-generated reply."""

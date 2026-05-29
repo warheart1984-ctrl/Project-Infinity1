@@ -165,6 +165,12 @@ def _base_output(
     }
 
 
+def _with_ul_substrate(result: dict[str, Any]) -> dict[str, Any]:
+    from src.aais_ul_substrate import wrap_runtime_snapshot
+
+    return wrap_runtime_snapshot(result)
+
+
 def validate_request(request: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(request, dict):
         raise ValueError("Request must be a dict.")
@@ -269,28 +275,32 @@ def run_story_forge_audio_capability(request: dict[str, Any]) -> dict[str, Any]:
         assert_executable(STORY_FORGE_AUDIO_CAPABILITY_COMPONENT_ID, runtime_context)
     except PhaseViolationError as exc:
         artifact = _artifact_from_request(request if isinstance(request, dict) else None)
-        return _base_output(
-            status="rejected",
-            request_identity=_artifact_identity(artifact) if artifact is not None else None,
-            rendered_video_path=_clean_text(
-                request.get("rendered_video_path") or request.get("video_path")
-            ) if isinstance(request, dict) else "",
-            error_type="AuthorityRejected",
-            message=str(exc),
+        return _with_ul_substrate(
+            _base_output(
+                status="rejected",
+                request_identity=_artifact_identity(artifact) if artifact is not None else None,
+                rendered_video_path=_clean_text(
+                    request.get("rendered_video_path") or request.get("video_path")
+                ) if isinstance(request, dict) else "",
+                error_type="AuthorityRejected",
+                message=str(exc),
+            )
         )
 
     try:
         validated = validate_request(request)
     except Exception as exc:  # noqa: BLE001
         artifact = _artifact_from_request(request if isinstance(request, dict) else None)
-        return _base_output(
-            status="rejected",
-            request_identity=_artifact_identity(artifact) if artifact is not None else None,
-            rendered_video_path=_clean_text(
-                request.get("rendered_video_path") or request.get("video_path")
-            ) if isinstance(request, dict) else "",
-            error_type="ValidationRejected",
-            message=str(exc),
+        return _with_ul_substrate(
+            _base_output(
+                status="rejected",
+                request_identity=_artifact_identity(artifact) if artifact is not None else None,
+                rendered_video_path=_clean_text(
+                    request.get("rendered_video_path") or request.get("video_path")
+                ) if isinstance(request, dict) else "",
+                error_type="ValidationRejected",
+                message=str(exc),
+            )
         )
 
     _, run_story_forge_movie_audio_pipeline = _story_forge_types(validated["story_forge_src"])
@@ -300,7 +310,7 @@ def run_story_forge_audio_capability(request: dict[str, Any]) -> dict[str, Any]:
         output_root=validated["output_root"],
         movie_output_path=validated["movie_output_path"],
     )
-    return enforce_output_contract(result)
+    return _with_ul_substrate(enforce_output_contract(result))
 
 
 __all__ = [

@@ -8,7 +8,8 @@ forcing Jarvis to become a second app shell.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 import hashlib
 import json
 from typing import Any
@@ -968,7 +969,7 @@ def build_modular_provider_preview(
         specialist_profile=context.metadata.get("specialist_profile"),
     )
 
-    return {
+    preview = {
         "modules": module_dicts,
         "provider_messages": [message.to_dict() for message in provider_messages],
         "provider_payload": payload,
@@ -990,6 +991,16 @@ def build_modular_provider_preview(
         "reasoning_packet": reasoning_packet,
         "reasoning_summary": reasoning_packet["summary"],
     }
+    if context.metadata.get("cloud_forge_context"):
+        from src.cloud_forge.integration import enrich_preview_with_cloud_forge
+
+        preview = enrich_preview_with_cloud_forge(
+            preview,
+            dict(context.metadata.get("cloud_forge_context") or {}),
+        )
+    from src.aais_ul_substrate import wrap_modular_preview
+
+    return wrap_modular_preview(preview)
 
 
 def build_protocol_view(

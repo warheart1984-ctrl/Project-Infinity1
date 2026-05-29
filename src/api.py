@@ -16,7 +16,8 @@ import re
 import tempfile
 import threading
 from dataclasses import asdict, is_dataclass
-from datetime import UTC, datetime
+from datetime import datetime
+from src.datetime_compat import UTC
 from io import BytesIO
 from uuid import uuid4
 
@@ -28,6 +29,7 @@ from src.anti_drift import (
     enforce_anti_drift,
 )
 from src.aais_blueprint import build_aais_blueprint
+from src.aais_ul_substrate import attach_ul_substrate, substrate_status
 from src.config import get_config
 from src.conversation_memory import (
     ConversationTurn,
@@ -60,6 +62,11 @@ from src.cognitive_bridge import (
     CognitiveBridgeValidationError,
     summarize_bridge_result,
 )
+from src.ugr.unified_runtime import ugr_runtime
+from src.ugr.operator_console.snapshot import build_operator_console_snapshot
+from src.ugr.operator_console.mesh_health import poll_mesh_health
+from src.ugr.operator_console.trace_viewer import load_deliberation_traces
+from src.ugr.operator_console.forge_platform import load_forge_platform_dashboard
 from src.jarvis_detachment_guard import build_bridge_attestation
 from src.critic import mission_critic
 from src.corrigibility import corrigibility_engine, default_corrigibility_state
@@ -8213,7 +8220,7 @@ def execute_capability_bridge_selection():
             runtime_context="operator_runtime",
         )
         result["capability_bridge"] = jarvis_operator.capability_bridge_snapshot()
-        return jsonify(result), _phase_gate_http_status(result)
+        return jsonify(attach_ul_substrate(result)), _phase_gate_http_status(result)
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
@@ -8380,16 +8387,18 @@ def manage_run_ledger():
                     "truth_status": data.get("truth_status"),
                 },
             )
-            return jsonify({"run": run}), 201
+            return jsonify(attach_ul_substrate({"run": run})), 201
 
         session_id = request.args.get("session_id")
         limit = max(1, min(int(request.args.get("limit", 20)), 100))
         truth_scope = normalize_truth_scope(request.args.get("truth_scope"), default="live")
         return jsonify(
-            {
-                "runs": jarvis_operator.list_runs(session_id=session_id, limit=limit, truth_scope=truth_scope),
-                "truth_scope": truth_scope,
-            }
+            attach_ul_substrate(
+                {
+                    "runs": jarvis_operator.list_runs(session_id=session_id, limit=limit, truth_scope=truth_scope),
+                    "truth_scope": truth_scope,
+                }
+            )
         )
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
@@ -8405,7 +8414,7 @@ def get_run_ledger_record(run_id):
         run = jarvis_operator.get_run(run_id)
         if not run:
             return jsonify({"error": "Run not found"}), 404
-        return jsonify({"run": run})
+        return jsonify(attach_ul_substrate({"run": run}))
     except Exception as e:
         logger.error(f"Error reading run ledger record: {e}")
         return jsonify({"error": str(e)}), 500
@@ -8664,25 +8673,29 @@ def run_forge_code():
                 },
             )
         return jsonify(
-            {
-                "task_id": forge_payload["task_id"],
-                "task": forge_payload["task"],
-                "kind": forge_payload["kind"],
-                "result": forge_payload["result"],
-                "auto_approve": forge_payload["auto_approve"],
-                "law_enforcement": dict(
-                    forge_payload.get("law_enforcement")
-                    or (forge_payload.get("result") or {}).get("law_enforcement")
-                    or {}
-                ),
-                "ul_snapshot": dict(
-                    forge_payload.get("ul_snapshot")
-                    or (forge_payload.get("result") or {}).get("ul_snapshot")
-                    or {}
-                ),
-                "workspace_context": workspace_context,
-                "forge_context": forge_context_summary,
-            }
+            attach_ul_substrate(
+                {
+                    "task_id": forge_payload["task_id"],
+                    "task": forge_payload["task"],
+                    "kind": forge_payload["kind"],
+                    "result": forge_payload["result"],
+                    "auto_approve": forge_payload["auto_approve"],
+                    "law_enforcement": dict(
+                        forge_payload.get("law_enforcement")
+                        or (forge_payload.get("result") or {}).get("law_enforcement")
+                        or {}
+                    ),
+                    "ul_snapshot": dict(
+                        forge_payload.get("ul_snapshot")
+                        or (forge_payload.get("result") or {}).get("ul_snapshot")
+                        or {}
+                    ),
+                    "workspace_context": workspace_context,
+                    "forge_context": forge_context_summary,
+                    "ul_substrate": forge_payload.get("ul_substrate"),
+                    "ul_trace": forge_payload.get("ul_trace"),
+                }
+            )
         )
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
@@ -8764,25 +8777,29 @@ def run_forge_repo_manager():
                 },
             )
         return jsonify(
-            {
-                "task_id": forge_payload["task_id"],
-                "task": forge_payload["task"],
-                "kind": forge_payload["kind"],
-                "result": forge_payload["result"],
-                "auto_approve": forge_payload["auto_approve"],
-                "law_enforcement": dict(
-                    forge_payload.get("law_enforcement")
-                    or (forge_payload.get("result") or {}).get("law_enforcement")
-                    or {}
-                ),
-                "ul_snapshot": dict(
-                    forge_payload.get("ul_snapshot")
-                    or (forge_payload.get("result") or {}).get("ul_snapshot")
-                    or {}
-                ),
-                "workspace_context": workspace_context,
-                "forge_context": forge_context_summary,
-            }
+            attach_ul_substrate(
+                {
+                    "task_id": forge_payload["task_id"],
+                    "task": forge_payload["task"],
+                    "kind": forge_payload["kind"],
+                    "result": forge_payload["result"],
+                    "auto_approve": forge_payload["auto_approve"],
+                    "law_enforcement": dict(
+                        forge_payload.get("law_enforcement")
+                        or (forge_payload.get("result") or {}).get("law_enforcement")
+                        or {}
+                    ),
+                    "ul_snapshot": dict(
+                        forge_payload.get("ul_snapshot")
+                        or (forge_payload.get("result") or {}).get("ul_snapshot")
+                        or {}
+                    ),
+                    "workspace_context": workspace_context,
+                    "forge_context": forge_context_summary,
+                    "ul_substrate": forge_payload.get("ul_substrate"),
+                    "ul_trace": forge_payload.get("ul_trace"),
+                }
+            )
         )
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
@@ -8832,7 +8849,7 @@ def run_forge_evaluation():
                     "updated_at": datetime.now(UTC).isoformat(),
                 },
             )
-        return jsonify(evaluation)
+        return jsonify(attach_ul_substrate(evaluation))
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except RuntimeError as e:
@@ -8881,7 +8898,7 @@ def run_evolve_job():
                     "updated_at": datetime.now(UTC).isoformat(),
                 },
             )
-        return jsonify(evolve_payload)
+        return jsonify(attach_ul_substrate(evolve_payload))
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except RuntimeError as e:
@@ -9118,11 +9135,17 @@ def build_patchforge_plan():
             session_id=str(data.get("session_id") or "").strip() or None,
             patch_plan=plan,
         )
-        return jsonify({
-            "patch_plan": plan,
-            "summary": jarvis_operator.patchforge.summarize_patch(plan),
-            "patch_review": review,
-        })
+        return jsonify(
+            attach_ul_substrate(
+                {
+                    "patch_plan": plan,
+                    "summary": jarvis_operator.patchforge.summarize_patch(plan),
+                    "patch_review": review,
+                    "ul_substrate": review.get("ul_substrate"),
+                    "ul_trace": review.get("ul_trace"),
+                }
+            )
+        )
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
@@ -9144,7 +9167,7 @@ def preview_patchforge_plan():
             if not review:
                 return jsonify({"error": "Patch review not found"}), 404
             patch_plan = dict(review.get("patch_plan") or {})
-        return jsonify({"preview": jarvis_operator.preview_patch_plan(patch_plan)})
+        return jsonify(attach_ul_substrate({"preview": jarvis_operator.preview_patch_plan(patch_plan)}))
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
@@ -9160,14 +9183,16 @@ def list_patch_reviews():
         limit = max(1, min(int(request.args.get("limit", 20)), 100))
         truth_scope = normalize_truth_scope(request.args.get("truth_scope"), default="live")
         return jsonify(
-            {
-                "reviews": jarvis_operator.list_patch_reviews(
-                    session_id=session_id,
-                    limit=limit,
-                    truth_scope=truth_scope,
-                ),
-                "truth_scope": truth_scope,
-            }
+            attach_ul_substrate(
+                {
+                    "reviews": jarvis_operator.list_patch_reviews(
+                        session_id=session_id,
+                        limit=limit,
+                        truth_scope=truth_scope,
+                    ),
+                    "truth_scope": truth_scope,
+                }
+            )
         )
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
@@ -9183,7 +9208,7 @@ def get_patch_review(review_id):
         review = jarvis_operator.get_patch_review(review_id)
         if not review:
             return jsonify({"error": "Patch review not found"}), 404
-        return jsonify({"review": review})
+        return jsonify(attach_ul_substrate({"review": review}))
     except Exception as e:
         logger.error(f"Error reading patch review: {e}")
         return jsonify({"error": str(e)}), 500
@@ -9203,7 +9228,7 @@ def decide_patch_review(review_id):
         )
         if not review:
             return jsonify({"error": "Patch review not found"}), 404
-        return jsonify({"review": review})
+        return jsonify(attach_ul_substrate({"review": review}))
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
@@ -9953,7 +9978,7 @@ def run_spatial_reason():
         if not result:
             return jsonify({"error": "Unsupported tool request"}), 400
 
-        return jsonify(result), _phase_gate_http_status(result)
+        return jsonify(attach_ul_substrate(result)), _phase_gate_http_status(result)
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
@@ -9994,7 +10019,7 @@ def run_mystic_read():
         if not result:
             return jsonify({"error": "Unsupported tool request"}), 400
 
-        return jsonify(result), _phase_gate_http_status(result)
+        return jsonify(attach_ul_substrate(result)), _phase_gate_http_status(result)
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
@@ -10034,7 +10059,7 @@ def run_v9_core():
         if not result:
             return jsonify({"error": "Unsupported tool request"}), 400
 
-        return jsonify(result), _phase_gate_http_status(result)
+        return jsonify(attach_ul_substrate(result)), _phase_gate_http_status(result)
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
@@ -10074,7 +10099,7 @@ def run_v10_core():
         if not result:
             return jsonify({"error": "Unsupported tool request"}), 400
 
-        return jsonify(result), _phase_gate_http_status(result)
+        return jsonify(attach_ul_substrate(result)), _phase_gate_http_status(result)
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
@@ -10236,6 +10261,7 @@ def get_jarvis_workbench():
             },
             "v9_runtime": v9_runtime.snapshot(limit=4),
             "v10_runtime": v10_runtime.snapshot(limit=4),
+            "operator_console": build_operator_console_snapshot(runtime=ugr_runtime),
         }
         return jsonify(payload)
     except ValueError as e:
@@ -10319,14 +10345,16 @@ def get_knowledge_authority_snapshot():
         limit = max(2, min(int(request.args.get("limit", 6)), 20))
         path_prefix = request.args.get("path_prefix")
         return jsonify(
-            {
-                "knowledge_authority": _build_knowledge_snapshot(
-                    session_id=session_id,
-                    query=query,
-                    limit=limit,
-                    path_prefix=path_prefix,
-                )
-            }
+            attach_ul_substrate(
+                {
+                    "knowledge_authority": _build_knowledge_snapshot(
+                        session_id=session_id,
+                        query=query,
+                        limit=limit,
+                        path_prefix=path_prefix,
+                    )
+                }
+            )
         )
     except MemoryBoardEnforcerError as e:
         logger.warning(f"Knowledge authority snapshot blocked by governance gateway: {e}")
@@ -10340,7 +10368,11 @@ def get_knowledge_authority_snapshot():
 def list_specialists():
     """List logical Jarvis specialists grouped by domain for manual selection in the UI."""
     try:
-        return jsonify({"domains": list_specialist_catalog(), "presets": list_specialist_presets()})
+        return jsonify(
+            attach_ul_substrate(
+                {"domains": list_specialist_catalog(), "presets": list_specialist_presets()}
+            )
+        )
     except Exception as e:
         logger.error(f"Error listing specialists: {e}")
         return jsonify({"error": str(e)}), 500
@@ -10401,6 +10433,7 @@ def get_jarvis_protocol():
                 "pipeline_mode": modular_preview["pipeline_mode"],
                 "guardrail_state": modular_preview["guardrail_state"],
                 "ul_trace": modular_preview["ul_trace"],
+                "ul_substrate": modular_preview.get("ul_substrate"),
                 "doctrine": modular_preview["doctrine"],
                 "guardrail_evaluation": modular_preview["guardrail_evaluation"],
                 "canonical_guardrail_evaluation": modular_preview["canonical_guardrail_evaluation"],
@@ -10430,11 +10463,25 @@ def get_jarvis_protocol():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/jarvis/ul-substrate/status", methods=["GET"])
+def get_ul_substrate_status():
+    """Expose the AAIS UL runtime substrate inventory for operator review."""
+    try:
+        return jsonify({"ul_substrate": substrate_status()})
+    except Exception as e:
+        logger.error(f"Error reading UL substrate status: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/jarvis/cognitive-bridge/detachment-guard", methods=["GET"])
 def get_detachment_guard_status():
     """Expose the current Jarvis detachment-guard snapshot for operator review."""
     try:
-        return jsonify({"detachment_guard": cognitive_bridge_service.detachment_guard.snapshot()})
+        return jsonify(
+            attach_ul_substrate(
+                {"detachment_guard": cognitive_bridge_service.detachment_guard.snapshot()}
+            )
+        )
     except Exception as e:
         logger.error(f"Error reading Jarvis detachment guard: {e}")
         return jsonify({"error": str(e)}), 500
@@ -10475,6 +10522,407 @@ def clear_detachment_guard_review_hold(source_id):
         ), status_code
     except Exception as e:
         logger.error(f"Error clearing Jarvis detachment review hold: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/deliberate", methods=["POST"])
+def ugr_deliberate():
+    """Run a governed multi-lane deliberation through the Unified Governed Runtime."""
+    try:
+        data = request.get_json(silent=True) or {}
+        question = str(data.get("question") or "").strip()
+        if not question:
+            return jsonify({"error": "question is required"}), 400
+        result = ugr_runtime.handle_request(
+            {
+                "question": question,
+                "intent": data.get("intent") or "general_qa",
+                "tenant_id": data.get("tenant_id") or "default",
+                "context": dict(data.get("context") or {}),
+                "lane_types": list(data.get("lane_types") or []),
+            }
+        )
+        status_code = 200 if result.get("status") in {"ok", "blocked", "rejected"} else 500
+        return jsonify(result), status_code
+    except Exception as e:
+        logger.error(f"Error running UGR deliberation: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/ingest", methods=["POST"])
+def ugr_ingest():
+    """Run governed curated ingestion for one configured source."""
+    try:
+        from src.ugr.ingestion.pipeline import GovernedIngestionPipeline
+
+        data = request.get_json(silent=True) or {}
+        source_id = str(data.get("source_id") or "").strip()
+        if not source_id:
+            return jsonify({"error": "source_id is required"}), 400
+        pipeline = GovernedIngestionPipeline()
+        result = pipeline.run_source(source_id, dry_run=bool(data.get("dry_run")))
+        status_code = 200 if result.status in {"ok", "no_accepted_proposals", "quarantined"} else 400
+        return jsonify(result.to_dict()), status_code
+    except Exception as e:
+        logger.error(f"Error running UGR ingestion: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/ingest/sources", methods=["GET"])
+def ugr_ingest_sources():
+    """List configured ingestion sources."""
+    try:
+        from src.ugr.ingestion.config import IngestionConfig
+
+        config = IngestionConfig()
+        return jsonify(
+            {
+                "sources": [source.to_dict() for source in config.sources.values()],
+                "enabled": [source.source_id for source in config.enabled_sources()],
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error listing UGR ingestion sources: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/platform/tenants", methods=["GET"])
+def ugr_platform_tenants():
+    """List configured UGR tenant overlays."""
+    try:
+        from src.ugr.platform.tenant_registry import TenantRegistry
+
+        registry = TenantRegistry()
+        return jsonify({"tenants": [tenant.to_dict() for tenant in registry.list_tenants()]})
+    except Exception as e:
+        logger.error(f"Error listing UGR platform tenants: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/platform/shadow-eval", methods=["POST"])
+def ugr_platform_shadow_eval():
+    """Compare prod vs shadow UGR deliberation for cognition CI/CD."""
+    try:
+        from src.ugr.platform.shadow_runtime import ShadowRuntimeEvaluator
+
+        data = request.get_json(silent=True) or {}
+        question = str(data.get("question") or "").strip()
+        if not question:
+            return jsonify({"error": "question is required"}), 400
+        evaluator = ShadowRuntimeEvaluator()
+        result = evaluator.evaluate(
+            {
+                "question": question,
+                "intent": data.get("intent") or "general_qa",
+                "tenant_id": data.get("tenant_id") or "default",
+                "context": dict(data.get("context") or {}),
+                "lane_types": list(data.get("lane_types") or []),
+            }
+        )
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error(f"Error running UGR shadow evaluation: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/platform/cicd/evaluate", methods=["POST"])
+def ugr_platform_cicd_evaluate():
+    """Run cognition CI/CD promotion decision for a deliberation request."""
+    try:
+        from src.ugr.platform.cognition_cicd import CognitionCICDPipeline
+
+        data = request.get_json(silent=True) or {}
+        pipeline = CognitionCICDPipeline()
+        if data.get("comparison"):
+            result = pipeline.evaluate_comparison(dict(data.get("comparison") or {}))
+        else:
+            question = str(data.get("question") or "").strip()
+            if not question:
+                return jsonify({"error": "question or comparison is required"}), 400
+            result = pipeline.evaluate(
+                {
+                    "question": question,
+                    "intent": data.get("intent") or "general_qa",
+                    "tenant_id": data.get("tenant_id") or "default",
+                    "context": dict(data.get("context") or {}),
+                    "lane_types": list(data.get("lane_types") or []),
+                }
+            )
+        status_code = 200 if result.get("status") == "ok" else 500
+        return jsonify(result), status_code
+    except Exception as e:
+        logger.error(f"Error running UGR cognition CI/CD: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/graph/stats", methods=["GET"])
+def ugr_graph_stats():
+    """Return UGR graph index statistics when enabled."""
+    try:
+        from src.ugr.graph_index.store import graph_index_enabled
+
+        stats = ugr_runtime.ledger.graph_index_stats() if hasattr(ugr_runtime, "ledger") else None
+        return jsonify({"enabled": graph_index_enabled(), "stats": stats}), 200
+    except Exception as e:
+        logger.error(f"Error reading UGR graph index stats: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/graph/query", methods=["POST"])
+def ugr_graph_query():
+    """Query the UGR graph index (requires UGR_GRAPH_ENABLED=1)."""
+    try:
+        data = request.get_json(silent=True) or {}
+        terms = list(data.get("terms") or [])
+        subject = str(data.get("subject") or "").strip()
+        tenant_scope = data.get("tenant_scope")
+        limit = int(data.get("limit") or 20)
+        ledger = ugr_runtime.ledger if hasattr(ugr_runtime, "ledger") else None
+        if ledger is None:
+            return jsonify({"error": "ugr runtime ledger unavailable"}), 500
+        if subject:
+            matches = ledger.query_by_subject(subject, tenant_scope=tenant_scope, limit=limit)
+        else:
+            if not terms:
+                return jsonify({"error": "terms or subject is required"}), 400
+            matches = ledger.query_related(terms, tenant_scope=tenant_scope, limit=limit)
+        return jsonify({"matches": matches, "stats": ledger.graph_index_stats()}), 200
+    except Exception as e:
+        logger.error(f"Error querying UGR graph index: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/graph/rebuild", methods=["POST"])
+def ugr_graph_rebuild():
+    """Rebuild the in-memory graph index from canonical JSONL."""
+    try:
+        ledger = ugr_runtime.ledger if hasattr(ugr_runtime, "ledger") else None
+        if ledger is None:
+            return jsonify({"error": "ugr runtime ledger unavailable"}), 500
+        result = ledger.rebuild_graph_index()
+        if result is None:
+            return jsonify({"error": "UGR_GRAPH_ENABLED is not active"}), 400
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error(f"Error rebuilding UGR graph index: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+_embryo_gateway = None
+
+
+def _get_embryo_gateway():
+    global _embryo_gateway
+    if _embryo_gateway is None:
+        from src.ugr.embryo.gateway import UGREmbryoGateway
+
+        _embryo_gateway = UGREmbryoGateway(runtime=ugr_runtime)
+    return _embryo_gateway
+
+
+@app.route("/api/ugr/v0/health", methods=["GET"])
+def ugr_v0_health():
+    """Embryo v0 component health snapshot."""
+    try:
+        return jsonify(_get_embryo_gateway().health()), 200
+    except Exception as e:
+        logger.error(f"Error reading UGR embryo v0 health: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/v0/deliberate", methods=["POST"])
+def ugr_v0_deliberate():
+    """Run governed deliberation through the embryo v0 gateway."""
+    try:
+        data = request.get_json(silent=True) or {}
+        result = _get_embryo_gateway().deliberate(data)
+        status_code = 200 if result.get("status") in {"ok", "blocked", "rejected"} else 500
+        return jsonify(result), status_code
+    except Exception as e:
+        logger.error(f"Error running UGR embryo v0 deliberation: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/v0/ingest", methods=["POST"])
+def ugr_v0_ingest():
+    """Run governed ingestion through the embryo v0 gateway."""
+    try:
+        data = request.get_json(silent=True) or {}
+        source_id = str(data.get("source_id") or "").strip()
+        if not source_id:
+            return jsonify({"error": "source_id is required"}), 400
+        result = _get_embryo_gateway().ingest(source_id=source_id, dry_run=bool(data.get("dry_run")))
+        status_code = 200 if result.get("status") in {"ok", "no_accepted_proposals", "quarantined"} else 400
+        return jsonify(result), status_code
+    except Exception as e:
+        logger.error(f"Error running UGR embryo v0 ingestion: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/v0/ingest/sources", methods=["GET"])
+def ugr_v0_ingest_sources():
+    """List ingestion sources via embryo v0 gateway."""
+    try:
+        return jsonify(_get_embryo_gateway().ingest_sources()), 200
+    except Exception as e:
+        logger.error(f"Error listing UGR embryo v0 ingestion sources: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/v0/graph/query", methods=["POST"])
+def ugr_v0_graph_query():
+    """Query pattern ledger via embryo v0 gateway."""
+    try:
+        data = request.get_json(silent=True) or {}
+        terms = list(data.get("terms") or [])
+        subject = str(data.get("subject") or "").strip()
+        if not subject and not terms:
+            return jsonify({"error": "terms or subject is required"}), 400
+        result = _get_embryo_gateway().graph_query(
+            terms=terms,
+            subject=subject or None,
+            tenant_scope=data.get("tenant_scope"),
+            limit=int(data.get("limit") or 20),
+        )
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error(f"Error querying UGR embryo v0 graph index: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/v0/shadow-eval", methods=["POST"])
+def ugr_v0_shadow_eval():
+    """Run shadow deliberation comparison via embryo v0 gateway."""
+    try:
+        data = request.get_json(silent=True) or {}
+        result = _get_embryo_gateway().shadow_eval(data)
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error(f"Error running UGR embryo v0 shadow eval: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+_embryo_v1_gateway = None
+
+
+def _get_embryo_v1_gateway():
+    global _embryo_v1_gateway
+    if _embryo_v1_gateway is None:
+        from src.ugr.embryo.gateway_v1 import UGREmbryoGatewayV1
+
+        _embryo_v1_gateway = UGREmbryoGatewayV1(runtime=ugr_runtime)
+    return _embryo_v1_gateway
+
+
+@app.route("/api/ugr/v1/health", methods=["GET"])
+def ugr_v1_health():
+    """Embryo v1 component health snapshot."""
+    try:
+        return jsonify(_get_embryo_v1_gateway().health()), 200
+    except Exception as e:
+        logger.error(f"Error reading UGR embryo v1 health: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/v1/causal/query", methods=["POST"])
+def ugr_v1_causal_query():
+    """Walk causal graph from a claim via embryo v1 gateway."""
+    try:
+        data = request.get_json(silent=True) or {}
+        claim_id = str(data.get("claim_id") or "").strip()
+        if not claim_id:
+            return jsonify({"error": "claim_id is required"}), 400
+        result = _get_embryo_v1_gateway().causal_query(
+            claim_id=claim_id,
+            depth=data.get("depth"),
+            tenant_scope=data.get("tenant_scope"),
+            limit=int(data.get("limit") or 50),
+        )
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error(f"Error querying UGR embryo v1 causal graph: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/v1/provenance", methods=["POST"])
+def ugr_v1_provenance_query():
+    """Query provenance edges for a claim via embryo v1 gateway."""
+    try:
+        data = request.get_json(silent=True) or {}
+        claim_id = str(data.get("claim_id") or "").strip()
+        if not claim_id:
+            return jsonify({"error": "claim_id is required"}), 400
+        result = _get_embryo_v1_gateway().provenance_query(
+            claim_id=claim_id,
+            limit=int(data.get("limit") or 50),
+        )
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error(f"Error querying UGR embryo v1 provenance: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/v1/regions/health", methods=["GET"])
+def ugr_v1_regions_health():
+    """Region health overlay snapshot via embryo v1 gateway."""
+    try:
+        return jsonify(_get_embryo_v1_gateway().regions_health()), 200
+    except Exception as e:
+        logger.error(f"Error reading UGR embryo v1 region health: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/ugr/v1/causal/rebuild", methods=["POST"])
+def ugr_v1_causal_rebuild():
+    """Rebuild causal graph from canonical JSONL via embryo v1 gateway."""
+    try:
+        return jsonify(_get_embryo_v1_gateway().rebuild_causal_graph()), 200
+    except Exception as e:
+        logger.error(f"Error rebuilding UGR embryo v1 causal graph: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/operator/console", methods=["GET"])
+def get_operator_console():
+    """UGR + Cloud Forge operator console snapshot (advisory readout only)."""
+    try:
+        return jsonify(build_operator_console_snapshot(runtime=ugr_runtime)), 200
+    except Exception as e:
+        logger.error(f"Error building operator console snapshot: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/operator/console/mesh-health", methods=["GET"])
+def get_operator_console_mesh_health():
+    """Lightweight mesh health poll for operator console live refresh."""
+    try:
+        return jsonify(poll_mesh_health()), 200
+    except Exception as e:
+        logger.error(f"Error polling operator console mesh health: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/operator/console/traces", methods=["GET"])
+def get_operator_console_traces():
+    """Read-only UGR deliberation trace viewer."""
+    try:
+        trace_id = str(request.args.get("trace_id") or "").strip() or None
+        limit = max(1, min(int(request.args.get("limit") or 20), 100))
+        payload = load_deliberation_traces(runtime=ugr_runtime, limit=limit, trace_id=trace_id)
+        return jsonify(payload), 200
+    except Exception as e:
+        logger.error(f"Error loading operator console traces: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/operator/console/forge-platform", methods=["GET"])
+def get_operator_console_forge_platform():
+    """Forge platform dashboard JSON for operator console."""
+    try:
+        live = str(request.args.get("live") or "").strip().lower() in {"1", "true", "yes", "on"}
+        return jsonify(load_forge_platform_dashboard(live_checks=live)), 200
+    except Exception as e:
+        logger.error(f"Error loading forge platform dashboard: {e}")
         return jsonify({"error": str(e)}), 500
 
 

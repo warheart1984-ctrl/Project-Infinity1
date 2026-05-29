@@ -12,6 +12,10 @@ It covers four domains:
 
 from __future__ import annotations
 
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
 from collections.abc import Iterable
 import math
 import warnings
@@ -25,6 +29,9 @@ RUNTIME_INVARIANT_STATUS_PASS = "pass"
 RUNTIME_INVARIANT_STATUS_FAIL = "fail"
 RUNTIME_SAFE_RECOMMENDED_STATES = {"pause", "degrade_safe", "observe"}
 MAX_RUNTIME_SUPPORTING_SIGNALS = 4
+BRIDGE_ALLOWED_RUNTIME_CONTEXTS = frozenset({"live_runtime", "operator_runtime", "test_harness"})
+BRIDGE_INVARIANT_PACKET_TYPES = frozenset({"deliberation_request", "generation_request"})
+BRIDGE_SAFE_EXECUTION_INTENTS = frozenset({"observe", "respond", "route"})
 
 
 def _normalize_scalar(value):
@@ -35,10 +42,10 @@ def _normalize_scalar(value):
     if isinstance(value, complex):
         if abs(value.imag) <= 1e-12:
             return float(value.real)
-        return {
+        return _wrap_ul_payload({
             "real": round(float(value.real), 12),
             "imag": round(float(value.imag), 12),
-        }
+        })
     if isinstance(value, (int, float)):
         numeric = float(value)
         if math.isnan(numeric) or math.isinf(numeric):
@@ -122,24 +129,24 @@ class MathInvariants:
         """Return trace, determinant, eigenvalues, rank, and Frobenius norm."""
         array = _coerce_square_matrix(matrix)
         eigenvalues = [_normalize_scalar(value) for value in np.linalg.eigvals(array)]
-        return {
+        return _wrap_ul_payload({
             "trace": _normalize_scalar(np.trace(array)),
             "determinant": _normalize_scalar(np.linalg.det(array)),
             "eigenvalues": eigenvalues,
             "rank": int(np.linalg.matrix_rank(array)),
             "frobenius_norm": _normalize_scalar(np.linalg.norm(array, "fro")),
-        }
+        })
 
     @staticmethod
     def polynomial_invariants(coeffs) -> dict:
         """Return degree, discriminant, and leading coefficient for numeric coefficients."""
         normalized = _normalize_coefficients(coeffs)
         poly = _build_polynomial(normalized)
-        return {
+        return _wrap_ul_payload({
             "degree": int(poly.degree()),
             "discriminant": _normalize_scalar(poly.discriminant()),
             "leading_coefficient": _normalize_scalar(poly.LC()),
-        }
+        })
 
     @staticmethod
     def topological_invariants(edges) -> dict:
@@ -149,25 +156,25 @@ class MathInvariants:
         vertices = graph.number_of_nodes()
         edge_count = graph.number_of_edges()
         connected_components = nx.number_connected_components(graph) if vertices else 0
-        return {
+        return _wrap_ul_payload({
             "vertices": vertices,
             "edges": edge_count,
             "connected_components": connected_components,
             "euler_characteristic": vertices - edge_count + connected_components,
             "number_of_cycles": len(nx.cycle_basis(graph)),
-        }
+        })
 
     @staticmethod
     def statistical_invariants(data) -> dict:
         """Return mean, variance, standard deviation, skewness, and kurtosis."""
         array = _coerce_numeric_data(data)
-        return {
+        return _wrap_ul_payload({
             "mean": _normalize_scalar(np.nanmean(array)),
             "variance": _normalize_scalar(np.nanvar(array)),
             "standard_deviation": _normalize_scalar(np.nanstd(array)),
             "skewness": _normalize_scalar(_safe_distribution_moment(array, mode="skew")),
             "kurtosis": _normalize_scalar(_safe_distribution_moment(array, mode="kurtosis")),
-        }
+        })
 
     @staticmethod
     def cross_domain_report(
@@ -189,12 +196,12 @@ class MathInvariants:
             domains["statistics"] = MathInvariants.statistical_invariants(data)
         if not domains:
             raise ValueError("At least one domain input is required.")
-        return {
+        return _wrap_ul_payload({
             "module": "invariant_engine",
             "domains": domains,
             "domain_count": len(domains),
             "available_domains": list(domains.keys()),
-        }
+        })
 
 
 class InvariantEngine(MathInvariants):
@@ -258,7 +265,7 @@ class InvariantEngine(MathInvariants):
             ),
         }
         failed = [name for name, passed in checks.items() if not passed]
-        return {
+        return _wrap_ul_payload({
             "module_id": "aais.invariant_engine.runtime_event_guard",
             "status": RUNTIME_INVARIANT_STATUS_PASS if not failed else RUNTIME_INVARIANT_STATUS_FAIL,
             "allows": not failed,
@@ -272,7 +279,7 @@ class InvariantEngine(MathInvariants):
                 + ", ".join(failed)
             ),
             "advisory_only": True,
-        }
+        })
 
     @staticmethod
     def assert_realtime_event_prediction_allowed(event, prediction) -> None:
@@ -283,3 +290,56 @@ class InvariantEngine(MathInvariants):
                 "Realtime event invariant validation failed: "
                 + ", ".join(result["failed_invariants"])
             )
+
+    @staticmethod
+    def validate_bridge_packet(normalized_packet: dict, governance: dict) -> dict:
+        """Validate governed bridge packets on the live deliberation/generation path."""
+        packet_type = str(
+            normalized_packet.get("type") or governance.get("packet_type") or ""
+        ).strip().lower()
+        payload = dict(normalized_packet.get("payload") or {})
+        runtime_context = str(
+            governance.get("runtime_context") or payload.get("runtime_context") or ""
+        ).strip().lower()
+        execution_intent = str(
+            governance.get("execution_intent") or payload.get("execution_intent") or ""
+        ).strip().lower()
+        effectful = bool(governance.get("effectful") or normalized_packet.get("effectful"))
+        source = str(governance.get("source") or normalized_packet.get("source") or "").strip().lower()
+        attestation = payload.get("bridge_attestation")
+
+        checks = {
+            "runtime_context_allowed": runtime_context in BRIDGE_ALLOWED_RUNTIME_CONTEXTS,
+            "source_declared": bool(source),
+            "packet_type_in_scope": packet_type in BRIDGE_INVARIANT_PACKET_TYPES,
+        }
+
+        if packet_type == "deliberation_request":
+            checks["deliberation_subject_present"] = bool(
+                str(payload.get("question") or payload.get("intent") or "").strip()
+            )
+            checks["deliberation_observation_only"] = (
+                execution_intent in BRIDGE_SAFE_EXECUTION_INTENTS and not effectful
+            )
+            checks["bridge_attestation_present"] = isinstance(attestation, dict) and bool(attestation)
+
+        if packet_type == "generation_request":
+            checks["generation_response_only"] = execution_intent in BRIDGE_SAFE_EXECUTION_INTENTS
+            checks["bridge_attestation_present"] = isinstance(attestation, dict) and bool(attestation)
+
+        failed = [name for name, passed in checks.items() if not passed]
+        return _wrap_ul_payload({
+            "module_id": "aais.invariant_engine.bridge_guard",
+            "status": RUNTIME_INVARIANT_STATUS_PASS if not failed else RUNTIME_INVARIANT_STATUS_FAIL,
+            "allows": not failed,
+            "checked_invariants": checks,
+            "failed_invariants": failed,
+            "reason_codes": list(failed),
+            "summary": (
+                "Bridge invariant gate accepted the governed packet."
+                if not failed
+                else "Bridge invariant gate blocked the governed packet: " + ", ".join(failed)
+            ),
+            "advisory_only": False,
+            "packet_type": packet_type,
+        })

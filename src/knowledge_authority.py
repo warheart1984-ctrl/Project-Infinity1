@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+def _wrap_ul_payload(payload: dict) -> dict:
+    from src.aais_ul_substrate import attach_ul_substrate
+
+    return attach_ul_substrate(dict(payload))
 from pathlib import Path
 from typing import Any
 
@@ -538,7 +542,7 @@ class KnowledgeAuthority:
             else "Do not invent APIs; prefer governed memory, workspace truth, and canonical docs over model prior."
         )
 
-        return {
+        return _wrap_ul_payload({
             "authority_order": authority_order,
             "active_authorities": active_authorities,
             "preferences": normalized_preferences,
@@ -582,7 +586,7 @@ class KnowledgeAuthority:
                 "projects": project_entries,
             },
             "doctrine": doctrine_entries,
-        }
+        })
 
 
 def clip_value(value: Any, limit: int = 72) -> str:
