@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Step markers on stderr so sudo/non-tty runs stay visible (stdout may block-buffer).
+forge_log_step() {
+  printf '%s\n' "$*" >&2
+}
+
+on_build_error() {
+  forge_log_step "ERROR: build failed at line ${BASH_LINENO[0]:-?} (exit ${2:-$?})"
+}
+trap on_build_error ERR
+
 usage() {
   cat <<'USAGE'
 Usage:
@@ -79,6 +89,8 @@ source "$SCRIPT_DIR/patch-debian-install-media.sh"
 source "$SCRIPT_DIR/stage-di-iso-payload.sh"
 # shellcheck source=embed-cogos-in-di-initrd.sh
 source "$SCRIPT_DIR/embed-cogos-in-di-initrd.sh"
+# shellcheck source=patch-live-session.sh
+source "$SCRIPT_DIR/patch-live-session.sh"
 # shellcheck source=build_iso.sh
 source "$SCRIPT_DIR/build_iso.sh"
 # shellcheck source=lib/replay-adapters.sh
@@ -181,8 +193,17 @@ forge_emit_final_attestation() {
 chmod_existing() {
   local f
   for f in "$@"; do
-    [[ -e "$f" ]] && chmod +x "$f"
+    [[ -e "$f" ]] || continue
+    if ! chmod +x "$f" 2>/dev/null; then
+      forge_log_step "WARN: chmod +x skipped: $f"
+    fi
   done
+}
+
+normalize_systemd_unit_modes() {
+  local root="${1:-}"
+  find "$root/etc/systemd/system" \( -name '*.service' -o -name '*.conf' \) -type f \
+    -exec chmod 644 {} + 2>/dev/null || true
 }
 
 write_live_install_guide() {
@@ -303,6 +324,11 @@ run_live_boot_integrity_gate() {
   local plymouth_policy="${COGOS_PLYMOUTH_POLICY:-optional}"
   local validator="$SCRIPT_DIR/validate-live-boot-integrity.sh"
 
+  if [[ "${COGOS_REPLAY_ADAPTER:-}" == "fedora-liveos-layout" ]]; then
+    forge_log_step "[7/9] Skipping Debian live-boot gate for fedora-family substrate replay"
+    return 0
+  fi
+
   if [[ "${COGOS_SKIP_BOOT_VALIDATION:-0}" == "1" ]]; then
     echo "WARN: live-boot integrity gate skipped (COGOS_SKIP_BOOT_VALIDATION=1)" >&2
     return 0
@@ -413,12 +439,29 @@ workdir_resume_ready() {
 
 extract_rootfs_from_substrate() {
   if [[ "$BUILD_FROM_TREE" == "1" ]]; then
+    if [[ ! -d "$ROOTFS_SRC" ]]; then
+      echo "ERROR: rootfs tree missing: $ROOTFS_SRC" >&2
+      echo "       Build it first: sudo -E bash wolf-cog-os/scripts/build-rootfs.sh --profile forge-selfhosted" >&2
+      exit 3
+    fi
     echo "[3/9] Stage root filesystem from tree: $ROOTFS_SRC"
     rsync -aH --delete "$ROOTFS_SRC/" "$WORK/rootfs/"
   else
     echo "[3/9] Extract root filesystem: ${SFS_NAME:-squashfs} (adapter=${COGOS_REPLAY_ADAPTER:-debian-live-layout})"
     replay_extract_rootfs "$WORK/iso" "$WORK/rootfs"
   fi
+}
+
+refresh_build_workdir() {
+  mkdir -p "$WOLF_OUTPUT"
+  if [[ "$BUILD_FROM_TREE" == "1" && "$ROOTFS_SRC" == "$WORK/"* ]]; then
+    echo "[work] Refresh ISO staging under $WORK (keeping rootfs tree at $ROOTFS_SRC)"
+    rm -rf "$WORK/iso" "$WORK/rootfs"
+    mkdir -p "$WORK/iso" "$WORK/rootfs"
+    return 0
+  fi
+  rm -rf "$WORK"
+  mkdir -p "$WORK/iso" "$WORK/rootfs" "$WOLF_OUTPUT"
 }
 
 if [[ "${COGOS_RESUME_WORK:-0}" == "1" ]] && workdir_resume_ready; then
@@ -433,8 +476,7 @@ if [[ "${COGOS_RESUME_WORK:-0}" == "1" ]] && workdir_resume_ready; then
   echo "Using root filesystem image: $SFS_SOURCE"
 elif [[ "${COGOS_RESUME_WORK:-0}" == "1" ]]; then
   echo "WARN: COGOS_RESUME_WORK=1 but workdir incomplete; running full rebuild" >&2
-  rm -rf "$WORK"
-  mkdir -p "$WORK/iso" "$WORK/rootfs" "$WOLF_OUTPUT"
+  refresh_build_workdir
   echo "[1/9] Extract ISO contents"
   xorriso -osirrox on -indev "$ISO" -extract / "$WORK/iso" >/dev/null
   chmod -R u+w "$WORK/iso"
@@ -447,8 +489,7 @@ elif [[ "${COGOS_RESUME_WORK:-0}" == "1" ]]; then
   echo "Using root filesystem image: $SFS_SOURCE"
   extract_rootfs_from_substrate
 else
-  rm -rf "$WORK"
-  mkdir -p "$WORK/iso" "$WORK/rootfs" "$WOLF_OUTPUT"
+  refresh_build_workdir
 
   echo "[1/9] Extract ISO contents"
   xorriso -osirrox on -indev "$ISO" -extract / "$WORK/iso" >/dev/null
@@ -499,6 +540,14 @@ else
     exit 1
   fi
   echo "[4c/9] Payload merged into rootfs"
+  rm -f "$WORK/rootfs/etc/init.d/90cogos" 2>/dev/null || true
+  # shellcheck source=lib/normalize-boot-stack-lf.sh
+  source "$SCRIPT_DIR/lib/normalize-boot-stack-lf.sh"
+  normalize_boot_stack_lf "$WORK/rootfs"
+  verify_boot_stack_lf "$WORK/rootfs" || {
+    echo "ERROR: boot stack launchers still contain CRLF after normalize" >&2
+    exit 1
+  }
 fi
 
 echo "[4c+] Runtime prep: memory dirs, file modes, install hooks"
@@ -508,7 +557,9 @@ mkdir -p \
   "$WORK/rootfs/opt/cogos/memory/logs" \
   "$WORK/rootfs/opt/cogos/memory/traces" \
   "$WORK/rootfs/opt/cogos/memory/tmp"
+forge_log_step "[4c+] Memory dirs ready"
 
+forge_log_step "[4c+] Setting CoGOS binary modes"
 chmod_existing \
   "$WORK/rootfs/opt/cogos/bin/cognitive_init" \
   "$WORK/rootfs/opt/cogos/bin/cogos_shell" \
@@ -520,14 +571,25 @@ chmod_existing \
   "$WORK/rootfs/opt/cogos/bin/cogos_manifest.py" \
   "$WORK/rootfs/opt/cogos/bin/cogos_install_proof.py" \
   "$WORK/rootfs/opt/cogos/bin/cogos_master_boot.py"
+forge_log_step "[4c+] Binary modes done"
 
 if forge_selector_present; then
-  echo "[4e/9] Stage Forge cockpit layout"
-  stage_forge_layout "$WORK/rootfs"
+  if [[ "$BUILD_FROM_TREE" == "1" && -f "$WORK/rootfs/forge/scripts/build/build.sh" ]]; then
+    forge_log_step "[4e/9] Forge cockpit already in rootfs tree; skipping re-stage"
+  else
+    forge_log_step "[4e/9] Stage Forge cockpit layout"
+    stage_forge_layout "$WORK/rootfs"
+  fi
 fi
 
 if [[ "${COGOS_STEALTH_INSTALL:-0}" == "1" ]]; then
-  echo "[4d/9] Stealth install: keeping stock Debian identity on live ISO"
+  forge_log_step "[4d/9] Stealth install: keeping stock Debian identity on live ISO"
+else
+  forge_log_step "[4d/9] Branding live session"
+  patch_live_wolf_branding "$WORK/rootfs"
+  if [[ "${COGOS_BOOT_PROFILE:-}" == "debian" || "${COGOS_DI_INSTALL:-0}" == "1" ]]; then
+    install_di_live_desktop "$WORK/rootfs"
+  fi
 fi
 
 if [[ "${COGOS_BOOT_PROFILE:-}" == "debian" || "${COGOS_DI_INSTALL:-0}" == "1" ]]; then
@@ -535,6 +597,8 @@ if [[ "${COGOS_BOOT_PROFILE:-}" == "debian" || "${COGOS_DI_INSTALL:-0}" == "1" ]
   stage_di_iso_payload "$WORK/rootfs"
   echo "[4e/9] Embed CoGOS runtime + preseed into gtk/text d-i initrd"
   embed_cogos_in_di_initrd "$WORK/iso/install/wolf-cog-os/runtime.tar"
+  echo "[4e+/9] Verify gtk d-i initrd WiFi stack"
+  bash "$SCRIPT_DIR/verify-di-initrd-wifi.sh"
 fi
 
 if [[ "${COGOS_SURPRISE_INSTALL:-0}" == "1" || "${COGOS_GRAPHICAL_INSTALL:-0}" == "1" ]]; then
@@ -555,7 +619,7 @@ if [[ "${COGOS_BOOT_PROFILE:-}" == "debian" || "${COGOS_GRAPHICAL_INSTALL:-0}" =
 fi
 
 if [[ "${COGOS_GRUB_MERGE:-0}" == "1" ]]; then
-  echo "[4f/9] Patch GRUB boot menu"
+  forge_log_step "[4f/9] Patch GRUB boot menu"
   case "${COGOS_BOOT_PROFILE:-}" in
     surprise)
       patch_grub_surprise
@@ -575,19 +639,24 @@ if [[ "${COGOS_GRUB_MERGE:-0}" == "1" ]]; then
   esac
 fi
 
-if [[ -f "$WORK/rootfs/opt/cogos/bin/cogos_manifest.py" && -f "$WORK/rootfs/opt/cogos/config/release_manifest.json" ]]; then
-  echo "[4g/9] Signing release manifest (optional)"
+if [[ -f "$WORK/rootfs/opt/cogos/bin/cogos_manifest.py" && -f "$WORK/rootfs/opt/cogos/config/release_manifest.json" && "$BUILD_FROM_TREE" != "1" ]]; then
+  forge_log_step "[4g/9] Signing release manifest (optional)"
   timeout 60 env COGOS_ROOT="$WORK/rootfs/opt/cogos" python3 "$WORK/rootfs/opt/cogos/bin/cogos_manifest.py" sign \
     "$WORK/rootfs/opt/cogos/config/release_manifest.json" 2>/dev/null || true
 fi
 
-echo "[5/9] Install CoGOS operator layer"
+forge_log_step "[5/9] Install CoGOS operator layer"
 chmod_existing \
-  "$WORK/rootfs/etc/init.d/90cogos" \
-  "$WORK/rootfs/etc/systemd/system/cogos-runtime.service" \
+  "$WORK/rootfs/usr/lib/cogos/firstboot.sh" \
+  "$WORK/rootfs/usr/lib/cogos/governance-grace.sh" \
+  "$WORK/rootfs/usr/lib/cogos/governance-daemon" \
+  "$WORK/rootfs/usr/lib/cogos/spine" \
+  "$WORK/rootfs/usr/lib/cogos/observer" \
   "$WORK/rootfs/usr/local/bin/cogos-install" \
   "$WORK/rootfs/usr/local/bin/cogos-install-finish" \
   "$WORK/rootfs/usr/local/bin/cogos-launch-installer" \
+  "$WORK/rootfs/usr/local/bin/cogos-launch-di-installer" \
+  "$WORK/rootfs/usr/local/bin/cogos-live-welcome" \
   "$WORK/rootfs/usr/local/bin/cogos-reveal-identity" \
   "$WORK/rootfs/usr/local/bin/cogos-first-boot" \
   "$WORK/rootfs/usr/local/bin/cogos-persist" \
@@ -602,7 +671,10 @@ chmod_existing \
   "$WORK/rootfs/usr/local/bin/cogos-master-boot" \
   "$WORK/rootfs/usr/local/bin/cogos-recovery"
 
-echo "[6/9] Enforce live-safe PID1 invariants"
+normalize_systemd_unit_modes "$WORK/rootfs"
+forge_log_step "[5/9] Operator layer ready"
+
+forge_log_step "[6/9] Enforce live-safe PID1 invariants"
 if [[ "${COGOS_ENABLE_PID1:-0}" != "0" ]]; then
   echo "ERROR: live-safe build forbids runtime PID1 takeover (set COGOS_ENABLE_PID1=0)." >&2
   echo "ERROR: keep install-on-disk takeover via cogos-install-finish." >&2
@@ -615,7 +687,7 @@ echo "Live PID1 pinned to systemd; disk takeover remains in cogos-install-finish
 run_live_boot_integrity_gate
 
 if [[ "${COGOS_PACK_ONLY:-0}" == "1" ]]; then
-  echo "[8/9] SKIP squashfs rebuild (COGOS_PACK_ONLY=1)"
+  forge_log_step "[8/9] SKIP squashfs rebuild (COGOS_PACK_ONLY=1)"
   resolve_sfs_source
   SFS_SOURCE="$(replay_sfs_write_path "$WORK/iso")"
   [[ -f "${SFS_SOURCE:-}" ]] || {
@@ -624,16 +696,17 @@ if [[ "${COGOS_PACK_ONLY:-0}" == "1" ]]; then
   }
   echo "Using existing root image: $SFS_SOURCE ($(du -h "$SFS_SOURCE" | awk '{print $1}'))"
 else
-  echo "[8/9] Rebuild SquashFS: ${SQUASHFS_COMP} -> ${SFS_NAME:-rootfs}"
+  forge_log_step "[8/9] Rebuild SquashFS: ${SQUASHFS_COMP} -> ${SFS_NAME:-rootfs} ($(du -sh "$WORK/rootfs" | awk '{print $1}') tree; 10-25 min, -progress below)"
   SFS_SOURCE="$(replay_sfs_write_path "$WORK/iso")"
   if [[ "${COGOS_XATTRS:-0}" == "1" ]]; then
-    mksquashfs "$WORK/rootfs" "$SFS_SOURCE" -comp "$SQUASHFS_COMP" -b "$SQUASHFS_BLOCK" -noappend -all-root
+    mksquashfs "$WORK/rootfs" "$SFS_SOURCE" -comp "$SQUASHFS_COMP" -b "$SQUASHFS_BLOCK" -noappend -all-root -progress
   else
-    mksquashfs "$WORK/rootfs" "$SFS_SOURCE" -comp "$SQUASHFS_COMP" -b "$SQUASHFS_BLOCK" -noappend -all-root -no-xattrs
+    mksquashfs "$WORK/rootfs" "$SFS_SOURCE" -comp "$SQUASHFS_COMP" -b "$SQUASHFS_BLOCK" -noappend -all-root -no-xattrs -progress
   fi
+  forge_log_step "[8/9] SquashFS rebuild complete: $SFS_SOURCE"
 fi
 
-echo "[9/9] Rebuild ISO (replay boot via adapter=${COGOS_REPLAY_ADAPTER:-debian-live-layout})"
+forge_log_step "[9/9] Rebuild ISO (replay boot via adapter=${COGOS_REPLAY_ADAPTER:-debian-live-layout})"
 build_iso_from_workdir "$WORK" "$REPLAY_ISO" "$OUT"
 
 if forge_selector_present; then

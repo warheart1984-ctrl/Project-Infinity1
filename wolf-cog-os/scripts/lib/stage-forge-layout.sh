@@ -21,12 +21,14 @@ stage_forge_layout() {
     "$rootfs/forge/governance" \
     "$rootfs/forge/output" \
     "$rootfs/forge/cache" \
-    "$rootfs/forge/scripts/build"
+    "$rootfs/forge/scripts/build" \
+    "$rootfs/forge/scripts/build/lib"
 
   rsync -a \
     --exclude 'output/***' \
     --exclude 'cache/***' \
     "$forge_src/" "$rootfs/forge/"
+  echo "[forge] staged forge registry tree"
 
   mkdir -p "$rootfs/forge/substrates" "$rootfs/forge/backends" "$rootfs/forge/governance"
   if [[ -f "$WOLF_FORGE_STAGING/substrates/registry.json" ]]; then
@@ -41,9 +43,6 @@ stage_forge_layout() {
   if [[ -f "$WOLF_FORGE_STAGING/replay-adapters/registry.json" ]]; then
     mkdir -p "$rootfs/forge/replay-adapters"
     cp "$WOLF_FORGE_STAGING/replay-adapters/registry.json" "$rootfs/forge/replay-adapters/registry.json"
-    if [[ -d "$scripts_src/lib/replay-adapters" ]]; then
-      rsync -a "$scripts_src/lib/replay-adapters/" "$rootfs/forge/scripts/build/lib/replay-adapters/"
-    fi
   fi
   if [[ -f "$REPO_ROOT/.github/governance/substrate-evolution-ledger.json" ]]; then
     cp "$REPO_ROOT/.github/governance/substrate-evolution-ledger.json" "$rootfs/forge/governance/substrate-evolution-ledger.json"
@@ -82,7 +81,9 @@ stage_forge_layout() {
   done
 
   if [[ -d "$scripts_src/lib" ]]; then
+    echo "[forge] staging build scripts/lib (may take a few minutes from DrvFs)..."
     rsync -a "$scripts_src/lib/" "$rootfs/forge/scripts/build/lib/"
+    echo "[forge] build scripts/lib staged"
   fi
 
   if [[ -f "$REPO_ROOT/Makefile" ]]; then

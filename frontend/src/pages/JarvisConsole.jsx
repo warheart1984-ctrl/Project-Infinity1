@@ -47,7 +47,11 @@ import {
 import { getApiBaseUrl } from '../lib/settings';
 import { captureBrowserSnapshot } from '../lib/browserVerify';
 import { getBrowserExpectationGuide, listBrowserVerificationTargets } from '../lib/browserExpectations';
+import ComposeReceiptPanel from '../components/ComposeReceiptPanel';
+import { normalizeComposeReceipt } from '../lib/composeReceipt';
 import './JarvisConsole.css';
+
+const DEEP_COMPOSE_STORAGE_KEY = 'jarvis-deep-compose';
 
 const quickActions = [
   'Summarize what I worked on today and suggest the next step.',
@@ -5596,6 +5600,10 @@ function JarvisConsole() {
   const [protocolSession, setProtocolSession] = useState(null);
   const [protocolBusy, setProtocolBusy] = useState(false);
   const [sessionRuntime, setSessionRuntime] = useState(() => mapSessionRuntime());
+  const [composeReceipt, setComposeReceipt] = useState(null);
+  const [deepComposeEnabled, setDeepComposeEnabled] = useState(
+    () => window.localStorage.getItem(DEEP_COMPOSE_STORAGE_KEY) === 'true',
+  );
   const [activeComposeTab, setActiveComposeTab] = useState('mode');
   const [activeSideTab, setActiveSideTab] = useState('conversation');
   const [mysticPrompt, setMysticPrompt] = useState('my current state and the next move I need to make');
@@ -6122,6 +6130,10 @@ function JarvisConsole() {
 
   const applySessionRuntime = useCallback((payload) => {
     setSessionRuntime(mapSessionRuntime(payload));
+    const nextReceipt = normalizeComposeReceipt(payload);
+    if (nextReceipt) {
+      setComposeReceipt(nextReceipt);
+    }
     applySystemGuard(payload);
     applyCorrigibility(payload);
     applyDreamspace(payload);
@@ -6162,6 +6174,26 @@ function JarvisConsole() {
   const applyBrowserVerification = useCallback((payload) => {
     setBrowserVerification(payload?.browser_verification || null);
   }, []);
+
+  const toggleDeepCompose = useCallback(() => {
+    setDeepComposeEnabled((current) => {
+      const next = !current;
+      window.localStorage.setItem(DEEP_COMPOSE_STORAGE_KEY, next ? 'true' : 'false');
+      return next;
+    });
+  }, []);
+
+  const buildStreamComposeFlags = useCallback((responseMode) => {
+    const deepModes = new Set(['think', 'research', 'debug']);
+    const usesDeepCompose = deepComposeEnabled || deepModes.has(responseMode);
+    const usesThinkSpeaking = responseMode === 'think';
+    return {
+      cognitive_runtime: usesDeepCompose,
+      compose_full: deepComposeEnabled && !deepModes.has(responseMode),
+      operator_speaking_wrap: usesThinkSpeaking,
+      speaking_runtime: usesThinkSpeaking,
+    };
+  }, [deepComposeEnabled]);
 
   const patchMessage = useCallback((messageId, updates) => {
     startTransition(() => {
@@ -6647,6 +6679,7 @@ function JarvisConsole() {
           provider: profile.preferredProvider,
           requested_specialists: selectedSpecialists,
           requested_specialist_preset: selectedSpecialistPreset,
+          ...buildStreamComposeFlags(profile.responseMode),
         },
         {
           signal: abortController.signal,
@@ -8272,6 +8305,19 @@ function JarvisConsole() {
                 </div>
               )}
 
+              {(activeComposeTab === 'mode' || activeComposeTab === 'all') && (
+                <label className="jarvis-toggle-field compose-deep-toggle">
+                  <input
+                    type="checkbox"
+                    checked={deepComposeEnabled}
+                    onChange={toggleDeepCompose}
+                  />
+                  <span>
+                    Deep compose — run full Nova Cortex on operator turns (Spine, ARIS, all lobes).
+                  </span>
+                </label>
+              )}
+
               {(activeComposeTab === 'provider' || activeComposeTab === 'all') && (
                 <div className="provider-row">
                   {availableProviders.map((provider) => {
@@ -8608,6 +8654,14 @@ function JarvisConsole() {
               </div>
             )}
           </div>
+          )}
+
+          {showReasoningPanel && (
+          <ComposeReceiptPanel
+            receipt={composeReceipt}
+            title="Composed turn"
+            compact
+          />
           )}
 
           {showReasoningPanel && (

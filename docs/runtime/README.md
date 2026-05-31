@@ -15,6 +15,26 @@ reference doc that sits above raw code but below vague planning notes.
   - subsystem-by-subsystem technical status and activation guidance
 - [SPECIALIST_REGISTRY_SPEC.md](./SPECIALIST_REGISTRY_SPEC.md)
   - specialist registry reference
+- [SPEAKING_RUNTIME_SPEC.md](./SPEAKING_RUNTIME_SPEC.md)
+  - governed loop that speaks its own process (Listen → Frame → Plan → Speak → Check → Update)
+- [NOVA_CORTEX.md](./NOVA_CORTEX.md)
+  - Nova's modular cortex: governed mini-lobe runtimes for wolf-cog-os-full
+- [NOVA_CAPABILITY_INVENTORY.md](./NOVA_CAPABILITY_INVENTORY.md)
+  - living checklist: what Nova can do now (proven / asserted / debt)
+- [AI_FACTORY.md](./AI_FACTORY.md)
+  - governed mind fabrication pipeline (spec → spine → runtime → proof → envelope)
+- [PLATFORM_MEMBRANE.md](./PLATFORM_MEMBRANE.md)
+  - multi-tenant SaaS ingress (identity, jobs, artifacts, operator console)
+- [LAB_CONSOLE.md](./LAB_CONSOLE.md)
+  - governed code lab bench (worktree → instruments → session receipt → experiments)
+- [STAGE2_COPILOT_DOCTRINE.md](./STAGE2_COPILOT_DOCTRINE.md)
+  - constitutional three-stage model: Thought → Copilot (integrator) → Environment
+- [NOVA_CORTEX_WOLF_INTEGRATION.md](./NOVA_CORTEX_WOLF_INTEGRATION.md)
+  - Wolf-cog-os-full boot stack, manifest, bridge, verify gate
+- [COGNITIVE_RUNTIME_FAMILY.md](./COGNITIVE_RUNTIME_FAMILY.md)
+  - legacy redirect to Nova Cortex
+- [SPEAKING_RUNTIME_SYSTEM_PROMPT.txt](./SPEAKING_RUNTIME_SYSTEM_PROMPT.txt)
+  - copy-paste system prompt for non-Python tools
 
 ## Canonical Rule
 

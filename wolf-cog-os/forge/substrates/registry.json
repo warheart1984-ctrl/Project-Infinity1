@@ -120,6 +120,20 @@
         "path_markers": ["LiveOS/liveos-flag"]
       }
     },
+    "rocky-live": {
+      "description": "Rocky Linux live/install ISO (LiveOS squashfs layout)",
+      "class": "fedora-family",
+      "family": "rocky",
+      "contract_version": "forge-substrate.v2",
+      "priority": 52,
+      "min_bytes": 800000000,
+      "replay_adapter": "fedora-liveos-layout",
+      "detect": {
+        "path_globs": ["LiveOS/squashfs.img", "LiveOS/ext3fs.img", "images/install.img"],
+        "path_any": ["images/pxeboot/vmlinuz", "isolinux/vmlinuz", "EFI/BOOT/grub.cfg"],
+        "path_markers": [".discinfo", "images/install.img"]
+      }
+    },
     "alpine-live": {
       "description": "Alpine extended/live ISO",
       "class": "alpine-family",

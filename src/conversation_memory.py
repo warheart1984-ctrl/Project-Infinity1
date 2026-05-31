@@ -1860,6 +1860,19 @@ class ConversationSession:
                 }
             )
 
+        verification_prompt = self.metadata.get("output_verification_prompt_block")
+        if verification_prompt:
+            system_blocks.append(
+                {
+                    "identity": "output_verification",
+                    "role": "system",
+                    "content": verification_prompt,
+                    "channel": "verification",
+                    "source": "output_verification_prompt_block",
+                    "priority": 24,
+                }
+            )
+
         continuity_prompt = self.metadata.get("continuity_prompt_block")
         if not companion_active and not relational_active and continuity_prompt:
             system_blocks.append(
@@ -2055,6 +2068,19 @@ class ConversationSession:
                     "channel": "corrigibility",
                     "source": "corrigibility_prompt_block",
                     "priority": 30,
+                }
+            )
+
+        verification_prompt = self.metadata.get("output_verification_prompt_block")
+        if verification_prompt:
+            system_blocks.append(
+                {
+                    "identity": "output_verification",
+                    "role": "system",
+                    "content": verification_prompt,
+                    "channel": "verification",
+                    "source": "output_verification_prompt_block",
+                    "priority": 24,
                 }
             )
 

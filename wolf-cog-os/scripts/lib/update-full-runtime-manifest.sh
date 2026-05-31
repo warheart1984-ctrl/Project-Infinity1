@@ -47,6 +47,10 @@ components["daily_driver"] = "full_nova_stack_v1"
 components["install_hook"] = "cogos-install-finish"
 components["live_boot_contract"] = "systemd_pid1_pre_pack_validated_v1"
 components["runtime_plane"] = "governed_full_stack_v1"
+components["cognitive_runtime_family"] = "v3_nova_cortex_unified"
+components["nova_cortex"] = "v3_nova_wolf_unified"
+components["cognitive_runtime_bridge"] = "opt/cogos/runtime/src/cogos_runtime_bridge.py"
+components["cognitive_runtime"] = "v3_nova_cortex"
 components.pop("surprise_installer", None)
 if graphical:
     components["graphical_install"] = "debian_di_preseed_late_command_v1"

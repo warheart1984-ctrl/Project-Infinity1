@@ -53,6 +53,7 @@ verify_iso_size() {
   local output_iso="$2"
   local min_ratio="${COGOS_MIN_ISO_RATIO:-0.92}"
   local min_bytes="${COGOS_MIN_ISO_BYTES:-3400000000}"
+  local src_size=0
 
   if [[ ! -f "$output_iso" ]]; then
     echo "ERROR: Output ISO missing: $output_iso" >&2
@@ -62,16 +63,27 @@ verify_iso_size() {
   local out_size
   out_size="$(stat -c%s "$output_iso" 2>/dev/null || stat -f%z "$output_iso")"
 
+  if [[ -f "$source_iso" ]]; then
+    src_size="$(stat -c%s "$source_iso" 2>/dev/null || stat -f%z "$source_iso")"
+    # Rocky/Fedora boot/install substrates (~1 GB) — not Debian live (~4 GB).
+    if (( src_size < 2000000000 )); then
+      min_ratio="${COGOS_MIN_ISO_RATIO:-0.35}"
+      min_bytes=$(( src_size * 35 / 100 ))
+      if (( min_bytes < 300000000 )); then
+        min_bytes=300000000
+      fi
+    fi
+  fi
+
   if (( out_size < min_bytes )); then
     echo "ERROR: Output ISO is too small ($(numfmt --to=iec "$out_size" 2>/dev/null || echo "${out_size} bytes"))." >&2
-    echo "       Expected at least $(numfmt --to=iec "$min_bytes" 2>/dev/null || echo "${min_bytes} bytes") (metal reference ~4.0 GB)." >&2
-    echo "       This usually means incomplete ISO extract, missing live/squashfs, or wrong base image." >&2
+    echo "       Expected at least $(numfmt --to=iec "$min_bytes" 2>/dev/null || echo "${min_bytes} bytes")." >&2
+    echo "       This usually means incomplete ISO extract, missing squashfs/install.img, or wrong base image." >&2
     return 10
   fi
 
-  if [[ -f "$source_iso" ]]; then
-    local src_size threshold
-    src_size="$(stat -c%s "$source_iso" 2>/dev/null || stat -f%z "$source_iso")"
+  if (( src_size > 0 )); then
+    local threshold
     threshold="$(python3 -c "print(int($src_size * $min_ratio))")"
     if (( out_size < threshold )); then
       pct="$(python3 -c "print(int((1 - float('${min_ratio}')) * 100))")"

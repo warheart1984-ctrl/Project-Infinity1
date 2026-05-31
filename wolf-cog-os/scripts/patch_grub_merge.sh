@@ -1,13 +1,58 @@
 #!/usr/bin/env bash
 # Merge GRUB: metal-style standalone cfg (no missing config.cfg); append governed entries.
+
+# Debian live: iso/live/vmlinuz + iso/boot/grub/grub.cfg
+# Fedora/Rocky: iso/images/pxeboot/* + iso/boot/grub2/grub.cfg (stock menu kept for forge repack)
+resolve_grub_boot_paths() {
+  local candidate
+
+  GRUB_CFG=""
+  VMLINUZ=""
+  INITRD=""
+
+  if [[ -d "$WORK/iso/live" ]]; then
+    VMLINUZ="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'vmlinuz*' 2>/dev/null | sort | head -n 1)"
+    INITRD="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'initrd*' 2>/dev/null | sort | head -n 1)"
+    for candidate in "$WORK/iso/boot/grub/grub.cfg"; do
+      if [[ -f "$candidate" ]]; then
+        GRUB_CFG="$candidate"
+        break
+      fi
+    done
+  fi
+
+  if [[ -z "$VMLINUZ" && -f "$WORK/iso/images/pxeboot/vmlinuz" ]]; then
+    VMLINUZ="$WORK/iso/images/pxeboot/vmlinuz"
+    INITRD="$WORK/iso/images/pxeboot/initrd.img"
+    for candidate in \
+      "$WORK/iso/boot/grub2/grub.cfg" \
+      "$WORK/iso/EFI/BOOT/grub.cfg" \
+      "$WORK/iso/boot/grub/grub.cfg"; do
+      if [[ -f "$candidate" ]]; then
+        GRUB_CFG="$candidate"
+        break
+      fi
+    done
+  fi
+
+  [[ -n "$VMLINUZ" && -n "$INITRD" && -n "$GRUB_CFG" ]] || return 1
+  VMLINUZ="/${VMLINUZ#$WORK/iso/}"
+  INITRD="/${INITRD#$WORK/iso/}"
+  return 0
+}
+
+is_fedora_family_iso_tree() {
+  [[ -f "$WORK/iso/images/install.img" && -f "$WORK/iso/images/pxeboot/vmlinuz" ]]
+}
+
 patch_grub_merge() {
   local grub="$WORK/iso/boot/grub/grub.cfg"
   local isolinux="$WORK/iso/isolinux"
   local vmlinuz initrd menu_label
   local findiso_arg=""
 
-  vmlinuz="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'vmlinuz*' | sort | head -n 1)"
-  initrd="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'initrd*' | sort | head -n 1)"
+  vmlinuz="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'vmlinuz*' 2>/dev/null | sort | head -n 1)"
+  initrd="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'initrd*' 2>/dev/null | sort | head -n 1)"
   if [[ -z "$vmlinuz" || -z "$initrd" || ! -d "$WORK/iso/boot/grub" ]]; then
     echo "GRUB merge skipped; live kernel/initrd/grub not found." >&2
     return 0
@@ -109,20 +154,24 @@ EOF
 
 # Forge ISO profile: normal live, Forge Mode cockpit, and recovery shell.
 patch_grub_forge() {
-  local grub="$WORK/iso/boot/grub/grub.cfg"
-  local isolinux="$WORK/iso/isolinux"
-  local vmlinuz initrd menu_label
+  local grub isolinux menu_label
   local findiso_arg=""
+  local vmlinuz initrd
 
-  vmlinuz="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'vmlinuz*' | sort | head -n 1)"
-  initrd="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'initrd*' | sort | head -n 1)"
-  if [[ -z "$vmlinuz" || -z "$initrd" || ! -d "$WORK/iso/boot/grub" ]]; then
+  if is_fedora_family_iso_tree; then
+    echo "GRUB forge: Rocky/Fedora substrate — keeping stock grub.cfg (forge rootfs repacked into install.img)" >&2
+    return 0
+  fi
+
+  if ! resolve_grub_boot_paths; then
     echo "GRUB forge patch skipped; live kernel/initrd/grub not found." >&2
     return 0
   fi
 
-  vmlinuz="/${vmlinuz#$WORK/iso/}"
-  initrd="/${initrd#$WORK/iso/}"
+  grub="$GRUB_CFG"
+  vmlinuz="$VMLINUZ"
+  initrd="$INITRD"
+  isolinux="$WORK/iso/isolinux"
   menu_label="${COGOS_OS_MENU:-Wolf CoG OS Forge}"
 
   if [[ "${COGOS_LIVE_FINDISO:-0}" == "1" ]]; then
@@ -193,8 +242,8 @@ patch_grub_metal_installer() {
   local isolinux="$WORK/iso/isolinux"
   local vmlinuz initrd
 
-  vmlinuz="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'vmlinuz*' | sort | head -n 1)"
-  initrd="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'initrd*' | sort | head -n 1)"
+  vmlinuz="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'vmlinuz*' 2>/dev/null | sort | head -n 1)"
+  initrd="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'initrd*' 2>/dev/null | sort | head -n 1)"
   if [[ -z "$vmlinuz" || -z "$initrd" || ! -d "$WORK/iso/boot/grub" ]]; then
     echo "GRUB metal installer patch skipped; live kernel/initrd/grub not found." >&2
     return 0
@@ -261,20 +310,18 @@ EOF
 resolve_iso_live_boot_paths() {
   LIVE_VMLINUZ=""
   LIVE_INITRD=""
-  LIVE_VMLINUZ="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'vmlinuz*' | sort | head -n 1)"
-  LIVE_INITRD="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'initrd*' | sort | head -n 1)"
-  if [[ -z "$LIVE_VMLINUZ" || -z "$LIVE_INITRD" ]]; then
+  if ! resolve_grub_boot_paths; then
     return 1
   fi
-  LIVE_VMLINUZ="/${LIVE_VMLINUZ#$WORK/iso/}"
-  LIVE_INITRD="/${LIVE_INITRD#$WORK/iso/}"
+  LIVE_VMLINUZ="$VMLINUZ"
+  LIVE_INITRD="$INITRD"
   return 0
 }
 
 # Debian live: stock gtk d-i + Wolf preseed (full runtime via late_command on /install/).
 patch_grub_debian_installer() {
   local grub="$WORK/iso/boot/grub/grub.cfg"
-  local live_title="Live system (amd64)"
+  local live_title="Wolf CoG OS — Live"
   if [[ "${COGOS_FULL_RUNTIME:-0}" == "1" ]]; then
     live_title="Wolf CoG OS — Live (full runtime)"
   fi
@@ -358,8 +405,8 @@ patch_grub_universal_installer() {
   local vmlinuz initrd
   local calamares_available="${COGOS_CALAMARES_AVAILABLE:-1}"
 
-  vmlinuz="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'vmlinuz*' | sort | head -n 1)"
-  initrd="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'initrd*' | sort | head -n 1)"
+  vmlinuz="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'vmlinuz*' 2>/dev/null | sort | head -n 1)"
+  initrd="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'initrd*' 2>/dev/null | sort | head -n 1)"
   if [[ -z "$vmlinuz" || -z "$initrd" || ! -d "$WORK/iso/boot/grub" ]]; then
     echo "GRUB universal patch skipped; live kernel/initrd/grub not found." >&2
     return 0
@@ -474,8 +521,8 @@ patch_grub_surprise() {
   local vmlinuz initrd
   local findiso_dd="" findiso_vt=" findiso=\${iso_path}"
 
-  vmlinuz="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'vmlinuz*' | sort | head -n 1)"
-  initrd="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'initrd*' | sort | head -n 1)"
+  vmlinuz="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'vmlinuz*' 2>/dev/null | sort | head -n 1)"
+  initrd="$(find "$WORK/iso/live" -maxdepth 1 -type f -name 'initrd*' 2>/dev/null | sort | head -n 1)"
   if [[ -z "$vmlinuz" || -z "$initrd" || ! -d "$WORK/iso/boot/grub" ]]; then
     echo "GRUB surprise patch skipped; live kernel/initrd/grub not found." >&2
     return 0

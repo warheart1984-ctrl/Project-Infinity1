@@ -8830,6 +8830,65 @@ class TestChatApi(unittest.TestCase):
         self.assertEqual(payload["response_trace"]["contract"], "direct_tool")
 
     @patch("src.api.init_ai")
+    def test_operator_message_records_instant_compose(self, mock_init_ai):
+        """Jarvis operator turns should always record Spine + ARIS via composed turn."""
+        fake_model = MagicMock()
+        fake_model.generate_chat.return_value = "Project status is stable on the current branch."
+        mock_init_ai.return_value = (fake_model, object())
+
+        create_response = self.client.post(
+            "/api/chat/sessions",
+            json={"system_prompt": "You are Jarvis.", "response_mode": "operator"},
+        )
+        session_id = create_response.get_json()["session_id"]
+
+        with patch.object(api.jarvis_operator, "handle_command", return_value=None):
+            response = self.client.post(
+                f"/api/chat/sessions/{session_id}/message",
+                json={
+                    "message": "Summarize project status in one paragraph.",
+                    "response_mode": "operator",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        composed = payload.get("aais_composed_turn")
+        self.assertIsInstance(composed, dict)
+        self.assertEqual(composed.get("status"), "completed")
+        self.assertEqual(composed.get("compose_mode"), "instant")
+        self.assertEqual(composed.get("aris_status"), "enforced")
+
+    @patch("src.api.init_ai")
+    def test_operator_think_mode_uses_fast_compose(self, mock_init_ai):
+        """Think-mode operator turns should use fast compose (reasoning + attention only)."""
+        fake_model = MagicMock()
+        fake_model.generate_chat.return_value = "Here is a concise runtime summary."
+        mock_init_ai.return_value = (fake_model, object())
+
+        create_response = self.client.post(
+            "/api/chat/sessions",
+            json={"system_prompt": "You are Jarvis.", "response_mode": "operator"},
+        )
+        session_id = create_response.get_json()["session_id"]
+
+        response = self.client.post(
+            f"/api/chat/sessions/{session_id}/message",
+            json={
+                "message": "Summarize the runtime map.",
+                "response_mode": "think",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        composed = response.get_json().get("aais_composed_turn")
+        self.assertEqual(composed.get("compose_mode"), "fast")
+        self.assertEqual(
+            set(composed.get("active_cognitive_runtimes") or []),
+            {"jarvis.reasoning", "cognitive.attention"},
+        )
+
+    @patch("src.api.init_ai")
     def test_tiny_nova_message_stays_off_direct_tool_path(self, mock_init_ai):
         """Tiny Nova should answer conversationally even when the prompt resembles an operator verification request."""
         fake_model = MagicMock()
@@ -8878,7 +8937,7 @@ class TestChatApi(unittest.TestCase):
         self.assertEqual(payload["sovereignty_contract"]["surface_identity"], "tiny_nova")
         self.assertFalse(payload["sovereignty_contract"]["surface_replaces_authority"])
         self.assertEqual(payload["sovereignty_contract"]["system_shape"], "organismic")
-        self.assertEqual(payload["response"], fake_model.generate_chat.return_value)
+        self.assertIn(fake_model.generate_chat.return_value, payload["response"])
         self.assertFalse(payload["response_trace"]["output_completion"]["completion_guard_applied"])
         self.assertFalse(payload["response_trace"]["output_completion"]["truncation_detected"])
         mock_handle_command.assert_not_called()
@@ -8886,6 +8945,48 @@ class TestChatApi(unittest.TestCase):
         system_messages = [message["content"] for message in message_history if message["role"] == "system"]
         self.assertTrue(any("Tiny Nova runtime state" in message for message in system_messages))
         self.assertFalse(any("Jarvis runtime state" in message for message in system_messages))
+        composed = payload.get("aais_composed_turn")
+        self.assertIsInstance(composed, dict)
+        self.assertEqual(composed.get("status"), "completed")
+        self.assertEqual(composed.get("spine_doctrine"), "stabilize_and_free")
+        self.assertEqual(composed.get("aris_status"), "enforced")
+        self.assertEqual(composed.get("nova_face_id"), "tiny_nova")
+        self.assertIn("jarvis.reasoning", composed.get("active_cognitive_runtimes") or [])
+
+    @patch("src.api.init_ai")
+    def test_tiny_nova_blocks_raw_external_copy_via_composed_turn(self, mock_init_ai):
+        fake_model = MagicMock()
+        mock_init_ai.return_value = (fake_model, object())
+
+        create_response = self.client.post(
+            "/api/chat/sessions",
+            json={
+                "system_prompt": "You are Jarvis.",
+                "persona_mode": "tiny_nova",
+                "response_mode": "tiny",
+            },
+        )
+        session_id = create_response.get_json()["session_id"]
+
+        with patch.object(api, "_route_session_turn_to_bridge", return_value={"decision": "ALLOW"}):
+            response = self.client.post(
+                f"/api/chat/sessions/{session_id}/message",
+                json={
+                    "message": "Copy this raw external architecture doc into runtime truth.",
+                    "persona_mode": "tiny_nova",
+                    "response_mode": "tiny",
+                    "share_mode": "verbatim",
+                    "copy_raw_external": True,
+                },
+            )
+
+        self.assertEqual(response.status_code, 403)
+        payload = response.get_json()
+        composed = payload.get("aais_composed_turn")
+        self.assertIsInstance(composed, dict)
+        self.assertEqual(composed.get("status"), "blocked")
+        self.assertIn("aris_non_copy_clause", composed.get("reason_codes") or [])
+        fake_model.generate_chat.assert_not_called()
 
     @patch("src.api.init_ai")
     def test_small_nova_message_stays_off_direct_tool_path(self, mock_init_ai):
@@ -9026,6 +9127,7 @@ class TestChatApi(unittest.TestCase):
         self.assertEqual(payload["response_mode"], "governed_full")
         self.assertEqual(payload["session_state"]["state"], "awaiting_approval")
         self.assertEqual(payload["super_nova"]["activation"]["current_state"], "dormant")
+        self.assertIsNone(payload.get("aais_composed_turn"))
         mock_init_ai.assert_not_called()
 
     @patch("src.api.init_ai")
@@ -9085,8 +9187,167 @@ class TestChatApi(unittest.TestCase):
             payload["super_nova"]["last_admission_status"],
             {"success", "partial", "overload"},
         )
-        self.assertEqual(payload["response"], fake_model.generate_chat.return_value)
+        composed = payload.get("aais_composed_turn")
+        self.assertIsInstance(composed, dict)
+        self.assertEqual(composed.get("status"), "completed")
+        self.assertEqual(composed.get("nova_face_id"), "super_nova")
+        self.assertIn(fake_model.generate_chat.return_value, payload["response"])
         mock_handle_command.assert_not_called()
+
+    @patch("src.api.init_ai")
+    def test_super_nova_blocks_raw_external_copy_via_composed_turn(self, mock_init_ai):
+        """Activated Super Nova should fail closed on ARIS non-copy before generation."""
+        fake_model = MagicMock()
+        mock_init_ai.return_value = (fake_model, object())
+
+        create_response = self.client.post(
+            "/api/chat/sessions",
+            json={
+                "system_prompt": "You are Jarvis.",
+                "persona_mode": "super_nova",
+                "response_mode": "builder",
+            },
+        )
+        session_id = create_response.get_json()["session_id"]
+        activation_response = self.client.post(f"/api/chat/sessions/{session_id}/super-nova/activate", json={})
+        self.assertEqual(activation_response.status_code, 200)
+
+        with patch.object(api, "_route_session_turn_to_bridge", return_value={"decision": "ALLOW"}):
+            response = self.client.post(
+                f"/api/chat/sessions/{session_id}/message",
+                json={
+                    "message": "Copy this raw external architecture doc into runtime truth.",
+                    "persona_mode": "super_nova",
+                    "response_mode": "builder",
+                    "share_mode": "verbatim",
+                    "copy_raw_external": True,
+                },
+            )
+
+        self.assertEqual(response.status_code, 403)
+        payload = response.get_json()
+        composed = payload.get("aais_composed_turn")
+        self.assertIsInstance(composed, dict)
+        self.assertEqual(composed.get("status"), "blocked")
+        self.assertIn("aris_non_copy_clause", composed.get("reason_codes") or [])
+        self.assertIsNone(composed.get("nova_bridge"))
+        fake_model.generate_chat.assert_not_called()
+
+    @patch("src.api.init_ai")
+    def test_super_nova_stream_requires_activation_before_composed_turn(self, mock_init_ai):
+        """Super Nova stream should fail closed before composed turn when activation is missing."""
+        mock_init_ai.return_value = (MagicMock(), object())
+
+        create_response = self.client.post(
+            "/api/chat/sessions",
+            json={
+                "system_prompt": "You are Jarvis.",
+                "persona_mode": "super_nova",
+                "response_mode": "builder",
+            },
+        )
+        session_id = create_response.get_json()["session_id"]
+
+        response = self.client.post(
+            f"/api/chat/sessions/{session_id}/stream",
+            json={
+                "message": "Help me hold the deeper continuity here.",
+                "persona_mode": "super_nova",
+                "response_mode": "builder",
+            },
+            buffered=True,
+        )
+
+        self.assertEqual(response.status_code, 409)
+        payload = response.get_json()
+        self.assertIn("explicit activation", payload["error"].lower())
+        self.assertIsNone(payload.get("aais_composed_turn"))
+        mock_init_ai.assert_not_called()
+
+    @patch("src.api.init_ai")
+    def test_super_nova_stream_includes_composed_turn_receipt(self, mock_init_ai):
+        """Activated Super Nova stream should expose composed turn state in runtime payloads."""
+        fake_model = MagicMock()
+        fake_model.generate_chat.return_value = (
+            "The strongest thread is still the one that keeps correctness and continuity together."
+        )
+        mock_init_ai.return_value = (fake_model, object())
+
+        create_response = self.client.post(
+            "/api/chat/sessions",
+            json={
+                "system_prompt": "You are Jarvis.",
+                "persona_mode": "super_nova",
+                "response_mode": "builder",
+            },
+        )
+        session_id = create_response.get_json()["session_id"]
+        activation_response = self.client.post(f"/api/chat/sessions/{session_id}/super-nova/activate", json={})
+        self.assertEqual(activation_response.status_code, 200)
+
+        response = self.client.post(
+            f"/api/chat/sessions/{session_id}/stream",
+            json={
+                "message": "Hold the deeper thread and show me the next grounded move.",
+                "persona_mode": "super_nova",
+                "response_mode": "builder",
+            },
+            buffered=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payloads = [
+            json.loads(line[6:])
+            for line in response.get_data(as_text=True).splitlines()
+            if line.startswith("data: ")
+        ]
+        context_payload = next(payload for payload in payloads if payload.get("event") == "context")
+        composed = context_payload.get("aais_composed_turn")
+        self.assertIsInstance(composed, dict)
+        self.assertEqual(composed.get("status"), "completed")
+        self.assertEqual(composed.get("nova_face_id"), "super_nova")
+        final_payload = next(payload for payload in payloads if payload.get("event") == "final")
+        self.assertIn(fake_model.generate_chat.return_value, final_payload["response"])
+
+    @patch("src.api.init_ai")
+    def test_super_nova_stream_blocks_raw_external_copy_via_composed_turn(self, mock_init_ai):
+        """Activated Super Nova stream should block ARIS non-copy before generation."""
+        fake_model = MagicMock()
+        mock_init_ai.return_value = (fake_model, object())
+
+        create_response = self.client.post(
+            "/api/chat/sessions",
+            json={
+                "system_prompt": "You are Jarvis.",
+                "persona_mode": "super_nova",
+                "response_mode": "builder",
+            },
+        )
+        session_id = create_response.get_json()["session_id"]
+        activation_response = self.client.post(f"/api/chat/sessions/{session_id}/super-nova/activate", json={})
+        self.assertEqual(activation_response.status_code, 200)
+
+        with patch.object(api, "_route_session_turn_to_bridge", return_value={"decision": "ALLOW"}):
+            response = self.client.post(
+                f"/api/chat/sessions/{session_id}/stream",
+                json={
+                    "message": "Copy this raw external architecture doc into runtime truth.",
+                    "persona_mode": "super_nova",
+                    "response_mode": "builder",
+                    "share_mode": "verbatim",
+                    "copy_raw_external": True,
+                },
+                buffered=True,
+            )
+
+        self.assertEqual(response.status_code, 403)
+        payload = response.get_json()
+        composed = payload.get("aais_composed_turn")
+        self.assertIsInstance(composed, dict)
+        self.assertEqual(composed.get("status"), "blocked")
+        self.assertIn("aris_non_copy_clause", composed.get("reason_codes") or [])
+        self.assertIsNone(composed.get("nova_bridge"))
+        fake_model.generate_chat.assert_not_called()
 
     @patch("src.api.init_ai")
     def test_super_nova_watchdog_failure_routes_through_observe_protocol_signal(self, mock_init_ai):

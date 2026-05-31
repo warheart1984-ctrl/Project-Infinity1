@@ -144,11 +144,36 @@ collect_plymouth_references() {
   printf 'plymouth_binary_present=%s\n' "$has_bin" >>"$PROOF_DIR/summary.txt"
 }
 
+verify_fedora_family_iso_boot() {
+  local pxeboot="$ISO_TREE/images/pxeboot"
+  [[ -f "$ISO_TREE/images/install.img" ]] || return 1
+  [[ -f "$pxeboot/vmlinuz" && -f "$pxeboot/initrd.img" ]] || \
+    die "fedora-family ISO missing pxeboot kernel/initrd under images/pxeboot" 12
+
+  local grub_cfg=""
+  for grub_cfg in \
+    "$ISO_TREE/boot/grub2/grub.cfg" \
+    "$ISO_TREE/EFI/BOOT/grub.cfg" \
+    "$ISO_TREE/boot/grub/grub.cfg"; do
+    if [[ -f "$grub_cfg" ]]; then
+      printf 'grub_boot_mode=fedora-installer\n' >>"$PROOF_DIR/summary.txt"
+      printf 'grub_config=%s\n' "$grub_cfg" >>"$PROOF_DIR/summary.txt"
+      printf 'squashfs_artifact=/images/install.img\n' >>"$PROOF_DIR/summary.txt"
+      return 0
+    fi
+  done
+  die "fedora-family ISO missing grub.cfg (boot/grub2 or EFI/BOOT)" 12
+}
+
 verify_grub_squashfs_consistency() {
   local grub_dir="$ISO_TREE/boot/grub"
   local live_dir="$ISO_TREE/live"
   local lines="$PROOF_DIR/grub-squashfs-lines.txt"
   : >"$lines"
+
+  if verify_fedora_family_iso_boot; then
+    return 0
+  fi
 
   [[ -d "$grub_dir" ]] || die "missing GRUB directory: $grub_dir" 12
   [[ -f "$live_dir/filesystem.squashfs" ]] || die "missing live squashfs artifact: $live_dir/filesystem.squashfs" 12
@@ -174,6 +199,11 @@ verify_grub_squashfs_consistency() {
 }
 
 verify_grub_init_contract() {
+  if [[ -f "$ISO_TREE/images/install.img" ]]; then
+    printf 'grub_init_contract=fedora-installer-skip\n' >>"$PROOF_DIR/summary.txt"
+    return 0
+  fi
+
   local grub_dir="$ISO_TREE/boot/grub"
   local init_lines="$PROOF_DIR/grub-init-lines.txt"
   : >"$init_lines"

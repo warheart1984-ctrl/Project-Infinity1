@@ -1,7 +1,42 @@
 {
   "schema_version": "forge-substrate-invariants.v1",
   "description": "Platform governance invariants for universal substrate replay (Gate F compatible)",
+  "runtime_scorpion_invariants": {
+    "status": "inactive",
+    "catalog_ref": "scorpion/invariants/os_invariants.v1.json",
+    "ingest_script": "wolf-cog-os/scripts/scorpion-ingest-boot-trace.sh",
+    "activation_env": "SCORPION_WOLF_INGEST=active",
+    "evaluator_ids": [
+      "syscall_sequence",
+      "scheduler_rhythm",
+      "memory_lifecycle",
+      "fd_flow",
+      "ipc_choreography",
+      "privilege_transition",
+      "entropy_signature",
+      "timing_delta"
+    ]
+  },
   "platforms": {
+    "linux": {
+      "substrate_ids": ["debian-rootfs", "ubuntu-rootfs"],
+      "replay_adapter": "debian-rootfs-layout",
+      "backend": "debootstrap-backend",
+      "required_invariants": [
+        "rootfs_integrity",
+        "systemd_unit_presence"
+      ],
+      "runtime_scorpion_evaluators": [
+        "syscall_sequence",
+        "scheduler_rhythm",
+        "memory_lifecycle",
+        "fd_flow"
+      ],
+      "gate_f_checks": [
+        "forge-lineage records replay_adapter",
+        "optional scorpion boot trace ingest when SCORPION_WOLF_INGEST=active"
+      ]
+    },
     "windows": {
       "substrate_ids": ["windows-installer"],
       "replay_adapter": "windows-wim-layout",

@@ -289,13 +289,29 @@ ensure_pid1_chain() {
   log "PID1 chain verified: /usr/sbin/init -> cognitive_init -> init.original"
 }
 
+keep_systemd_pid1() {
+  if [ "${COGOS_KEEP_SYSTEMD_PID1:-0}" = "1" ]; then
+    return 0
+  fi
+  if [ -f /etc/cogos/keep-systemd-pid1 ]; then
+    return 0
+  fi
+  if grep -qE 'cogos\.keep_systemd=1|COGOS_KEEP_SYSTEMD_PID1=1' /proc/cmdline 2>/dev/null; then
+    return 0
+  fi
+  if [ -f "$ROOT_MNT/etc/systemd/system/cogos-governance.service" ]; then
+    return 0
+  fi
+  return 1
+}
+
 refresh_initramfs() {
   if [ "$DRY_RUN" = "true" ]; then
     log "+ chroot $ROOT_MNT update-initramfs -u -k all"
     return 0
   fi
   if chroot "$ROOT_MNT" command -v update-initramfs >/dev/null 2>&1; then
-    log "regenerating initramfs after PID1 swap"
+    log "regenerating initramfs"
     chroot "$ROOT_MNT" update-initramfs -u -k all >>"$INSTALL_LOG" 2>&1 \
       || log "WARN: update-initramfs failed (update-grub may still refresh)"
   fi
@@ -303,13 +319,17 @@ refresh_initramfs() {
 
 finalize_first_boot() {
   if [ "$DRY_RUN" = "true" ]; then
-    log "+ first-boot marker + cogos-first-boot.service"
+    log "+ first-boot marker + cogos-first-boot.service (legacy)"
     return 0
   fi
   for dir in "$ROOT_MNT/opt/cogos/memory/operator" "$ROOT_MNT/var/lib/cogos/memory/operator"; do
     mkdir -p "$dir"
     date -u +%Y-%m-%dT%H:%M:%SZ > "$dir/FIRST_BOOT_PENDING"
   done
+  if [ -f "$ROOT_MNT/etc/systemd/system/cogos-governance.service" ]; then
+    log "boot stack present — skipping legacy cogos-first-boot enable"
+    return 0
+  fi
   if [ -f "$ROOT_MNT/etc/systemd/system/cogos-first-boot.service" ] \
      && [ -x "$ROOT_MNT/usr/local/bin/cogos-first-boot" ]; then
     mkdir -p "$ROOT_MNT/etc/systemd/system/graphical.target.wants"
@@ -318,11 +338,20 @@ finalize_first_boot() {
     chroot "$ROOT_MNT" systemctl enable cogos-first-boot.service >>"$INSTALL_LOG" 2>&1 \
       || log "enabled cogos-first-boot via symlink fallback"
   fi
-  if [ -f "$ROOT_MNT/opt/cogos/config/boot_profile_daily_driver.json" ]; then
-    cp -f "$ROOT_MNT/opt/cogos/config/boot_profile_daily_driver.json" \
-      "$ROOT_MNT/opt/cogos/config/boot_profile.json"
-    log "boot profile set to daily driver (full runtime)"
+}
+
+run_install_finish() {
+  if [ "$DRY_RUN" = "true" ]; then
+    log "+ chroot $ROOT_MNT cogos-install-finish --in-target --keep-systemd-pid1 --quiet"
+    return 0
   fi
+  if [ ! -x "$ROOT_MNT/usr/local/bin/cogos-install-finish" ]; then
+    log "WARN: cogos-install-finish missing on target"
+    return 1
+  fi
+  chroot "$ROOT_MNT" /usr/local/bin/cogos-install-finish --in-target --keep-systemd-pid1 --quiet \
+    >>"$INSTALL_LOG" 2>&1 \
+    || log "WARN: cogos-install-finish returned non-zero"
 }
 
 create_user() {
@@ -384,8 +413,6 @@ apply_install() {
     / "$ROOT_MNT/"
 
   run_step mkdir -p "$ROOT_MNT/proc" "$ROOT_MNT/sys" "$ROOT_MNT/dev" "$ROOT_MNT/run" "$ROOT_MNT/tmp"
-  ensure_pid1_chain
-  finalize_first_boot
   if [ "$DRY_RUN" != "true" ]; then
     echo "$HOSTNAME" > "$ROOT_MNT/etc/hostname"
     ROOT_UUID="$(blkid -s UUID -o value "$ROOT_PART")"
@@ -405,6 +432,13 @@ EOF
   run_step mount --bind /sys "$ROOT_MNT/sys"
   run_step mount --bind /run "$ROOT_MNT/run"
   create_user
+  if keep_systemd_pid1; then
+    log "keeping native systemd PID1 — running cogos-install-finish"
+    run_install_finish || finalize_first_boot
+  else
+    ensure_pid1_chain
+    finalize_first_boot
+  fi
   refresh_initramfs
   install_bootloader
   if [ "$DRY_RUN" != "true" ]; then

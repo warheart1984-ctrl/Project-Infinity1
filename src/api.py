@@ -96,6 +96,22 @@ from src.jarvis_modular import (
     build_provider_messages_from_protocol,
 )
 from src.jarvis_protocol import protocol_spec
+from src.cog_runtime.nova import (
+    apply_nova_cognitive_finalization,
+    summarize_cognitive_runtime_state,
+)
+from src.cog_runtime.nova_face import summarize_nova_face_bridge
+from src.aais_composed_runtime import (
+    resolve_composed_turn_payload,
+    run_composed_turn,
+    summarize_composed_turn,
+)
+from src.speaking_runtime.integration import (
+    apply_speaking_runtime_finalization,
+    build_speaking_runtime_prompt_block,
+    resolve_speaking_runtime_enabled,
+    summarize_speaking_runtime_state,
+)
 from src.jarvis_reasoning_protocol import (
     analyze_direct_challenge,
     analyze_relational_question,
@@ -992,6 +1008,16 @@ def _require_super_nova_activation(session) -> tuple[bool, tuple[dict, int] | No
     return True, None
 
 
+def _require_super_nova_before_composed_turn(session) -> tuple[bool, tuple[dict, int] | None]:
+    """Fail closed before Spine/ARIS/Nova Cortex run on a Super Nova companion turn."""
+    if not _session_uses_super_nova(session):
+        return True, None
+    allowed, blocked_payload = _require_super_nova_phase_gate(session)
+    if not allowed:
+        return False, blocked_payload
+    return _require_super_nova_activation(session)
+
+
 def _finalize_super_nova_admission(
     session,
     *,
@@ -1858,6 +1884,109 @@ def _begin_turn_trace(session):
     _sanitize_session_response_trace(session)
 
 
+def _maybe_block_mechanic_enforcement(session, session_id: str):
+    """MECH-CHAT-01 — optional runtime profile gate before chat actuation."""
+    from mechanic.integration.chat_hook import enforce_chat_turn_request
+
+    metadata = getattr(session, "metadata", None) or {}
+    slingshot = metadata.get("slingshot") or {}
+    if slingshot.get("active"):
+        return None
+    case_id = str(metadata.get("mechanic_case_id") or "").strip()
+    return enforce_chat_turn_request(
+        action="propose",
+        model_calls_this_turn=0,
+        audit_fields={"trace_id": session_id, "case_id": case_id or session_id},
+        case_id=case_id or None,
+    )
+
+
+def _admit_slingshot_turn(session, data: dict[str, Any], session_id: str):
+    """Slingshot launch admission — pullback/tension validation before compose."""
+    slingshot_payload = data.get("slingshot")
+    if not isinstance(slingshot_payload, dict) or not slingshot_payload:
+        return None
+    from slingshot.launch import admit_slingshot_turn
+
+    return admit_slingshot_turn(session, slingshot_payload, session_id=session_id)
+
+
+def _finalize_slingshot_turn_impact(
+    session,
+    *,
+    user_message: str,
+    response_text: str,
+    session_id: str,
+) -> dict[str, Any] | None:
+    """Impact catch-zone: midflight reply checks, receipt, optional signoff gate."""
+    metadata = getattr(session, "metadata", None) or {}
+    slingshot = metadata.get("slingshot") or {}
+    if not slingshot.get("active"):
+        return None
+
+    from slingshot.impact import build_impact_receipt, persist_impact_receipt
+    from slingshot.midflight import (
+        apply_midflight_to_session,
+        evaluate_slingshot_midflight_reply,
+        merge_midflight_reports,
+    )
+
+    packet = dict(slingshot.get("packet") or {})
+    case_id = str(slingshot.get("case_id") or packet.get("case_id") or "")
+    reply_report = evaluate_slingshot_midflight_reply(
+        user_message=user_message,
+        assistant_reply=response_text or "",
+        packet=packet,
+    )
+    cortex_report = dict(metadata.get("slingshot_midflight_cortex") or {})
+    merged = merge_midflight_reports(cortex_report, reply_report)
+    apply_midflight_to_session(session, merged)
+
+    receipt = build_impact_receipt(
+        case_id=case_id,
+        turn_id=session_id,
+        user_message=user_message,
+        assistant_reply=response_text or "",
+        midflight_report=merged,
+        session_metadata=metadata,
+        compose_mode_used=str(metadata.get("composed_turn_mode") or "fast"),
+        cortex_fast_path=bool(metadata.get("cortex_fast_path")),
+    )
+    receipt_path = persist_impact_receipt(receipt)
+    session.metadata["slingshot_last_receipt"] = {
+        "path": str(receipt_path),
+        "impact_status": receipt.get("impact_status"),
+        "receipt_hash": receipt.get("receipt_hash"),
+    }
+
+    if merged.get("signoff_required"):
+        _store_pending_action(
+            session,
+            {
+                "id": f"slingshot_signoff_{case_id}",
+                "type": "slingshot_signoff",
+                "label": "Slingshot drift signoff required",
+                "summary": "Stage 2 drift detected during slingshot launch; approve to continue.",
+                "case_id": case_id,
+                "impact_status": merged.get("impact_status"),
+            },
+        )
+
+    if merged.get("halt_turn"):
+        return {
+            "error": "Slingshot turn halted due to Class III drift or cost ceiling breach.",
+            "slingshot": {
+                "blocked": True,
+                "impact_status": merged.get("impact_status"),
+                "drift_events": merged.get("drift_events"),
+                "receipt_path": str(receipt_path),
+                "claim_label": "proven",
+            },
+            "status_code": 403,
+        }
+    return None
+
+
 def _session_event_key(event_type: str, summary: str, payload=None):
     """Build a stable per-turn dedupe key for one session event."""
     return (
@@ -2519,7 +2648,123 @@ def _finalize_visible_response(
     completion_trace = completion_report.to_dict()
     session.metadata["output_completion_trace"] = completion_trace
     _record_output_completion_trace(response_trace, completion_trace)
-    return finalized_text
+    if _local_fallback_active(session, response_trace=response_trace):
+        return finalized_text
+    if session.metadata.get("cognitive_runtime_enabled"):
+        cognitive_text = apply_nova_cognitive_finalization(
+            session,
+            user_message,
+            finalized_text,
+            response_trace=response_trace,
+        )
+        if session.metadata.get("nova_cognitive_summary"):
+            return cognitive_text
+    return apply_speaking_runtime_finalization(
+        session,
+        user_message,
+        finalized_text,
+        response_trace=response_trace,
+    )
+
+
+def _configure_speaking_runtime_turn(
+    session,
+    request_payload,
+    user_message: str,
+    *,
+    companion_turn: bool = False,
+):
+    """Enable Speaking Runtime for this turn when requested or triggered."""
+    direct_challenge = looks_like_direct_challenge(user_message)
+    resolve_speaking_runtime_enabled(
+        session,
+        request_payload,
+        user_message,
+        companion_turn=companion_turn,
+        direct_challenge=direct_challenge,
+        local_fallback=False,
+    )
+
+
+def _attach_cortex_memory_board_cues(session) -> None:
+    """Attach unified memory governance membrane cues for Nova Cortex."""
+    from src.memory_governance_membrane import attach_turn_memory_membrane
+
+    attach_turn_memory_membrane(session, jarvis_operator=jarvis_operator)
+
+
+def _configure_cognitive_runtime_turn(
+    session,
+    request_payload,
+    user_message: str,
+    *,
+    companion_turn: bool = False,
+    super_nova_turn: bool = False,
+):
+    """Configure Spine, ARIS, and Nova Cortex for every Jarvis chat turn."""
+    surface_profile = _get_companion_surface_profile(
+        persona_mode=(session.metadata or {}).get("persona_mode"),
+        response_mode=(session.metadata or {}).get("response_mode")
+        or (session.metadata or {}).get("requested_response_mode"),
+    )
+    payload, compose_mode = resolve_composed_turn_payload(
+        session,
+        request_payload,
+        companion_turn=companion_turn,
+        super_nova_turn=super_nova_turn,
+        user_message=user_message,
+    )
+    session.metadata["composed_turn_mode"] = compose_mode
+    session.metadata["cortex_fast_path"] = bool(payload.get("cortex_fast_path"))
+    from src.cog_runtime.formal.turn_agency import capture_turn_boundary
+
+    session.metadata["turn_boundary_before"] = capture_turn_boundary(session.metadata)
+    _attach_cortex_memory_board_cues(session)
+    run_composed_turn(
+        session,
+        user_message,
+        request_payload=payload,
+        companion_turn=companion_turn,
+        surface_profile=surface_profile,
+        compose_mode=compose_mode,
+        emit_speaking=bool(
+            companion_turn
+            or (payload.get("operator_speaking_wrap") and payload.get("speaking_runtime"))
+        ),
+        include_speaking_update=bool(
+            companion_turn or payload.get("operator_speaking_wrap")
+        ),
+    )
+
+
+def _composed_turn_block_payload(session):
+    """Return a chat error payload when ARIS blocked a composed companion turn."""
+    composed = (session.metadata or {}).get("aais_composed_turn")
+    if not isinstance(composed, dict) or composed.get("status") != "blocked":
+        return None
+    aris = composed.get("aris") or {}
+    summary = (aris.get("non_copy_clause") or {}).get("summary") or (
+        "ARIS non-copy clause blocked this turn before Nova Cortex executed."
+    )
+    return {
+        "error": summary,
+        "aais_composed_turn": composed,
+    }
+
+
+def _god_brain_bridge_kwargs(session) -> dict:
+    """Pass Nova Face → Cortex → Jarvis binding into God Brain traces."""
+    binding = dict((session.metadata or {}).get("jarvis_core_binding") or {})
+    face = dict((session.metadata or {}).get("nova_face") or {})
+    kwargs: dict = {}
+    runtimes = binding.get("active_cognitive_runtimes")
+    if runtimes:
+        kwargs["active_cognitive_runtimes"] = list(runtimes)
+    if face:
+        kwargs["nova_face"] = face
+    if binding:
+        kwargs["jarvis_core_binding"] = binding
+    return kwargs
 
 
 def _set_turn_contract(
@@ -3819,6 +4064,25 @@ def _consume_pending_action_approval(
     pending_action = pending_action or _load_pending_action(session)
     if not awaiting_approval or not pending_action:
         return None
+    if str(pending_action.get("type") or "") == "slingshot_signoff":
+        if not _is_action_approval_message(user_message, pending_action=pending_action):
+            return None
+        _store_pending_action(session, None)
+        slingshot = dict(session.metadata.get("slingshot") or {})
+        slingshot["status"] = "active"
+        session.metadata["slingshot"] = slingshot
+        return {
+            "action_result": {
+                "response": (
+                    "Slingshot signoff accepted. Governed fast-path launch is re-enabled for this case."
+                ),
+                "tool_result": {
+                    "type": "slingshot_signoff",
+                    "status": "approved",
+                    "case_id": pending_action.get("case_id"),
+                },
+            },
+        }
     if _is_finalized_action_instance(session, pending_action):
         _store_pending_action(session, None)
         _refresh_action_lifecycle(session)
@@ -4726,6 +4990,7 @@ def _hydrate_jarvis_context(
         research_sources=research_sources,
         policy_status=session.metadata.get("policy_status"),
         mode_guidance=session.metadata.get("mode_guidance"),
+        **_god_brain_bridge_kwargs(session),
     )
     session.metadata["god_brain"] = god_brain
     steps.append(god_brain["summary"])
@@ -5501,6 +5766,9 @@ def _extra_prompt_blocks(session, *, plan_summary=None, local_fallback=False):
                 "required": True,
             }
         )
+    speaking_runtime_block = build_speaking_runtime_prompt_block(session)
+    if speaking_runtime_block:
+        blocks.append(speaking_runtime_block)
     return blocks
 
 
@@ -6368,6 +6636,10 @@ def _build_chat_runtime_payload(session, session_id, tool_result=None):
         "response_trace": response_trace,
         "canonical_trace_contract": canonical_trace_contract,
         "turn_contract": session.metadata.get("turn_contract"),
+        "speaking_runtime": summarize_speaking_runtime_state(session),
+        "cognitive_runtime": summarize_cognitive_runtime_state(session),
+        "nova_face_bridge": summarize_nova_face_bridge(session),
+        "aais_composed_turn": summarize_composed_turn(session),
         "last_turn_contract": session.metadata.get("last_turn_contract"),
         "sovereignty_contract": sovereignty_contract,
         "mode_freeze": session.metadata.get("mode_freeze"),
@@ -11355,6 +11627,14 @@ def _create_chat_session_from_payload(data: dict | None):
                 "requested_specialist_preset": session.metadata.get("requested_specialist_preset"),
             },
         )
+        if companion_profile:
+            from src.memory_governance_membrane import seed_session_memory_membrane
+
+            seed_session_memory_membrane(
+                session,
+                jarvis_operator=jarvis_operator,
+                companion_turn=True,
+            )
     return session
 
 
@@ -12025,6 +12305,16 @@ def chat_message(session_id):
                 }
             ), 403
 
+        slingshot_block = _admit_slingshot_turn(session, data, session_id)
+        if slingshot_block is not None:
+            status = int(slingshot_block.get("status_code") or 403)
+            return jsonify(slingshot_block), status
+
+        mechanic_block = _maybe_block_mechanic_enforcement(session, session_id)
+        if mechanic_block is not None:
+            status = int(mechanic_block.get("status_code") or 403)
+            return jsonify(mechanic_block), status
+
         _begin_turn_trace(session)
         # Add the new turn and generate from structured history.
         awaiting_approval = session.session_state.state == "awaiting_approval"
@@ -12093,6 +12383,45 @@ def chat_message(session_id):
             use_research=use_research,
         )
         _clear_turn_context(session)
+        if super_nova_turn:
+            allowed, blocked_payload = _require_super_nova_before_composed_turn(session)
+            if not allowed:
+                payload, status_code = blocked_payload
+                return jsonify(payload), status_code
+        _configure_speaking_runtime_turn(
+            session,
+            data,
+            user_message,
+            companion_turn=companion_turn,
+        )
+        _configure_cognitive_runtime_turn(
+            session,
+            data,
+            user_message,
+            companion_turn=companion_turn,
+            super_nova_turn=super_nova_turn,
+        )
+        composed_block = _composed_turn_block_payload(session)
+        if composed_block:
+            _record_session_event(
+                session,
+                "aais_composed_turn_blocked",
+                composed_block.get("error") or "Composed turn blocked before runtime execution.",
+                payload=session.metadata.get("aais_composed_turn"),
+            )
+            return jsonify(
+                {
+                    **composed_block,
+                    **_build_chat_runtime_payload(session, session_id),
+                }
+            ), 403
+        if session.metadata.get("aais_composed_turn"):
+            _record_session_event(
+                session,
+                "aais_composed_turn_routed",
+                "Turn routed through Spine, ARIS, and Nova Cortex composition.",
+                payload=summarize_composed_turn(session),
+            )
         tool_result = _maybe_handle_freeform_external_suggestion(
             session,
             user_message=user_message,
@@ -12266,134 +12595,148 @@ def chat_message(session_id):
             )
 
             def _generate_chat_reply():
-                correction_prompt = corrigibility_engine.apply_to_next_generation(session)
-                if correction_prompt:
-                    _append_response_trace_step(
-                        response_trace,
-                        "Folded the latest operator correction silently into this reply."
-                    )
-                    _record_session_event(
+                def _generate_once():
+                    correction_prompt = corrigibility_engine.apply_to_next_generation(session)
+                    if correction_prompt:
+                        _append_response_trace_step(
+                            response_trace,
+                            "Folded the latest operator correction silently into this reply."
+                        )
+                        _record_session_event(
+                            session,
+                            "corrigibility_applied",
+                            "Jarvis folded a queued correction into the next generated reply.",
+                            payload={
+                                "severity": (
+                                    (session.metadata.get("corrigibility") or {}).get("pending") or {}
+                                ).get("severity"),
+                            },
+                        )
+                    direct_challenge_turn = _direct_challenge_turn_active(
                         session,
-                        "corrigibility_applied",
-                        "Jarvis folded a queued correction into the next generated reply.",
-                        payload={
-                            "severity": (
-                                (session.metadata.get("corrigibility") or {}).get("pending") or {}
-                            ).get("severity"),
-                        },
+                        response_trace=response_trace,
+                        user_message=user_message,
                     )
-                direct_challenge_turn = _direct_challenge_turn_active(
-                    session,
-                    response_trace=response_trace,
-                    user_message=user_message,
-                )
-                relational_turn = _relational_turn_active(
-                    session,
-                    response_trace=response_trace,
-                    user_message=user_message,
-                )
-                if _mode_uses_plan(response_mode) and not relational_turn:
+                    relational_turn = _relational_turn_active(
+                        session,
+                        response_trace=response_trace,
+                        user_message=user_message,
+                    )
+                    if _mode_uses_plan(response_mode) and not relational_turn:
+                        _transition_session_state(
+                            session,
+                            "planning",
+                            summary=f"Jarvis is drafting a compact {response_mode} plan before answering.",
+                            reason="planning",
+                            event_type="planning_started",
+                        )
+                        plan_summary = _build_mode_plan(
+                            session,
+                            response_mode=response_mode,
+                            model=None,
+                            max_length=max_length,
+                        )
+                        if plan_summary:
+                            response_trace["plan_summary"] = plan_summary
+                            _append_response_trace_step(
+                                response_trace,
+                                f"Built a structured {response_mode} planning pass before the final answer."
+                            )
+                            _record_session_event(
+                                session,
+                                "planning_completed",
+                                f"{response_mode.title()} mode completed its planning pass.",
+                                payload={"plan_summary": plan_summary},
+                            )
+                    session.metadata["response_trace"] = response_trace
+                    generation_package = _prepare_chat_turn_modular_generation(
+                        session,
+                        plan_summary=response_trace.get("plan_summary"),
+                        response_trace=response_trace,
+                        max_length=max_length,
+                        model=ai_model,
+                        temperature=temperature,
+                        stream=False,
+                    )
+                    message_history = generation_package["local_messages"]
                     _transition_session_state(
                         session,
-                        "planning",
-                        summary=f"Jarvis is drafting a compact {response_mode} plan before answering.",
-                        reason="planning",
-                        event_type="planning_started",
+                        "responding",
+                        summary="Jarvis is generating the final reply.",
+                        reason="responding",
+                        event_type="response_generation_started",
+                        payload={"response_mode": response_mode},
                     )
-                    plan_summary = _build_mode_plan(
-                        session,
-                        response_mode=response_mode,
-                        model=None,
-                        max_length=max_length,
-                    )
-                    if plan_summary:
-                        response_trace["plan_summary"] = plan_summary
-                        _append_response_trace_step(
-                            response_trace,
-                            f"Built a structured {response_mode} planning pass before the final answer."
-                        )
-                        _record_session_event(
-                            session,
-                            "planning_completed",
-                            f"{response_mode.title()} mode completed its planning pass.",
-                            payload={"plan_summary": plan_summary},
-                        )
-                session.metadata["response_trace"] = response_trace
-                generation_package = _prepare_chat_turn_modular_generation(
-                    session,
-                    plan_summary=response_trace.get("plan_summary"),
-                    response_trace=response_trace,
-                    max_length=max_length,
-                    model=ai_model,
-                    temperature=temperature,
-                    stream=False,
-                )
-                message_history = generation_package["local_messages"]
-                _transition_session_state(
-                    session,
-                    "responding",
-                    summary="Jarvis is generating the final reply.",
-                    reason="responding",
-                    event_type="response_generation_started",
-                    payload={"response_mode": response_mode},
-                )
-                routing_profile = session.metadata.get("model_route") or {}
-                response_text = None
-                generation_metadata = {"output_token_budget": int(max_length or 0)}
-                if routing_profile.get("provider") not in {None, "", "local"}:
-                    try:
-                        remote_response = _generate_remote_provider_reply(
-                            session,
+                    routing_profile = session.metadata.get("model_route") or {}
+                    response_text = None
+                    generation_metadata = {"output_token_budget": int(max_length or 0)}
+                    if routing_profile.get("provider") not in {None, "", "local"}:
+                        try:
+                            remote_response = _generate_remote_provider_reply(
+                                session,
+                                max_length=max_length,
+                                temperature=temperature,
+                                plan_summary=response_trace.get("plan_summary"),
+                            )
+                        except Exception as exc:
+                            provider_notice = _apply_remote_provider_fallback(
+                                session,
+                                exc,
+                                response_trace=response_trace,
+                            )
+                            if provider_notice is None:
+                                raise
+                            _record_session_event(
+                                session,
+                                "provider_fallback",
+                                provider_notice["summary"],
+                                payload=provider_notice,
+                            )
+                        else:
+                            _append_response_trace_step(
+                                response_trace,
+                                f"Delegated the final answer to {routing_profile.get('provider_label', routing_profile.get('provider'))}."
+                            )
+                            response_text = remote_response.content
+                            generation_metadata = _generation_metadata_from_provider_response(
+                                remote_response,
+                                output_token_budget=_effective_provider_output_budget(session, max_length),
+                            )
+
+                    if response_text is None:
+                        message_history = generation_package["local_messages"]
+                        model, _ = init_ai()
+                        response_text = model.generate_chat(
+                            message_history,
                             max_length=max_length,
                             temperature=temperature,
-                            plan_summary=response_trace.get("plan_summary"),
+                            response_mode=response_mode,
+                            routing_profile=session.metadata.get("model_route"),
                         )
-                    except Exception as exc:
-                        provider_notice = _apply_remote_provider_fallback(
-                            session,
-                            exc,
-                            response_trace=response_trace,
+                        generation_metadata = _generation_metadata_from_model(
+                            model,
+                            output_token_budget=max_length,
                         )
-                        if provider_notice is None:
-                            raise
-                        _record_session_event(
-                            session,
-                            "provider_fallback",
-                            provider_notice["summary"],
-                            payload=provider_notice,
-                        )
-                    else:
-                        _append_response_trace_step(
-                            response_trace,
-                            f"Delegated the final answer to {routing_profile.get('provider_label', routing_profile.get('provider'))}."
-                        )
-                        response_text = remote_response.content
-                        generation_metadata = _generation_metadata_from_provider_response(
-                            remote_response,
-                            output_token_budget=_effective_provider_output_budget(session, max_length),
-                        )
+                    return _finalize_visible_response(
+                        session,
+                        user_message,
+                        response_text,
+                        response_trace=response_trace,
+                        generation_metadata=generation_metadata,
+                    )
 
-                if response_text is None:
-                    message_history = generation_package["local_messages"]
-                    model, _ = init_ai()
-                    response_text = model.generate_chat(
-                        message_history,
-                        max_length=max_length,
-                        temperature=temperature,
-                        response_mode=response_mode,
-                        routing_profile=session.metadata.get("model_route"),
-                    )
-                    generation_metadata = _generation_metadata_from_model(
-                        model,
-                        output_token_budget=max_length,
-                    )
-                return _finalize_visible_response(
-                    session,
-                    user_message,
-                    response_text,
-                    response_trace=response_trace,
-                    generation_metadata=generation_metadata,
+                from src.cog_runtime.formal.generation_gate import (
+                    generation_verification_enabled,
+                    run_generation_with_verification,
                 )
+
+                if generation_verification_enabled(session):
+                    return run_generation_with_verification(
+                        session,
+                        _generate_once,
+                        user_message=user_message,
+                    )
+                return _generate_once()
 
             if super_nova_turn:
                 response_text, blocked_payload = _run_super_nova_session(
@@ -12458,6 +12801,25 @@ def chat_message(session_id):
                 "contract": (session.metadata.get("response_trace") or {}).get("contract"),
             },
         )
+
+        slingshot_block = _finalize_slingshot_turn_impact(
+            session,
+            user_message=user_message,
+            response_text=response_text,
+            session_id=session_id,
+        )
+        if slingshot_block is not None:
+            status = int(slingshot_block.get("status_code") or 403)
+            return jsonify(
+                {
+                    **slingshot_block,
+                    **_build_chat_runtime_payload(
+                        session,
+                        session_id,
+                        tool_result=tool_result["tool_result"] if tool_result else None,
+                    ),
+                }
+            ), status
 
         return jsonify({
             "response": response_text,
@@ -12537,7 +12899,7 @@ def chat_message_stream(session_id):
         super_nova_turn = _session_uses_super_nova(session)
         _attach_session_mission_context(session)
         if super_nova_turn:
-            allowed, blocked_payload = _require_super_nova_activation(session)
+            allowed, blocked_payload = _require_super_nova_before_composed_turn(session)
             if not allowed:
                 payload, status_code = blocked_payload
                 return jsonify(payload), status_code
@@ -12566,6 +12928,16 @@ def chat_message_stream(session_id):
                     "cognitive_bridge": bridge_result,
                 }
             ), 403
+
+        slingshot_block = _admit_slingshot_turn(session, data, session_id)
+        if slingshot_block is not None:
+            status = int(slingshot_block.get("status_code") or 403)
+            return jsonify(slingshot_block), status
+
+        mechanic_block = _maybe_block_mechanic_enforcement(session, session_id)
+        if mechanic_block is not None:
+            status = int(mechanic_block.get("status_code") or 403)
+            return jsonify(mechanic_block), status
 
         _begin_turn_trace(session)
         awaiting_approval = session.session_state.state == "awaiting_approval"
@@ -12660,6 +13032,40 @@ def chat_message_stream(session_id):
         )
         policy_event = _latest_session_event(session)
         _clear_turn_context(session)
+        _configure_speaking_runtime_turn(
+            session,
+            data,
+            user_message,
+            companion_turn=companion_turn,
+        )
+        _configure_cognitive_runtime_turn(
+            session,
+            data,
+            user_message,
+            companion_turn=companion_turn,
+            super_nova_turn=super_nova_turn,
+        )
+        composed_block = _composed_turn_block_payload(session)
+        if composed_block:
+            _record_session_event(
+                session,
+                "aais_composed_turn_blocked",
+                composed_block.get("error") or "Composed turn blocked before runtime execution.",
+                payload=session.metadata.get("aais_composed_turn"),
+            )
+            return jsonify(
+                {
+                    **composed_block,
+                    **_build_chat_runtime_payload(session, session_id),
+                }
+            ), 403
+        if session.metadata.get("aais_composed_turn"):
+            _record_session_event(
+                session,
+                "aais_composed_turn_routed",
+                "Turn routed through Spine, ARIS, and Nova Cortex composition.",
+                payload=summarize_composed_turn(session),
+            )
         tool_result = _maybe_handle_freeform_external_suggestion(
             session,
             user_message=user_message,
@@ -13392,10 +13798,26 @@ def chat_message_stream(session_id):
             live_payload = emit_live_event(final_event)
             if live_payload:
                 yield live_payload
+            slingshot_block = _finalize_slingshot_turn_impact(
+                session,
+                user_message=user_message,
+                response_text=full_response,
+                session_id=session_id,
+            )
+            runtime_payload = _build_chat_runtime_payload(session, session_id)
+            if slingshot_block is not None:
+                yield _format_sse_payload({
+                    "event": "final",
+                    "error": slingshot_block.get("error"),
+                    "slingshot": slingshot_block.get("slingshot"),
+                    **runtime_payload,
+                })
+                yield _format_sse_payload({"event": "done"})
+                return
             yield _format_sse_payload({
                 "event": "final",
                 "response": full_response,
-                **_build_chat_runtime_payload(session, session_id),
+                **runtime_payload,
             })
             yield _format_sse_payload({"event": "done"})
 

@@ -17,6 +17,11 @@ contracts.
   - active Beatbox downstream audio-lane documentation
 - [speakers/README.md](./speakers/README.md)
   - active Speakers downstream voice/mix documentation
+- [scorpion/README.md](./scorpion/README.md)
+- [mechanic/README.md](./mechanic/README.md)
+  - governed OS anomaly extractor (fixture Sentinel; Stage 1+ runtime)
+- [platform/README.md](./platform/README.md)
+  - multi-tenant platform membrane (identity, jobs, artifacts, ingress)
 
 ## Rule
 

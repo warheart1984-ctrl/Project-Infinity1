@@ -3,6 +3,7 @@
 set -euo pipefail
 
 WOLF_DI_PRESEED="${WOLF_DI_PRESEED:-preseed/file=/preseed.cfg}"
+WOLF_DI_FIRMWARE_KCL="${WOLF_DI_FIRMWARE_KCL:-firmware=1}"
 
 patch_grub_linux_line() {
   local line="$1"
@@ -30,6 +31,7 @@ import re
 
 cfg = Path(r"$cfg")
 preseed = "$WOLF_DI_PRESEED"
+fw_kcl = "$WOLF_DI_FIRMWARE_KCL"
 text = cfg.read_text(encoding="utf-8")
 text = text.replace("Graphical installer", "Wolf CoG OS graphical installer")
 text = text.replace("Text installer", "Wolf CoG OS text installer")
@@ -46,6 +48,11 @@ for line in text.splitlines(keepends=True):
                 line = line.rstrip()[:-5] + f" {preseed} quiet\n"
             else:
                 line = line.rstrip() + f" {preseed}\n"
+        if fw_kcl and fw_kcl not in line:
+            if " ---" in line:
+                line = line.replace(" --- ", f" {fw_kcl} --- ", 1)
+            else:
+                line = line.rstrip() + f" {fw_kcl}\n"
     lines.append(line)
 cfg.write_text("".join(lines), encoding="utf-8")
 print(f"patched GRUB installer cfg: {cfg}")
@@ -60,6 +67,7 @@ from pathlib import Path
 
 cfg = Path(r"$cfg")
 preseed = "$WOLF_DI_PRESEED"
+fw_kcl = "$WOLF_DI_FIRMWARE_KCL"
 text = cfg.read_text(encoding="utf-8")
 text = text.replace("Graphical installer", "Wolf CoG OS graphical installer")
 text = text.replace("Text installer", "Wolf CoG OS text installer")
@@ -73,6 +81,11 @@ for line in text.splitlines(keepends=True):
             line = line.replace(" --- ", f" {preseed} --- ", 1)
         else:
             line = line.rstrip() + f" {preseed}\n"
+    if line.strip().startswith("append ") and fw_kcl and fw_kcl not in line:
+        if " ---" in line:
+            line = line.replace(" --- ", f" {fw_kcl} --- ", 1)
+        else:
+            line = line.rstrip() + f" {fw_kcl}\n"
     lines.append(line)
 cfg.write_text("".join(lines), encoding="utf-8")
 print(f"patched isolinux installer cfg: {cfg}")
@@ -85,12 +98,12 @@ patch_install_start_for_wolf_di() {
 
   cat > "$start_cfg" <<EOF
 menuentry 'Start Wolf CoG OS installer' --hotkey=i {
-	linux	/install/gtk/vmlinuz vga=788 ${WOLF_DI_PRESEED} --- quiet
+	linux	/install/gtk/vmlinuz vga=788 ${WOLF_DI_FIRMWARE_KCL} ${WOLF_DI_PRESEED} --- quiet
 	initrd	/install/gtk/initrd.gz
 }
 
 menuentry 'Start Wolf CoG OS installer (speech synthesis)' --hotkey=s {
-	linux	/install/gtk/vmlinuz speakup.synth=soft vga=788 ${WOLF_DI_PRESEED} --- quiet
+	linux	/install/gtk/vmlinuz speakup.synth=soft vga=788 ${WOLF_DI_FIRMWARE_KCL} ${WOLF_DI_PRESEED} --- quiet
 	initrd	/install/gtk/initrd.gz
 }
 EOF

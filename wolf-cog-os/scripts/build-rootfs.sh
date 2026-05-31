@@ -73,9 +73,19 @@ source "$SCRIPT_DIR/lib/stage-forge-layout.sh"
 source "$SCRIPT_DIR/lib/rootfs-bootstrap.sh"
 # shellcheck source=lib/rootfs-chroot.sh
 source "$SCRIPT_DIR/lib/rootfs-chroot.sh"
+# shellcheck source=lib/forge-native-paths.sh
+source "$SCRIPT_DIR/lib/forge-native-paths.sh"
+
+forge_apply_native_work_paths "${COGOS_ROOTFS_OUT:-$WOLF_ROOTFS_OUT}"
 
 ROOTFS_OUT="${COGOS_ROOTFS_OUT:-$WOLF_ROOTFS_OUT}"
 ROOTFS_WORK="${COGOS_ROOTFS_WORK:-${COGOS_WORK}-rootfs-stage}"
+forge_apply_native_work_paths "$ROOTFS_OUT"
+ROOTFS_OUT="${COGOS_ROOTFS_OUT:-$ROOTFS_OUT}"
+ROOTFS_WORK="${COGOS_ROOTFS_WORK:-$ROOTFS_WORK}"
+
+forge_log_rootfs_filesystem "$ROOTFS_OUT" "ROOTFS_OUT"
+forge_log_rootfs_filesystem "$ROOTFS_WORK" "ROOTFS_WORK"
 DEBIAN_SUITE="${COGOS_DEBIAN_SUITE:-trixie}"
 DEBIAN_MIRROR="${COGOS_MIRROR:-http://deb.debian.org/debian}"
 DEBIAN_ARCH="${COGOS_ARCH:-amd64}"
@@ -193,6 +203,27 @@ fi
 mkdir -p "$(dirname "$ROOTFS_OUT")" "$(dirname "$ROOTFS_WORK")"
 ROOTFS_OUT="$(readlink -f "$ROOTFS_OUT" 2>/dev/null || echo "$ROOTFS_OUT")"
 ROOTFS_WORK="$(readlink -f "$ROOTFS_WORK" 2>/dev/null || echo "$ROOTFS_WORK")"
+
+rootfs_refuse_drvfs() {
+  local path="$1"
+  local label="$2"
+  local parent="${path%/*}"
+  [[ -n "$parent" && "$parent" != "$path" ]] || parent="$path"
+  local fstype
+  fstype="$(df -T "$parent" 2>/dev/null | tail -1 | awk '{print $2}')"
+  if [[ "$fstype" == "9p" ]]; then
+    echo "ERROR: $label on Windows mount (9p): $path" >&2
+    echo "       debootstrap tar/symlink extract fails on DrvFs." >&2
+    echo "       Fix: export COGOS_ROOTFS_OUT=\$HOME/.cogos-forge-work/rootfs-forge" >&2
+    echo "             export COGOS_WORK=\$HOME/.cogos-forge-work" >&2
+    echo "             sudo -E make rootfs-forge" >&2
+    exit 4
+  fi
+}
+
+rootfs_refuse_drvfs "$ROOTFS_OUT" "COGOS_ROOTFS_OUT"
+rootfs_refuse_drvfs "$ROOTFS_WORK" "COGOS_ROOTFS_WORK"
+
 mkdir -p "$ROOTFS_WORK"
 rm -rf "$ROOTFS_OUT"
 
@@ -274,7 +305,7 @@ chmod_if_exists \
   "$ROOTFS_OUT/opt/cogos/bin/cognitive_init" \
   "$ROOTFS_OUT/opt/cogos/bin/cogos_boot.py" \
   "$ROOTFS_OUT/opt/cogos/bin/cogos_daemon.py" \
-  "$ROOTFS_OUT/etc/init.d/90cogos" \
+  "$ROOTFS_OUT/usr/lib/cogos/firstboot.sh" \
   "$ROOTFS_OUT/usr/local/bin/cogos-install" \
   "$ROOTFS_OUT/usr/local/bin/cogos-install-finish" \
   "$ROOTFS_OUT/usr/local/bin/cogos-first-boot" \

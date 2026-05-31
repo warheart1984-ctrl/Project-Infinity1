@@ -33,6 +33,41 @@ substrate_resolve_iso_path() {
   return 1
 }
 
+# Local Rocky ISO: env overrides, then repo-root Rocky-*.iso / rocky-*.iso, then rocky-substrate.iso
+substrate_resolve_rocky_iso_path() {
+  local root="${REPO_ROOT:-.}"
+  local candidate resolved
+  local -a found=()
+
+  for candidate in "${ROCKY_SUBSTRATE_ISO:-}" "${COGOS_ROCKY_SUBSTRATE_ISO:-}"; do
+    if [[ -n "$candidate" && -f "$candidate" ]]; then
+      resolved="$(readlink -f "$candidate" 2>/dev/null || echo "$candidate")"
+      printf '%s\n' "$resolved"
+      return 0
+    fi
+  done
+
+  shopt -s nullglob
+  for candidate in "$root"/Rocky-*.iso "$root"/rocky-*.iso; do
+    [[ -f "$candidate" ]] && found+=("$candidate")
+  done
+  shopt -u nullglob
+
+  if ((${#found[@]} > 0)); then
+    mapfile -t found < <(printf '%s\n' "${found[@]}" | sort -V)
+    resolved="$(readlink -f "${found[-1]}" 2>/dev/null || echo "${found[-1]}")"
+    printf '%s\n' "$resolved"
+    return 0
+  fi
+
+  if [[ -f "$root/rocky-substrate.iso" ]]; then
+    printf '%s\n' "$(readlink -f "$root/rocky-substrate.iso" 2>/dev/null || echo "$root/rocky-substrate.iso")"
+    return 0
+  fi
+
+  return 1
+}
+
 substrate_export_env() {
   local iso_path="$1"
   export COGOS_SUBSTRATE_ISO="$iso_path"

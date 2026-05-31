@@ -90,3 +90,22 @@ class TrustBundleOrgan:
         bundle["proof_bundle_path"] = str(proof_path)
         bundle["proof_bundle_sha256_path"] = str(self.output_dir / "proof_bundle.sha256")
         return bundle
+
+    def receive_claim(self, claim: dict[str, Any], *, bridge_trace: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Ledger bridge destination — validate receipt only (no external apply)."""
+        import hashlib
+        import json
+        import uuid
+
+        cid = str(claim.get("claim_id") or uuid.uuid4())
+        body = json.dumps({"claim_id": cid, "law_id": claim.get("law_id")}, sort_keys=True)
+        receipt_id = str(uuid.uuid4())
+        return {
+            "receipt_id": receipt_id,
+            "claim_id": cid,
+            "acknowledged": True,
+            "claim_label": "proven",
+            "bridge_trace_id": (bridge_trace or {}).get("trace_id"),
+            "artifact_sha256": hashlib.sha256(body.encode()).hexdigest(),
+            "claim_label_doctrine": "asserted",
+        }

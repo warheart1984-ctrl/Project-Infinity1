@@ -24,7 +24,7 @@
       "description": "Fedora/openSUSE LiveOS/squashfs.img replay",
       "status": "experimental",
       "wired_in_build": true,
-      "substrate_families": ["fedora", "opensuse"]
+      "substrate_families": ["fedora", "opensuse", "rocky"]
     },
     "alpine-modloop-layout": {
       "description": "Alpine modloop-based live replay",

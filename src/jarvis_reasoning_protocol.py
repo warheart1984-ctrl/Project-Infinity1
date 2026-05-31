@@ -1305,6 +1305,8 @@ class ReasoningPacket:
 
 
 def reasoning_protocol_spec() -> dict[str, Any]:
+    from src.cog_runtime.capability_governance import lobe_capability_contract
+
     return _wrap_ul_payload({
         "id": REASONING_PROTOCOL_ID,
         "version": REASONING_PROTOCOL_VERSION,
@@ -1312,6 +1314,7 @@ def reasoning_protocol_spec() -> dict[str, Any]:
             "Bounded reasoning contract for operator-visible goals, route choice, "
             "workspace evidence, risks, action state, and verification targets."
         ),
+        **lobe_capability_contract(REASONING_PROTOCOL_ID),
         "doctrine": (
             "Direct challenge overrides writing-domain drift. Jarvis answers as Jarvis first."
         ),

@@ -9,6 +9,8 @@ firmware-misc-nonfree
 firmware-amd-graphics
 firmware-iwlwifi
 firmware-realtek
+firmware-brcm80211
+firmware-atheros
 alsa-utils
 pipewire
 wireplumber

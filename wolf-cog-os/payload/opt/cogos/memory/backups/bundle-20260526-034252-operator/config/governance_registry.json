@@ -55,6 +55,11 @@
       "path": "config/daily_driver.json",
       "loader": "runtime.daily_driver",
       "owns": ["pain_points", "remedies", "silent_governance", "daily_routine", "boot_apply"]
+    },
+    "cognitive_runtime_family": {
+      "path": "config/cognitive_runtime_family.json",
+      "loader": "runtime.cognitive_runtime_family",
+      "owns": ["runtimes", "composition_rules", "edition", "turn_pipeline"]
     }
   },
   "bindings": {

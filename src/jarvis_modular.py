@@ -17,6 +17,12 @@ from typing import Any
 from src.aais_ul import build_ul_snapshot
 from src.angels_and_wards import DEFAULT_DOCTRINE as ANGELS_AND_WARDS
 from src.jarvis_reasoning_protocol import build_reasoning_packet, reasoning_protocol_spec
+from src.cog_runtime.coherence_projection import (
+    build_coherence_projection,
+    format_coherence_projection_block,
+)
+from src.cog_runtime import cognitive_runtime_family_spec, nova_cortex_spec
+from src.speaking_runtime import speaking_runtime_spec
 from src.jarvis_protocol import JarvisMessage, build_provider_payload, normalize_messages
 from src.six_wards_guardrails import (
     DEFAULT_DOCTRINE as SIX_WARDS_DOCTRINE,
@@ -34,6 +40,7 @@ from src.writers_3_rules import (
 CHANNEL_LABELS = {
     "instruction": "System instruction",
     "runtime": "Runtime context",
+    "cognitive": "Nova cognitive state",
     "memory": "Memory context",
     "workspace": "Workspace context",
     "research": "Knowledge context",
@@ -47,15 +54,16 @@ CHANNEL_LABELS = {
 CHANNEL_ORDER = {
     "instruction": 0,
     "runtime": 1,
-    "memory": 2,
-    "workspace": 3,
-    "research": 4,
-    "browser": 5,
-    "specialist": 6,
-    "orchestration": 7,
-    "corrigibility": 8,
-    "tool": 9,
-    "dialogue": 10,
+    "cognitive": 2,
+    "memory": 3,
+    "workspace": 4,
+    "research": 5,
+    "browser": 6,
+    "specialist": 7,
+    "orchestration": 8,
+    "corrigibility": 9,
+    "tool": 10,
+    "dialogue": 11,
 }
 
 
@@ -312,8 +320,37 @@ class ProviderPayloadModule(BaseContextModule):
         return payload
 
 
+class NovaCoherenceProjectionModule(BaseContextModule):
+    """Project read-only Nova Cortex state into provider messages before generation."""
+
+    name = "NovaCoherenceProjectionModule"
+    order = 15
+
+    def collect(self, context: ModularContext) -> list[ContextModule]:
+        projection = build_coherence_projection(context.metadata)
+        if not projection:
+            return []
+        content = format_coherence_projection_block(projection)
+        if not content.strip():
+            return []
+        return [
+            ContextModule(
+                channel="cognitive",
+                label="Nova cognitive state",
+                content=content,
+                metadata={
+                    "projection_version": projection.get("projection_version"),
+                    "read_only": True,
+                    "source": "coherence_projection",
+                },
+                source_module=self.name,
+            )
+        ]
+
+
 context_modules = [
     ProtocolContextModule(),
+    NovaCoherenceProjectionModule(),
     KnowledgeModule(),
     ToolResultsModule(),
     AttachmentsModule(),
@@ -328,6 +365,7 @@ MODE_PIPELINES = {
     "default": list(DEFAULT_CONTEXT_MODULES),
     "research": [
         ProtocolContextModule(),
+        NovaCoherenceProjectionModule(),
         KnowledgeModule(),
         ToolResultsModule(),
         AttachmentsModule(),
@@ -335,12 +373,14 @@ MODE_PIPELINES = {
     ],
     "operator": [
         ProtocolContextModule(),
+        NovaCoherenceProjectionModule(),
         ToolResultsModule(),
         AttachmentsModule(),
         ProviderPayloadModule(),
     ],
     "mystic": [
         ProtocolContextModule(),
+        NovaCoherenceProjectionModule(),
         KnowledgeModule(),
         ProviderPayloadModule(),
     ],
@@ -988,6 +1028,9 @@ def build_modular_provider_preview(
         "override_result": canonical_guardrail_evaluation["override_result"],
         "escalation_result": canonical_guardrail_evaluation["escalation_result"],
         "reasoning_protocol": reasoning_protocol_spec(),
+        "speaking_runtime": speaking_runtime_spec(),
+        "nova_cortex": nova_cortex_spec(),
+        "cognitive_runtime_family": cognitive_runtime_family_spec(),
         "reasoning_packet": reasoning_packet,
         "reasoning_summary": reasoning_packet["summary"],
     }

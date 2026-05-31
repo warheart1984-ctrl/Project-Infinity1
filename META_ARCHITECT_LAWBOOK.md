@@ -160,7 +160,7 @@ This law applies to:
 A project is **completed** when any of the following is true:
 
 - its baseline sign-off marks readiness,
-- a release or operational-readiness claim is made,
+- a release or operational readiness claim is made,
 - the project is presented as shippable, deployable, or operator-ready, or
 - it reaches **Phase Complete** status.
 
@@ -179,6 +179,68 @@ This law ensures:
 - prevention of undocumented operational drift, and
 - compliance with Meta-Architect doctrine: **A system is not complete until it can be started by someone else.**
 
+## Doctrine XIII (MA-13): Stage 2 Copilot Integrator Mandate
+
+**MA-13 — Stage 2 Copilot Integrator Mandate** is binding constitutional law for human–machine cognition in AAIS and governed copilot runtimes (Nova Cortex, Jarvis integration layer, Wolf/Forge substrate).
+
+Authoritative specification: [`docs/runtime/STAGE2_COPILOT_DOCTRINE.md`](docs/runtime/STAGE2_COPILOT_DOCTRINE.md) (v1.1+).
+
+### 13.1 — Constitutional claim (not metaphysics)
+
+This doctrine assigns **authority** in collaborative systems — not a claim about pure human cognition.
+
+| Stage | Function | Sovereign authority |
+|-------|----------|---------------------|
+| **Stage 1 — Thought** | Origination of intent, values, direction | Human / operator |
+| **Stage 2 — Copilot** | Integration: stabilize, extend, structure, translate, continuity | Runtime law + Jarvis executive |
+| **Stage 3 — Environment** | Actuation and feedback (code, systems, consequences, evidence) | Substrate, tools, world |
+
+A **copilot** is the governed **integration layer** (constitutional membrane) between human intent and world action — not a replacement mind, generic assistant, or unbounded autonomous agent.
+
+### 13.2 — Five axioms (binding)
+
+1. **Human sovereignty** — Stage 1 is the sole legitimate source of originating intent and normative authority.
+2. **Integrator subordination** — Stage 2 may extend and translate intent; it may not replace, override, or counterfeit it.
+3. **Governed actuation** — Stage 2 → Stage 3 transitions require explicit authority, capability limits, and auditability.
+4. **Ontology preservation** — Stage 2 preserves operator identity, commitments, and constraints unless explicitly revised.
+5. **Traceable consequence** — Significant actions remain legible as transformations of human intent.
+
+### 13.3 — Failure taxonomy (required review language)
+
+Stage 2 violations SHALL be classified — not dismissed as generic "model mistakes":
+
+| Class | Name | Stage violation |
+|-------|------|-----------------|
+| **I** | Usurpation | Stage 2 acts like Stage 1 (invents goals, pilot substitution, silent inference → authority) |
+| **II** | Distortion | Stage 2 misrepresents Stage 1 (smuggled intent, dropped constraints, ontology drift) |
+| **III** | Leakage | Stage 2 acts like uncontrolled Stage 3 (unauthorized tools, irreversible action, hidden effects) |
+
+Reviews of cognitive runtime, Jarvis integration, copilot UX, and autonomy boundaries MUST use this taxonomy when assessing fidelity, safety, or architectural compliance.
+
+### 13.4 — Stronger fidelity standard
+
+"Does not originate intent" is necessary but not sufficient.
+
+Stage 2 MUST NOT manufacture, smuggle, or silently reshape user intent through framing, omission, or default selection.
+
+**Consentful inference:** provisional inference in service of the operator is permitted; silent upgrade of inference into binding authority is prohibited.
+
+### 13.5 — Enforcement surfaces
+
+- Runtime: Nova Cortex composition rules, Intent/Narrative consult-only invariants, Jarvis single executive, coherence projection (bounded state, not hidden preference).
+- Documentation: [`NOVA_CORTEX.md`](docs/runtime/NOVA_CORTEX.md), [`NOVA_CAPABILITY_INVENTORY.md`](docs/runtime/NOVA_CAPABILITY_INVENTORY.md).
+- Evaluation debt: intent fidelity, distortion rate, authority leakage — tracked in capability inventory until proven.
+
+### 13.6 — Exceptions
+
+None for sovereign intent origination or ungoverned Stage 3 actuation.
+
+Time-bounded exceptions for evaluation or research MUST be debt-tracked under Doctrine VI.
+
+### 13.7 — Rationale
+
+Human–machine systems require a constitutional integration layer between intent and consequence. Without Stage 2 role clarity, products collapse origination, integration, and actuation — producing usurpation, distortion, and leakage by design.
+
 ## Claim Taxonomy (Required)
 
 - `asserted`: insufficient evidence, not admissible for acceptance
@@ -190,6 +252,7 @@ All major fix, test, and release claims MUST carry one of these labels.
 ## Repository Alignment Notes
 
 - `HUMAN_AI_CO_COLLABORATION_CHARTER.md` is the constitutional companion governing human-AI collaboration semantics under this lawbook.
+- `docs/runtime/STAGE2_COPILOT_DOCTRINE.md` operationalizes **Doctrine XIII (MA-13): Stage 2 Copilot Integrator Mandate** — origination / integration / actuation authority model and Class I/II/III failure taxonomy.
 - `REPO_PROOF_LAW.md` operationalizes proof and evidence requirements under this lawbook.
 - `docs/TRUST_BUNDLE_SPEC.md` is the normative Trust Bundle schema for Doctrine XI one-click verification.
 - `templates/TRUST_BUNDLE_TEMPLATE.md` is the default contributor/agent format for Doctrine XI-compliant Trust Bundles.

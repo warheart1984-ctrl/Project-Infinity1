@@ -33,6 +33,14 @@ const WorkflowRunDetail = lazy(() => import('./pages/WorkflowRunDetail'));
 const WorkflowApprovals = lazy(() => import('./pages/WorkflowApprovals'));
 const WorkflowTemplates = lazy(() => import('./pages/WorkflowTemplates'));
 const OperatorConsole = lazy(() => import('./pages/OperatorConsole'));
+const PlatformConsole = lazy(() => import('./pages/PlatformConsole'));
+const PlatformJobDetail = lazy(() => import('./pages/PlatformJobDetail'));
+const PlatformArtifacts = lazy(() => import('./pages/PlatformArtifacts'));
+const PlatformGettingStarted = lazy(() => import('./pages/PlatformGettingStarted'));
+const PlatformAssistant = lazy(() => import('./pages/PlatformAssistant'));
+const PlatformWorkflow = lazy(() => import('./pages/PlatformWorkflow'));
+const PlatformMesh = lazy(() => import('./pages/PlatformMesh'));
+const PlatformMarketplace = lazy(() => import('./pages/PlatformMarketplace'));
 
 function RouteFallback() {
   return (
@@ -76,6 +84,14 @@ function AppShell() {
             <Route path="/workflows/approvals" element={<WorkflowApprovals />} />
             <Route path="/workflows/templates" element={<WorkflowTemplates />} />
             <Route path="/operator" element={<OperatorConsole />} />
+            <Route path="/platform" element={<PlatformConsole />} />
+            <Route path="/platform/jobs/:jobId" element={<PlatformJobDetail />} />
+            <Route path="/platform/artifacts" element={<PlatformArtifacts />} />
+            <Route path="/platform/getting-started" element={<PlatformGettingStarted />} />
+            <Route path="/platform/assistant" element={<PlatformAssistant />} />
+            <Route path="/platform/workflows" element={<PlatformWorkflow />} />
+            <Route path="/platform/mesh" element={<PlatformMesh />} />
+            <Route path="/platform/marketplace" element={<PlatformMarketplace />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

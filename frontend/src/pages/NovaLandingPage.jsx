@@ -1,4 +1,4 @@
-import React, { startTransition, useCallback, useEffect, useRef, useState } from 'react';
+import React, { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   FiArrowRight,
@@ -45,6 +45,8 @@ import {
   setActiveNovaSessionArchive,
   toLoadedSessionArchivePayload,
 } from '../lib/novaSessionArchive';
+import ComposeReceiptPanel from '../components/ComposeReceiptPanel';
+import { normalizeComposeReceipt, summarizeSuperNovaCompose } from '../lib/composeReceipt';
 import './NovaLandingPage.css';
 
 const DEFAULT_COMPANION_PERSONA = SMALL_NOVA_PERSONA_MODE;
@@ -387,6 +389,7 @@ function NovaLandingPage() {
   const [archivePassphraseEnabled, setArchivePassphraseEnabled] = useState(false);
   const [archivePassphrase, setArchivePassphrase] = useState('');
   const [loadedArchive, setLoadedArchive] = useState(() => getActiveNovaSessionArchive());
+  const [composeReceipt, setComposeReceipt] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const streamAbortRef = useRef(null);
@@ -413,6 +416,18 @@ function NovaLandingPage() {
     }
     setSuperNovaState(null);
   }, [companionPersona]);
+
+  const syncComposeReceipt = useCallback((payload) => {
+    const next = normalizeComposeReceipt(payload);
+    if (next) {
+      setComposeReceipt(next);
+    }
+  }, []);
+
+  const superNovaComposeSummary = useMemo(
+    () => (superNovaSurface ? summarizeSuperNovaCompose(superNovaState, composeReceipt) : null),
+    [composeReceipt, superNovaSurface, superNovaState],
+  );
 
   const patchMessage = (messageId, patch) => {
     setMessages((current) => current.map((message) => (
@@ -690,6 +705,8 @@ function NovaLandingPage() {
             message: text,
             persona_mode: surface.personaMode,
             response_mode: surface.responseMode,
+            cognitive_runtime: true,
+            speaking_runtime: true,
             loaded_session_archive: loadedArchive
               ? toLoadedSessionArchivePayload(loadedArchive)
               : null,
@@ -697,6 +714,12 @@ function NovaLandingPage() {
           {
             signal: abortController.signal,
             onEvent: (payload) => {
+              if (payload.event === 'context') {
+                syncComposeReceipt(payload);
+                syncSuperNovaState(payload, surface.personaMode);
+                return;
+              }
+
               if (payload.event === 'token') {
                 patchMessage(assistantMessageId, {
                   content: payload.text_so_far || '',
@@ -711,6 +734,7 @@ function NovaLandingPage() {
                   content: payload.response || '',
                   streaming: false,
                 });
+                syncComposeReceipt(payload);
                 syncSuperNovaState(payload, surface.personaMode);
                 return;
               }
@@ -741,6 +765,9 @@ function NovaLandingPage() {
         }
         if (finalPayload?.super_nova) {
           setSuperNovaState(finalPayload.super_nova);
+        }
+        if (finalPayload) {
+          syncComposeReceipt(finalPayload);
         }
       }
 
@@ -1277,6 +1304,12 @@ function NovaLandingPage() {
                 </div>
               </section>
             ) : null}
+
+            <ComposeReceiptPanel
+              receipt={composeReceipt}
+              superNovaSummary={superNovaComposeSummary}
+              title="Turn process"
+            />
 
             <section className="nova-archive-recent" aria-label="Recent saved sessions">
               <div className="nova-archive-recent__head">

@@ -620,6 +620,36 @@ AAIS subsystems currently cluster into these architectural layers:
 - integration risk: `medium`
 - recommended priority: `P3 dormant`
 
+### Project Scorpion (OS Anomaly Extractor)
+
+- status: `partial`
+- primary purpose: governed OS-level anomaly extraction from behavioral invariant
+  traces; fixture Sentinel in Stage 1, kernel Sentinel deferred to Stage 4
+- architectural layer: execution lanes / OS forensics (isolated from `src/*`)
+- dependencies:
+  - `scorpion/scorpion.py`
+  - `scorpion/invariants/os_invariants.v1.json`
+  - `docs/subsystems/scorpion/SCORPION_BLUEPRINT.md`
+- governed inputs and outputs:
+  - input: normalized trace events (`scorpion.event.v1`)
+  - output: drift scan, ledger claims, sandbox extraction, reconstruction plans,
+    health drift index
+- related files/modules:
+  - `scorpion/`
+  - `tests/test_scorpion.py`
+  - `docs/proof/scorpion/`
+- invariants or doctrine surfaces:
+  - `docs/subsystems/scorpion/SCORPION_BLUEPRINT.md`
+  - `docs/subsystems/scorpion/SCORPION_CLI_CONTRACT.md`
+  - `META_ARCHITECT_LAWBOOK.md`
+  - `REPO_PROOF_LAW.md`
+- current implementation gaps:
+  - no live kernel Sentinel (eBPF/auditd); `KernelSentinel` is stub only
+  - Wolf CoG post-build ingest documented but inactive
+  - no `src/scorpion_bridge.py` Jarvis handoff yet
+- integration risk: `medium`
+- recommended priority: `P2 after core hardening` (parallel sibling to Forgekeeper)
+
 ### Capability Module Layer And Service Bridge
 
 - status: `partial`

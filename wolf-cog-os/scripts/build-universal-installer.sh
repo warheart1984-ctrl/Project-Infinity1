@@ -18,8 +18,10 @@ source "$SCRIPT_DIR/paths.sh"
 source "$SCRIPT_DIR/lib/update-full-runtime-manifest.sh"
 # shellcheck source=lib/ensure-payload-ready.sh
 source "$SCRIPT_DIR/lib/ensure-payload-ready.sh"
+# shellcheck source=stage-nova-cortex-into-payload.sh
+source "$SCRIPT_DIR/stage-nova-cortex-into-payload.sh"
 
-TAG="${COGOS_TAG:-wolf-cog-os-full-2.2}"
+TAG="${COGOS_TAG:-wolf-cog-os-full-3.5}"
 BUILD_DATE="${COGOS_BUILD_DATE:-$(date -u +%Y-%m-%d)}"
 export COGOS_TAG="$TAG"
 export COGOS_BUILD_DATE="$BUILD_DATE"
@@ -70,16 +72,19 @@ fi
 
 PAYLOAD_CACHE="${COGOS_PAYLOAD_CACHE:-${HOME}/.cogos-payload-cache}"
 ensure_payload_ready "$WOLF_COGOS_ROOT/payload" "$PAYLOAD_CACHE"
+stage_nova_cortex_into_payload "$PAYLOAD_CACHE" "$WOLF_COGOS_ROOT/payload"
 
 MANIFEST_ROOT="${COGOS_PAYLOAD:-$WOLF_PAYLOAD}/opt/cogos"
 update_full_runtime_manifest "$MANIFEST_ROOT" "$TAG" "$BUILD_DATE" "debian"
 
-echo "=== Wolf CoG OS — Debian gtk installer + Full Runtime ==="
+echo "=== Wolf CoG OS — Unified Full Runtime (Nova Cortex + gtk installer) ==="
 echo "Tag:        $COGOS_TAG"
 echo "Substrate:  $BASE_ISO"
 echo "Live boot:  systemd PID1 + pre-pack integrity gate"
-echo "Runtime:    full stack via native cogos-runtime.service (systemd PID1 on d-i install)"
+echo "Runtime:    boot stack (firstboot → governance → spine → observer)"
 echo "PID1:       keep native systemd on disk (COGOS_KEEP_SYSTEMD_PID1=1)"
+echo "Nova:       Nova Cortex v3 unified (cog_runtime + bridge staged on ISO)"
+echo "Live:       Wolf CoG OS branding + desktop Install Wolf CoG OS icon"
 echo "Install:    Start Wolf CoG OS installer (gtk d-i from /install/gtk/)"
 echo "Fallback:   cogos-install apply from live terminal"
 echo "Output:     $COGOS_OUT"
@@ -101,9 +106,11 @@ fi
 echo ""
 echo "=== Wolf CoG OS full runtime ISO complete ==="
 echo "Flash: Rufus DD mode (recommended) or Ventoy"
-echo "Boot:  Start Wolf CoG OS installer (default)  OR  Live (full runtime)"
+echo "Boot:  Start Wolf CoG OS installer (default)  OR  Live (full runtime + desktop install icon)"
 echo "Install: stock Debian gtk graphical installer + Wolf runtime hook on finish"
 echo "Terminal install:  submenu Terminal install, then cogos-install apply"
 echo "Proof: \$COGOS_WORK/proof/live-boot-integrity/validation.json"
+echo "Proof: \$COGOS_WORK/proof/di-initrd-wifi/summary.txt"
+echo "Metal:  wolf-cog-os/docs/METAL_PROOF_CHECKLIST.md"
 echo "SHA:   ${COGOS_OUT}.sha256"
 ls -lh "$COGOS_OUT" "${COGOS_OUT}.sha256" 2>/dev/null || true

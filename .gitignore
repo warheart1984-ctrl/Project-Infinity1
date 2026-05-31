@@ -105,6 +105,7 @@ wolf-cog-os/artifacts/
 wolf-cog-os/payload-iso/
 
 # ISO extract / CI scratch / release drops
+_tmp_iso_check/
 metal-iso-extract/
 ci-artifacts/
 release/

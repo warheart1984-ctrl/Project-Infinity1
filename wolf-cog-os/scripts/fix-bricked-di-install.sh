@@ -26,23 +26,36 @@ if [[ -d "$MNT/sbin" ]]; then
 fi
 echo "  PID1 -> /lib/systemd/systemd"
 
-# Overlay fixed payload bits from repo
+# shellcheck source=lib/cogos-systemd-stack.sh
+source "$SCRIPT_DIR/lib/cogos-systemd-stack.sh"
+
 PAYLOAD="$SCRIPT_DIR/../payload"
-for f in \
-  usr/local/bin/cogos-install-finish \
-  usr/local/bin/cogos-runtime-start \
-  usr/local/bin/cogos-runtime-stop \
-  etc/systemd/system/cogos-runtime.service \
-  etc/init.d/90cogos; do
-  if [[ -f "$PAYLOAD/$f" ]]; then
-    install -D -m755 "$PAYLOAD/$f" "$MNT/$f" 2>/dev/null || install -D -m644 "$PAYLOAD/$f" "$MNT/$f"
-    echo "  installed $f"
-  fi
+for rel in "${COGOS_BOOT_STACK_UNITS[@]}"; do
+  f="${rel#etc/systemd/system/}"
+  [[ -f "$PAYLOAD/etc/systemd/system/$f" ]] || continue
+  install_cogos_boot_stack_file "$PAYLOAD" "$MNT" "$rel"
+  echo "  installed $rel"
 done
 
-# Remove broken SysV enable symlinks if any
-rm -f "$MNT/etc/rc2.d/S90cogos" "$MNT/etc/rc3.d/S90cogos" \
-      "$MNT/etc/rc4.d/S90cogos" "$MNT/etc/rc5.d/S90cogos" 2>/dev/null || true
+find "$MNT/etc/systemd/system" \( -name '*.service' -o -name '*.conf' \) -type f \
+  -exec chmod 644 {} + 2>/dev/null || true
+
+# Remove SysV hooks that break systemd first boot
+rm -f "$MNT/etc/init.d/90cogos" 2>/dev/null || true
+for rc_dir in "$MNT"/etc/rc*.d; do
+  [[ -d "$rc_dir" ]] || continue
+  rm -f "$rc_dir"/[SK]??cogos "$rc_dir"/[SK]??90cogos 2>/dev/null || true
+done
+rm -f "$MNT/etc/systemd/system/90cogos.service" \
+      "$MNT/etc/systemd/system/multi-user.target.wants/90cogos.service" 2>/dev/null || true
+
+if [[ -f "$PAYLOAD/usr/local/bin/cogos-install-finish" ]]; then
+  install -D -m755 "$PAYLOAD/usr/local/bin/cogos-install-finish" "$MNT/usr/local/bin/cogos-install-finish"
+fi
+for launcher in firstboot.sh governance-grace.sh governance-daemon spine observer; do
+  [[ -f "$PAYLOAD/usr/lib/cogos/$launcher" ]] || continue
+  install -D -m755 "$PAYLOAD/usr/lib/cogos/$launcher" "$MNT/usr/lib/cogos/$launcher"
+done
 
 if [[ -x "$MNT/usr/local/bin/cogos-install-finish" ]]; then
   chroot "$MNT" /usr/local/bin/cogos-install-finish --in-target --keep-systemd-pid1 --quiet
@@ -56,4 +69,4 @@ if chroot "$MNT" command -v update-grub >/dev/null 2>&1; then
 fi
 
 echo "Done. Reboot from internal disk (remove USB)."
-echo "Then: systemctl status cogos-runtime.service"
+echo "Then: systemctl status cogos-firstboot.service cogos-governance.service cogos-spine.service cogos-observer.service"

@@ -16,6 +16,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from src.jarvis_reasoning_protocol import reasoning_protocol_spec
+from src.cog_runtime import cognitive_runtime_family_spec, nova_cortex_spec
+from src.speaking_runtime import speaking_runtime_spec
 
 
 PROTOCOL_ID = "jarvis.protocol"
@@ -226,6 +228,9 @@ def protocol_spec() -> dict[str, Any]:
             ],
         },
         "reasoning_protocol": reasoning_protocol_spec(),
+        "speaking_runtime": speaking_runtime_spec(),
+        "nova_cortex": nova_cortex_spec(),
+        "cognitive_runtime_family": cognitive_runtime_family_spec(),
     })
 
 

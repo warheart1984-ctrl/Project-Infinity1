@@ -1,0 +1,71 @@
+services:
+  mechanic-api:
+    build:
+      context: ../..
+      dockerfile: mechanic/hosted/deploy/Dockerfile
+    env_file: .env.example
+    environment:
+      MECHANIC_DATABASE_URL: postgresql://mechanic:mechanic@postgres:5432/mechanic
+      MECHANIC_ARTIFACT_BACKEND: s3
+      MECHANIC_S3_ENDPOINT_URL: http://minio:9000
+      MECHANIC_S3_BUCKET: mechanic-artifacts
+      AWS_ACCESS_KEY_ID: mechanic
+      AWS_SECRET_ACCESS_KEY: mechanic-secret
+      MECHANIC_REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8765:8765"
+    depends_on:
+      - postgres
+      - redis
+      - minio
+
+  mechanic-worker:
+    build:
+      context: ../..
+      dockerfile: mechanic/hosted/deploy/Dockerfile
+    command: ["python", "-m", "mechanic.hosted.worker_fleet"]
+    env_file: .env.example
+    environment:
+      MECHANIC_DATABASE_URL: postgresql://mechanic:mechanic@postgres:5432/mechanic
+      MECHANIC_ARTIFACT_BACKEND: s3
+      MECHANIC_S3_ENDPOINT_URL: http://minio:9000
+      MECHANIC_S3_BUCKET: mechanic-artifacts
+      AWS_ACCESS_KEY_ID: mechanic
+      AWS_SECRET_ACCESS_KEY: mechanic-secret
+      MECHANIC_REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+      - minio
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: mechanic
+      POSTGRES_USER: mechanic
+      POSTGRES_PASSWORD: mechanic
+    volumes:
+      - mechanic-postgres:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - mechanic-redis:/data
+
+  minio:
+    image: minio/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: mechanic
+      MINIO_ROOT_PASSWORD: mechanic-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - mechanic-minio:/data
+
+volumes:
+  mechanic-postgres:
+  mechanic-redis:
+  mechanic-minio:

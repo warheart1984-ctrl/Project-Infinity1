@@ -295,6 +295,9 @@ def build_god_brain_trace(
     mode_guidance: dict | None = None,
     tool_type: str | None = None,
     tool_label: str | None = None,
+    active_cognitive_runtimes=None,
+    nova_face: dict | None = None,
+    jarvis_core_binding: dict | None = None,
 ) -> dict:
     """Build a compact orchestration trace for the current turn."""
     normalized_mode = _normalize_response_mode(response_mode)
@@ -446,4 +449,7 @@ def build_god_brain_trace(
             "disagreement_label": _disagreement_label(disagreement),
         },
         "instruction": instruction,
+        "active_cognitive_runtimes": list(active_cognitive_runtimes or []),
+        "nova_face": dict(nova_face or {}),
+        "jarvis_core_binding": dict(jarvis_core_binding or {}),
     }

@@ -167,6 +167,12 @@ def build_chat_turn_modular_preview(
     turn_metadata.setdefault("cognitive_bridge", session.metadata.get("cognitive_bridge"))
     turn_metadata.setdefault("mission_board", session.metadata.get("mission_board"))
     turn_metadata.setdefault("model_route", session.metadata.get("model_route"))
+    turn_metadata.setdefault("cognitive_runtime_enabled", session.metadata.get("cognitive_runtime_enabled"))
+    turn_metadata.setdefault("nova_intent", session.metadata.get("nova_intent"))
+    turn_metadata.setdefault("nova_narrative", session.metadata.get("nova_narrative"))
+    turn_metadata.setdefault("cortex_arc", session.metadata.get("cortex_arc"))
+    turn_metadata.setdefault("cognitive_runtime_artifacts", session.metadata.get("cognitive_runtime_artifacts"))
+    turn_metadata.setdefault("nova_cognitive_session", session.metadata.get("nova_cognitive_session"))
 
     return build_modular_provider_preview(
         model=model,

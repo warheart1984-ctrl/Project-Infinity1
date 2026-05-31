@@ -44,6 +44,7 @@ Pull requests to `main` run governance workflows under [`.github/workflows/`](.g
 | `ugr-operator-console-gate.yml` | Operator console manifest + tests |
 | `documentation-baseline-gate.yml` | Documentation baseline |
 | `forgekeeper-governance-gate.yml` | Forgekeeper governance ledger |
+| `scorpion-governance-gate.yml` | Scorpion OS anomaly extractor governance |
 
 ## Branch policy
 

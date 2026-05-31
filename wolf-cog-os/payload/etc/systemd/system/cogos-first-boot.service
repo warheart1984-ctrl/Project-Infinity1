@@ -1,7 +1,6 @@
 [Unit]
 Description=CoGOS post-install first boot takeover
-After=network-online.target graphical.target
-Wants=network-online.target
+After=graphical.target
 
 [Service]
 Type=oneshot
