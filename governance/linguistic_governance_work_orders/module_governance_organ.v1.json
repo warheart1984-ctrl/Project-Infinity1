@@ -3,7 +3,7 @@
   "gene": "module_governance_organ",
   "status": "pending",
   "urgency_score": 20.6,
-  "queue_generated_at": "2026-06-05T19:07:45Z",
+  "queue_generated_at": "2026-06-05T21:33:57Z",
   "recommended_actions": [
     {
       "kind": "cascade_report",
@@ -12,5 +12,5 @@
     }
   ],
   "operator_notes": "",
-  "updated_at": "2026-06-05T19:07:45Z"
+  "updated_at": "2026-06-05T21:33:57Z"
 }

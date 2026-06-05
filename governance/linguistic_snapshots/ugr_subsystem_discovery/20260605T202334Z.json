@@ -1,0 +1,40 @@
+{
+  "linguistic_snapshot_version": "linguistic_snapshot.v1",
+  "gene": "ugr_subsystem_discovery",
+  "captured_at": "2026-06-05T20:23:34Z",
+  "capture_source": "naming-genome-gate",
+  "genome_stage": "governed",
+  "layers": {
+    "genome": {
+      "gene": "ugr_subsystem_discovery",
+      "engineering_class": "SubsystemDiscoveryEngine",
+      "mythic_label": "Ugr Subsystem Discovery",
+      "linguistic_version": "1.0.0",
+      "display_name": "UGR Subsystem Discovery",
+      "module_path": "src/ugr/discovery/subsystem_discovery.py"
+    },
+    "source": {
+      "path": "E:/project-infi/src/ugr/discovery/subsystem_discovery.py",
+      "header": {
+        "engineering": "SubsystemDiscoveryEngine"
+      },
+      "symbols": []
+    },
+    "docs": {
+      "concept_spec": {
+        "mythic": "UGR Subsystem Discovery \u2014 entry point that registers subsystem contributions, issues signed discovery receipts, and enables the rest of the Proof-of-Subsystem custody chain.",
+        "engineering_class": "SubsystemDiscoveryEngine",
+        "engineering_detail": "service for build/validate/issue of subsystem_discovery_receipts, query, and governance handoff.",
+        "title": "UGR Subsystem Discovery"
+      },
+      "active_doc": {
+        "title": "UGR Subsystem Discovery"
+      }
+    }
+  },
+  "fingerprints": {
+    "mythic": "7b620b12da300f1f44d3b62b6862711a33a7205c6a01a1f0f545c4e862266f78",
+    "engineering": "a0f918e34c50985636ae7254f6160e90359f401b60ec629998759656d4ac2f99",
+    "combined": "05c9c6d5ba14b571a7890feeeae0b80be6f68f354eb81df8c57a3b92dc0a348f"
+  }
+}

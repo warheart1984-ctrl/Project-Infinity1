@@ -3,7 +3,7 @@
   "gene": "governed_direct_pipeline",
   "status": "pending",
   "urgency_score": 25.6,
-  "queue_generated_at": "2026-06-05T19:07:45Z",
+  "queue_generated_at": "2026-06-05T21:33:57Z",
   "recommended_actions": [
     {
       "kind": "watch_wave2_header",
@@ -31,5 +31,5 @@
     }
   ],
   "operator_notes": "",
-  "updated_at": "2026-06-05T19:07:45Z"
+  "updated_at": "2026-06-05T21:33:57Z"
 }

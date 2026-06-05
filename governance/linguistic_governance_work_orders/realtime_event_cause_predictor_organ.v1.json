@@ -3,7 +3,7 @@
   "gene": "realtime_event_cause_predictor_organ",
   "status": "pending",
   "urgency_score": 21.0,
-  "queue_generated_at": "2026-06-05T19:07:45Z",
+  "queue_generated_at": "2026-06-05T21:33:57Z",
   "recommended_actions": [
     {
       "kind": "wave2_header",
@@ -21,5 +21,5 @@
     }
   ],
   "operator_notes": "",
-  "updated_at": "2026-06-05T19:07:45Z"
+  "updated_at": "2026-06-05T21:33:57Z"
 }

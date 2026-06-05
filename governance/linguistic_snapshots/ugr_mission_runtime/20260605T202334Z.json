@@ -1,0 +1,40 @@
+{
+  "linguistic_snapshot_version": "linguistic_snapshot.v1",
+  "gene": "ugr_mission_runtime",
+  "captured_at": "2026-06-05T20:23:34Z",
+  "capture_source": "naming-genome-gate",
+  "genome_stage": "governed",
+  "layers": {
+    "genome": {
+      "gene": "ugr_mission_runtime",
+      "engineering_class": "MissionRuntimeEngine",
+      "mythic_label": "Ugr Mission Runtime",
+      "linguistic_version": "1.0.0",
+      "display_name": "UGR Mission Runtime",
+      "module_path": "src/ugr/mission/mission_runtime.py"
+    },
+    "source": {
+      "path": "E:/project-infi/src/ugr/mission/mission_runtime.py",
+      "header": {
+        "engineering": "MissionRuntimeEngine"
+      },
+      "symbols": []
+    },
+    "docs": {
+      "concept_spec": {
+        "mythic": "UGR Mission Runtime \u2014 executes governed missions, steps for promotion and adoption of discovered subsystems, and feeds attribution back into the reward chain.",
+        "engineering_class": "MissionRuntimeEngine",
+        "engineering_detail": "mission board integration, step execution, receipt of governance signals, and adoption event emission for rewards.",
+        "title": "UGR Mission Runtime"
+      },
+      "active_doc": {
+        "title": "UGR Mission Runtime"
+      }
+    }
+  },
+  "fingerprints": {
+    "mythic": "e4bae6ded3294764f483d08ca3eee723584b0bb49e0e296aafbea1c1f655a387",
+    "engineering": "edc6956d4c9efbe395fc869e04950c13aef28e3186f01ac74d4b6db56840d59e",
+    "combined": "5e213da4a7aa797963e66899bc16a576a6850302406c72fa31f74a7896ca0b5c"
+  }
+}

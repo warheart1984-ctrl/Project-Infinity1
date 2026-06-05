@@ -1,6 +1,6 @@
 {
   "linguistic_drift_forecast_version": "linguistic_drift_forecast.v1",
-  "generated_at": "2026-06-05T19:11:28Z",
+  "generated_at": "2026-06-05T21:36:17Z",
   "horizon_days": 30,
   "ecosystem_trend": 0.0,
   "forecasts": [
@@ -2308,6 +2308,44 @@
       ]
     },
     {
+      "gene": "ugr_mission_runtime",
+      "current_risk": 4,
+      "current_band": "low",
+      "predicted_risk_30d": 12,
+      "predicted_band": "low",
+      "lead_time_days": 0,
+      "signals": {
+        "trajectory_delta": 30.0,
+        "latent_alignment": 0.0,
+        "mutation_pressure": 0.0,
+        "parent_forecast": 20.0,
+        "ecosystem_trend": 0.0
+      },
+      "drivers": [
+        "rising linguistic snapshot trajectory",
+        "parent gene in forecast or cycle at-risk set"
+      ]
+    },
+    {
+      "gene": "ugr_subsystem_discovery",
+      "current_risk": 4,
+      "current_band": "low",
+      "predicted_risk_30d": 12,
+      "predicted_band": "low",
+      "lead_time_days": 0,
+      "signals": {
+        "trajectory_delta": 30.0,
+        "latent_alignment": 0.0,
+        "mutation_pressure": 0.0,
+        "parent_forecast": 20.0,
+        "ecosystem_trend": 0.0
+      },
+      "drivers": [
+        "rising linguistic snapshot trajectory",
+        "parent gene in forecast or cycle at-risk set"
+      ]
+    },
+    {
       "gene": "v10_action_engine_organ",
       "current_risk": 4,
       "current_band": "low",
@@ -3140,6 +3178,24 @@
       ]
     },
     {
+      "gene": "ugr_operator_reward_engine",
+      "current_risk": 4,
+      "current_band": "low",
+      "predicted_risk_30d": 11,
+      "predicted_band": "low",
+      "lead_time_days": 0,
+      "signals": {
+        "trajectory_delta": 30.0,
+        "latent_alignment": 0.0,
+        "mutation_pressure": 0.0,
+        "parent_forecast": 0.0,
+        "ecosystem_trend": 0.0
+      },
+      "drivers": [
+        "rising linguistic snapshot trajectory"
+      ]
+    },
+    {
       "gene": "ui_vision_organ",
       "current_risk": 4,
       "current_band": "low",
@@ -3264,58 +3320,6 @@
       "drivers": [
         "parent gene in forecast or cycle at-risk set"
       ]
-    },
-    {
-      "gene": "ugr_mission_runtime",
-      "current_risk": 0,
-      "current_band": "low",
-      "predicted_risk_30d": 1,
-      "predicted_band": "low",
-      "lead_time_days": 0,
-      "signals": {
-        "trajectory_delta": 0.0,
-        "latent_alignment": 0.0,
-        "mutation_pressure": 0.0,
-        "parent_forecast": 20.0,
-        "ecosystem_trend": 0.0
-      },
-      "drivers": [
-        "parent gene in forecast or cycle at-risk set"
-      ]
-    },
-    {
-      "gene": "ugr_subsystem_discovery",
-      "current_risk": 0,
-      "current_band": "low",
-      "predicted_risk_30d": 1,
-      "predicted_band": "low",
-      "lead_time_days": 0,
-      "signals": {
-        "trajectory_delta": 0.0,
-        "latent_alignment": 0.0,
-        "mutation_pressure": 0.0,
-        "parent_forecast": 20.0,
-        "ecosystem_trend": 0.0
-      },
-      "drivers": [
-        "parent gene in forecast or cycle at-risk set"
-      ]
-    },
-    {
-      "gene": "ugr_operator_reward_engine",
-      "current_risk": 0,
-      "current_band": "low",
-      "predicted_risk_30d": 0,
-      "predicted_band": "low",
-      "lead_time_days": 0,
-      "signals": {
-        "trajectory_delta": 0.0,
-        "latent_alignment": 0.0,
-        "mutation_pressure": 0.0,
-        "parent_forecast": 0.0,
-        "ecosystem_trend": 0.0
-      },
-      "drivers": []
     }
   ]
 }

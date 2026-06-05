@@ -1,54 +1,54 @@
 {
   "linguistic_governance_attestation_version": "linguistic_governance_attestation.v1",
-  "generated_at": "2026-06-05T12:41:33Z",
+  "generated_at": "2026-06-05T20:07:52Z",
   "closed_loop_score": 80,
   "policy_mode": "observe",
   "registry_summary": {
     "policy_mode": "observe",
-    "last_gate_run_at": "2026-06-05T12:41:32Z",
-    "last_forecast_at": "2026-06-05T12:40:18Z",
-    "last_calibration_at": "2026-06-05T12:40:09Z",
-    "last_cycle_at": "2026-06-05T12:40:57Z",
-    "last_work_order_sync_at": "2026-06-05T12:41:32Z",
-    "last_attestation_at": "2026-06-05T12:18:07Z"
+    "last_gate_run_at": "2026-06-05T20:07:52Z",
+    "last_forecast_at": "2026-06-05T20:06:57Z",
+    "last_calibration_at": "2026-06-05T20:06:49Z",
+    "last_cycle_at": "2026-06-05T20:07:27Z",
+    "last_work_order_sync_at": "2026-06-05T20:07:51Z",
+    "last_attestation_at": "2026-06-05T19:57:53Z"
   },
   "forecast_summary": {
     "present": true,
-    "generated_at": "2026-06-05T12:40:39Z",
-    "predicted_medium_high": 50,
+    "generated_at": "2026-06-05T20:07:12Z",
+    "predicted_medium_high": 0,
     "stale": false
   },
   "calibration_summary": {
     "present": true,
-    "generated_at": "2026-06-05T12:40:18Z",
-    "band_hit_rate": 0.76,
-    "false_alarm_rate": 0.24,
+    "generated_at": "2026-06-05T20:06:57Z",
+    "band_hit_rate": 1.0,
+    "false_alarm_rate": 0.0,
     "miss_rate": 0.0,
     "stale": false
   },
   "queue_summary": {
     "present": true,
-    "generated_at": "2026-06-05T12:41:32Z",
+    "generated_at": "2026-06-05T20:07:51Z",
     "item_count": 30,
     "top_genes": [
-      "coding_organs_stack",
-      "linguistic_drift_predictor_organ",
-      "linguistic_full_governance_cycle_organ",
-      "linguistic_governance_attestation_organ",
-      "linguistic_governance_queue_organ"
+      "operator_cognition_coherence_fabric",
+      "capability_service_bridge",
+      "governed_direct_pipeline",
+      "cisiv_operator_lineage_console",
+      "jarvis_memory_board"
     ]
   },
   "work_order_summary": {
-    "total": 50,
-    "pending": 50,
+    "total": 59,
+    "pending": 59,
     "acknowledged": 0,
     "completed": 0,
     "deferred": 0
   },
   "full_cycle_summary": {
     "present": true,
-    "cycle_id": "20260605T121451Z",
-    "generated_at": "2026-06-05T12:14:51Z",
+    "cycle_id": "20260605T195629Z",
+    "generated_at": "2026-06-05T19:56:29Z",
     "passed": true,
     "phase_keys": [
       "attestation",
@@ -67,12 +67,12 @@
     "lifecycle_artifact_aligned": true
   },
   "meta_gate_summary": {
-    "last_gate_run_at": "2026-06-05T12:41:32Z"
+    "last_gate_run_at": "2026-06-05T20:07:52Z"
   },
   "recommendations": [
     {
       "action": "triage_work_orders",
-      "reason": "50 pending work order(s)"
+      "reason": "59 pending work order(s)"
     }
   ]
 }

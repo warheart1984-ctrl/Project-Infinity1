@@ -1,7 +1,7 @@
 {
   "linguistic_forecast_calibration_version": "linguistic_forecast_calibration.v1",
-  "generated_at": "2026-06-05T19:05:41Z",
-  "forecast_generated_at": "2026-06-05T18:59:27Z",
+  "generated_at": "2026-06-05T21:33:04Z",
+  "forecast_generated_at": "2026-06-05T21:31:45Z",
   "forecast_cycle_id": "",
   "metrics": {
     "gene_count": 179,
@@ -9,7 +9,7 @@
     "false_alarm_rate": 0.0,
     "miss_rate": 0.0,
     "stable_rate": 1.0,
-    "mean_abs_risk_error": 8.99
+    "mean_abs_risk_error": 9.09
   },
   "signal_attribution": {
     "trajectory_delta": {
@@ -79,29 +79,7 @@
   },
   "gene_records": [
     {
-      "gene": "meta_linguistic_governance_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 32,
-      "actual_risk": 16,
-      "risk_delta": -16,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
       "gene": "cisiv_operator_lineage_console",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 31,
-      "actual_risk": 16,
-      "risk_delta": -15,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "linguistic_drift_forecast_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 31,
@@ -134,12 +112,34 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "naming_genome_organ",
+      "gene": "meta_linguistic_governance_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 31,
       "actual_risk": 16,
       "risk_delta": -15,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "operator_cognition_coherence_fabric",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 31,
+      "actual_risk": 20,
+      "risk_delta": -11,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "linguistic_drift_forecast_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 30,
+      "actual_risk": 16,
+      "risk_delta": -14,
       "band_outcome": "stable",
       "lead_time_days": 0,
       "lead_time_accuracy": false
@@ -156,12 +156,12 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "operator_cognition_coherence_fabric",
+      "gene": "naming_genome_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 30,
-      "actual_risk": 20,
-      "risk_delta": -10,
+      "actual_risk": 16,
+      "risk_delta": -14,
       "band_outcome": "stable",
       "lead_time_days": 0,
       "lead_time_accuracy": false
@@ -288,17 +288,6 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "linguistic_drift_predictor_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 26,
-      "actual_risk": 11,
-      "risk_delta": -15,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
       "gene": "linguistic_full_governance_cycle_organ",
       "predicted_band": "low",
       "actual_band": "low",
@@ -310,23 +299,12 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "linguistic_governance_attestation_organ",
+      "gene": "linguistic_drift_predictor_organ",
       "predicted_band": "low",
       "actual_band": "low",
-      "predicted_risk_30d": 26,
+      "predicted_risk_30d": 25,
       "actual_risk": 11,
-      "risk_delta": -15,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "linguistic_governed_lifecycle_fabric_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 26,
-      "actual_risk": 11,
-      "risk_delta": -15,
+      "risk_delta": -14,
       "band_outcome": "stable",
       "lead_time_days": 0,
       "lead_time_accuracy": false
@@ -376,6 +354,39 @@
       "lead_time_accuracy": false
     },
     {
+      "gene": "linguistic_governance_attestation_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 24,
+      "actual_risk": 11,
+      "risk_delta": -13,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "linguistic_governed_lifecycle_fabric_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 24,
+      "actual_risk": 11,
+      "risk_delta": -13,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "cognitive_bridge_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 23,
+      "actual_risk": 14,
+      "risk_delta": -9,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
       "gene": "continuity_witness_organ",
       "predicted_band": "low",
       "actual_band": "low",
@@ -409,45 +420,12 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "cognitive_bridge_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 22,
-      "actual_risk": 14,
-      "risk_delta": -8,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
       "gene": "jarvis_console_surface_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 22,
       "actual_risk": 14,
       "risk_delta": -8,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "linguistic_attestation_history_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 22,
-      "actual_risk": 7,
-      "risk_delta": -15,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "linguistic_drift_report_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 22,
-      "actual_risk": 7,
-      "risk_delta": -15,
       "band_outcome": "stable",
       "lead_time_days": 0,
       "lead_time_accuracy": false
@@ -465,17 +443,6 @@
     },
     {
       "gene": "linguistic_forecast_consumption_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 22,
-      "actual_risk": 7,
-      "risk_delta": -15,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "linguistic_governance_cadence_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 22,
@@ -530,6 +497,17 @@
       "lead_time_accuracy": false
     },
     {
+      "gene": "reflection_runtime_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 22,
+      "actual_risk": 14,
+      "risk_delta": -8,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
       "gene": "workflow_shell_organ",
       "predicted_band": "low",
       "actual_band": "low",
@@ -552,7 +530,7 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "linguistic_cascade_organ",
+      "gene": "linguistic_cycle_optimization_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 21,
@@ -563,7 +541,7 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "linguistic_cycle_optimization_organ",
+      "gene": "linguistic_drift_report_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 21,
@@ -585,40 +563,7 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "linguistic_full_governance_cycle_history_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 21,
-      "actual_risk": 7,
-      "risk_delta": -14,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
       "gene": "linguistic_governance_cycle_history_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 21,
-      "actual_risk": 7,
-      "risk_delta": -14,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "linguistic_governance_day_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 21,
-      "actual_risk": 7,
-      "risk_delta": -14,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "linguistic_governance_work_order_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 21,
@@ -651,28 +596,6 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "linguistic_remediation_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 21,
-      "actual_risk": 7,
-      "risk_delta": -14,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "linguistic_work_order_history_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 21,
-      "actual_risk": 7,
-      "risk_delta": -14,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
       "gene": "meta_linguistic_registry_organ",
       "predicted_band": "low",
       "actual_band": "low",
@@ -695,17 +618,6 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "mythic_engineering_translator_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 21,
-      "actual_risk": 7,
-      "risk_delta": -14,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
       "gene": "otem_execution_substrate",
       "predicted_band": "low",
       "actual_band": "low",
@@ -718,17 +630,6 @@
     },
     {
       "gene": "project_infi_law_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 21,
-      "actual_risk": 14,
-      "risk_delta": -7,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "reflection_runtime_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 21,
@@ -761,12 +662,122 @@
       "lead_time_accuracy": false
     },
     {
+      "gene": "linguistic_attestation_history_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 20,
+      "actual_risk": 7,
+      "risk_delta": -13,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "linguistic_cascade_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 20,
+      "actual_risk": 7,
+      "risk_delta": -13,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "linguistic_full_governance_cycle_history_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 20,
+      "actual_risk": 7,
+      "risk_delta": -13,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "linguistic_governance_cadence_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 20,
+      "actual_risk": 7,
+      "risk_delta": -13,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "linguistic_governance_day_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 20,
+      "actual_risk": 7,
+      "risk_delta": -13,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "linguistic_governance_work_order_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 20,
+      "actual_risk": 7,
+      "risk_delta": -13,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "linguistic_remediation_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 20,
+      "actual_risk": 7,
+      "risk_delta": -13,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "linguistic_work_order_history_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 20,
+      "actual_risk": 7,
+      "risk_delta": -13,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
       "gene": "media_processor_family",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 20,
       "actual_risk": 7,
       "risk_delta": -13,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "mythic_engineering_translator_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 20,
+      "actual_risk": 7,
+      "risk_delta": -13,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "adaptive_lane_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 18,
+      "actual_risk": 9,
+      "risk_delta": -9,
       "band_outcome": "stable",
       "lead_time_days": 0,
       "lead_time_accuracy": false
@@ -794,7 +805,7 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "verification_gate_organ",
+      "gene": "reasoning_executive_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 18,
@@ -805,12 +816,23 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "adaptive_lane_organ",
+      "gene": "ul_lineage_console_organ",
       "predicted_band": "low",
       "actual_band": "low",
-      "predicted_risk_30d": 17,
+      "predicted_risk_30d": 18,
       "actual_risk": 9,
-      "risk_delta": -8,
+      "risk_delta": -9,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "verification_gate_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 18,
+      "actual_risk": 9,
+      "risk_delta": -9,
       "band_outcome": "stable",
       "lead_time_days": 0,
       "lead_time_accuracy": false
@@ -893,6 +915,28 @@
       "lead_time_accuracy": false
     },
     {
+      "gene": "movie_renderer_lane_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 17,
+      "actual_risk": 9,
+      "risk_delta": -8,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "nova_face_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 17,
+      "actual_risk": 9,
+      "risk_delta": -8,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
       "gene": "orchestration_spine_organ",
       "predicted_band": "low",
       "actual_band": "low",
@@ -904,7 +948,7 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "reasoning_executive_organ",
+      "gene": "otem_bounded_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 17,
@@ -915,7 +959,7 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "ul_lineage_console_organ",
+      "gene": "story_forge_launcher_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 17,
@@ -981,17 +1025,6 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "movie_renderer_lane_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 16,
-      "actual_risk": 9,
-      "risk_delta": -7,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
       "gene": "narrative_continuity_organ",
       "predicted_band": "low",
       "actual_band": "low",
@@ -1004,28 +1037,6 @@
     },
     {
       "gene": "narrative_trust_pack",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 16,
-      "actual_risk": 9,
-      "risk_delta": -7,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "nova_face_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 16,
-      "actual_risk": 9,
-      "risk_delta": -7,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "otem_bounded_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 16,
@@ -1081,17 +1092,6 @@
     },
     {
       "gene": "spatial_reasoning_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 16,
-      "actual_risk": 9,
-      "risk_delta": -7,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "story_forge_launcher_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 16,
@@ -1168,6 +1168,17 @@
       "lead_time_accuracy": false
     },
     {
+      "gene": "beatbox_lane_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 12,
+      "actual_risk": 4,
+      "risk_delta": -8,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
       "gene": "chat_turn_governance_organ",
       "predicted_band": "low",
       "actual_band": "low",
@@ -1223,7 +1234,29 @@
       "lead_time_accuracy": false
     },
     {
+      "gene": "direct_challenge_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 12,
+      "actual_risk": 4,
+      "risk_delta": -8,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
       "gene": "document_vision_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 12,
+      "actual_risk": 4,
+      "risk_delta": -8,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "game_front_door_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 12,
@@ -1246,6 +1279,17 @@
     },
     {
       "gene": "imagine_generator_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 12,
+      "actual_risk": 4,
+      "risk_delta": -8,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "knowledge_authority_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 12,
@@ -1279,6 +1323,17 @@
     },
     {
       "gene": "memory_smith_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 12,
+      "actual_risk": 4,
+      "risk_delta": -8,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "narrative_trust_pack_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 12,
@@ -1344,7 +1399,51 @@
       "lead_time_accuracy": false
     },
     {
+      "gene": "text_game_to_video_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 12,
+      "actual_risk": 4,
+      "risk_delta": -8,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "text_to_3d_world_lane_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 12,
+      "actual_risk": 4,
+      "risk_delta": -8,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
       "gene": "tracing_spine_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 12,
+      "actual_risk": 4,
+      "risk_delta": -8,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "ugr_mission_runtime",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 12,
+      "actual_risk": 4,
+      "risk_delta": -8,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
+      "gene": "ugr_subsystem_discovery",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 12,
@@ -1388,6 +1487,17 @@
       "lead_time_accuracy": false
     },
     {
+      "gene": "world_pack_lane_organ",
+      "predicted_band": "low",
+      "actual_band": "low",
+      "predicted_risk_30d": 12,
+      "actual_risk": 4,
+      "risk_delta": -8,
+      "band_outcome": "stable",
+      "lead_time_days": 0,
+      "lead_time_accuracy": false
+    },
+    {
       "gene": "aais_doctor_organ",
       "predicted_band": "low",
       "actual_band": "low",
@@ -1411,17 +1521,6 @@
     },
     {
       "gene": "attention_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 11,
-      "actual_risk": 4,
-      "risk_delta": -7,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "beatbox_lane_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 11,
@@ -1498,17 +1597,6 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "direct_challenge_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 11,
-      "actual_risk": 4,
-      "risk_delta": -7,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
       "gene": "dreamspace_organ",
       "predicted_band": "low",
       "actual_band": "low",
@@ -1543,17 +1631,6 @@
     },
     {
       "gene": "forge_eval_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 11,
-      "actual_risk": 4,
-      "risk_delta": -7,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "game_front_door_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 11,
@@ -1641,17 +1718,6 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "knowledge_authority_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 11,
-      "actual_risk": 4,
-      "risk_delta": -7,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
       "gene": "mission_board_organ",
       "predicted_band": "low",
       "actual_band": "low",
@@ -1664,17 +1730,6 @@
     },
     {
       "gene": "mystic_engine_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 11,
-      "actual_risk": 4,
-      "risk_delta": -7,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "narrative_trust_pack_organ",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 11,
@@ -1905,18 +1960,7 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "text_game_to_video_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 11,
-      "actual_risk": 4,
-      "risk_delta": -7,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "text_to_3d_world_lane_organ",
+      "gene": "ugr_operator_reward_engine",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 11,
@@ -1993,56 +2037,12 @@
       "lead_time_accuracy": false
     },
     {
-      "gene": "world_pack_lane_organ",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 11,
-      "actual_risk": 4,
-      "risk_delta": -7,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
       "gene": "forensic_triangulation",
       "predicted_band": "low",
       "actual_band": "low",
       "predicted_risk_30d": 5,
       "actual_risk": 4,
       "risk_delta": -1,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "ugr_mission_runtime",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 1,
-      "actual_risk": 0,
-      "risk_delta": -1,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "ugr_subsystem_discovery",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 1,
-      "actual_risk": 0,
-      "risk_delta": -1,
-      "band_outcome": "stable",
-      "lead_time_days": 0,
-      "lead_time_accuracy": false
-    },
-    {
-      "gene": "ugr_operator_reward_engine",
-      "predicted_band": "low",
-      "actual_band": "low",
-      "predicted_risk_30d": 0,
-      "actual_risk": 0,
-      "risk_delta": 0,
       "band_outcome": "stable",
       "lead_time_days": 0,
       "lead_time_accuracy": false

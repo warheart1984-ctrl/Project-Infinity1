@@ -22,6 +22,13 @@ def validate_engineering_class(name: str) -> bool:
     return bool(name and ENGINEERING_CLASS_PATTERN.match(name))
 
 
+def _repo_relative_path(root: Path, path: Path) -> str:
+    try:
+        return str(path.relative_to(root)).replace("\\", "/")
+    except ValueError:
+        return str(path).replace("\\", "/")
+
+
 def _linguistic_delta_path(root: Path, gene: str, mp_id: str) -> Path:
     return root / "schemas/deltas" / f"{gene}_{mp_id}_linguistic.json"
 
@@ -167,8 +174,8 @@ def apply_linguistic_mutation(
         {
             "proposal_id": mp_id,
             "status": "promoted",
-            "schema_delta_ref": str(delta_path.relative_to(root)).replace("\\", "/"),
-            "notes": f"linguistic_layer backup: {backup.relative_to(root)}",
+            "schema_delta_ref": _repo_relative_path(root, delta_path),
+            "notes": f"linguistic_layer backup: {_repo_relative_path(root, backup)}",
         }
     )
     genome_path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")

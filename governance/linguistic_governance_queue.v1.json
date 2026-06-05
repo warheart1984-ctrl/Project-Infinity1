@@ -1,10 +1,10 @@
 {
   "linguistic_governance_queue_version": "linguistic_governance_queue.v1",
-  "generated_at": "2026-06-05T19:10:11Z",
+  "generated_at": "2026-06-05T21:35:34Z",
   "items": [
     {
       "gene": "operator_cognition_coherence_fabric",
-      "urgency_score": 26.0,
+      "urgency_score": 26.4,
       "sources": [
         "forecast",
         "preemptive",
@@ -13,7 +13,7 @@
       "current_band": "low",
       "predicted_band": "low",
       "current_risk": 20,
-      "predicted_risk_30d": 30,
+      "predicted_risk_30d": 31,
       "calibration_outcome": "stable",
       "recommended_actions": [
         {
@@ -126,42 +126,6 @@
       "work_order_status": "pending"
     },
     {
-      "gene": "meta_linguistic_governance_organ",
-      "urgency_score": 25.6,
-      "sources": [
-        "forecast",
-        "preemptive",
-        "remediation"
-      ],
-      "current_band": "low",
-      "predicted_band": "low",
-      "current_risk": 16,
-      "predicted_risk_30d": 32,
-      "calibration_outcome": "stable",
-      "recommended_actions": [
-        {
-          "kind": "watch_cascade",
-          "command": "python tools/linguistic_cascade_report.py --gene naming_protocol_organ",
-          "note": "Parent at risk \u2014 monitor cascade"
-        },
-        {
-          "kind": "schedule_remediation",
-          "command": "python tools/governance/generate_linguistic_remediations.py --gene meta_linguistic_governance_organ",
-          "note": "Pre-generate remediation when predicted band materializes"
-        },
-        {
-          "kind": "recommendation",
-          "text": "Review recent MP-LING proposals; stabilize linguistic_version"
-        },
-        {
-          "kind": "cascade_report",
-          "command": "python tools/linguistic_cascade_report.py --gene meta_linguistic_governance_organ",
-          "note": "Review lineage cascade impact"
-        }
-      ],
-      "work_order_status": "pending"
-    },
-    {
       "gene": "cisiv_operator_lineage_console",
       "urgency_score": 25.2,
       "sources": [
@@ -192,6 +156,42 @@
         {
           "kind": "cascade_report",
           "command": "python tools/linguistic_cascade_report.py --gene cisiv_operator_lineage_console",
+          "note": "Review lineage cascade impact"
+        }
+      ],
+      "work_order_status": "pending"
+    },
+    {
+      "gene": "jarvis_memory_board",
+      "urgency_score": 25.2,
+      "sources": [
+        "forecast",
+        "preemptive",
+        "remediation"
+      ],
+      "current_band": "low",
+      "predicted_band": "low",
+      "current_risk": 20,
+      "predicted_risk_30d": 28,
+      "calibration_outcome": "stable",
+      "recommended_actions": [
+        {
+          "kind": "watch_wave2_header",
+          "path": "src/jarvis_memory_board.py",
+          "note": "Add # Engineering header before band escalates"
+        },
+        {
+          "kind": "schedule_remediation",
+          "command": "python tools/governance/generate_linguistic_remediations.py --gene jarvis_memory_board",
+          "note": "Pre-generate remediation when predicted band materializes"
+        },
+        {
+          "kind": "recommendation",
+          "text": "Review recent MP-LING proposals; stabilize linguistic_version"
+        },
+        {
+          "kind": "cascade_report",
+          "command": "python tools/linguistic_cascade_report.py --gene jarvis_memory_board",
           "note": "Review lineage cascade impact"
         }
       ],

@@ -1,0 +1,40 @@
+{
+  "linguistic_snapshot_version": "linguistic_snapshot.v1",
+  "gene": "ugr_operator_reward_engine",
+  "captured_at": "2026-06-05T20:23:34Z",
+  "capture_source": "naming-genome-gate",
+  "genome_stage": "governed",
+  "layers": {
+    "genome": {
+      "gene": "ugr_operator_reward_engine",
+      "engineering_class": "OperatorRewardEngine",
+      "mythic_label": "Ugr Operator Reward Engine",
+      "linguistic_version": "1.0.0",
+      "display_name": "UGR Operator Reward Engine",
+      "module_path": "src/ugr/rewards/operator_reward_engine.py"
+    },
+    "source": {
+      "path": "E:/project-infi/src/ugr/rewards/operator_reward_engine.py",
+      "header": {
+        "engineering": "OperatorRewardEngine"
+      },
+      "symbols": []
+    },
+    "docs": {
+      "concept_spec": {
+        "mythic": "UGR Operator Reward Engine \u2014 Proof-of-Subsystem incentive layer that turns verified subsystem discovery, promotion, and adoption into durable operator reputation and bounded rail credits.",
+        "engineering_class": "OperatorRewardEngine",
+        "engineering_detail": "(`UgrOperatorRewardEngine`) \u2014 governed reward issuance, attribution, ledger, and policy engine for the UGR membrane.",
+        "title": "UGR Operator Reward Engine"
+      },
+      "active_doc": {
+        "title": "UGR Operator Reward Engine"
+      }
+    }
+  },
+  "fingerprints": {
+    "mythic": "0a6bff8b9c344f20a578c0352b4a0ad3b2040f70f8705b47fc005e623faf160f",
+    "engineering": "d75bbd4f3f3df919caaf2bccc9400ceda3d6dacc02bf65c921e2410d371eb210",
+    "combined": "1229939e2fafc7b919316ea8441c1d8847ab9cb76b0de20b3b0546c8009e601e"
+  }
+}
