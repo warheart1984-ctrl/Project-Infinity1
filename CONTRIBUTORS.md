@@ -19,6 +19,15 @@ Claims here are descriptive, not proof of release readiness — see `REPO_PROOF_
 Per [`HUMAN_AI_CO_COLLABORATION_CHARTER.md`](HUMAN_AI_CO_COLLABORATION_CHARTER.md), AI agents may be credited for
 implementation work when a human maintainer accepts the contribution.
 
+**AI collaborator provenance pattern**
+
+Each AI collaborator entry should record:
+
+- **Scope of influence:** what the AI helped shape or verify
+- **Bounded authority:** what remained under human authority and review
+- **Proof of contribution:** commits, artifacts, tests, gates, or accepted session output
+- **Governance notes:** caveats, limits, skip reasons, or claim posture
+
 - **Cursor Agent (Auto)** — AI implementation collaborator (Cursor IDE)
   - **Scope:** UL/CISIV phased rollout (Phases 1–5), chat-turn and forge/repo governance modules, CISIV
     consolidation, UL smoke fixtures, proof/trust bundles, operational README
@@ -31,16 +40,21 @@ implementation work when a human maintainer accepts the contribution.
   - **Claim posture:** implementation **proven** on single-machine pytest/drift/smoke; cross-machine matrix **asserted pending**
 
 - **OpenAI Codex** — AI coding and verification collaborator
-  - **Scope:** flagship verification sweeps, README presentation update, local tooling/runtime setup, targeted
-    verification blocker repairs
-  - **Key artifacts:**
+  - **Scope of influence:** flagship verification sweeps, README presentation update, local tooling/runtime setup,
+    targeted verification blocker repairs, and contributor provenance structure
+  - **Bounded authority:** Codex acted as an implementation and verification collaborator only; Jon Halstead retained
+    project authority, release authority, governance interpretation, and final acceptance of claims
+  - **Proof of contribution:**
+    - Commit `777f292`
     - `README.md`
     - `docs/assets/project-infinity-flagship.png`
     - `.github/scripts/check-lab-governance.py`
     - `src/jarvis_modular2.py`
-  - **Evidence:** human-directed Codex session with Jon Halstead
-  - **Claim posture:** implementation **verified** locally by Python/backend shard sweep, frontend tests/build/lint,
-    compile checks, dependency checks, and governance gates; environment-bound skips documented in session output
+    - Human-directed Codex session with Jon Halstead
+    - Local verification: Python/backend shard sweep, frontend tests/build/lint, compile checks, dependency checks,
+      and governance gates
+  - **Governance notes:** implementation **verified** locally; environment-bound skips and the Windows Lab worktree
+    MAX_PATH limitation were documented in session output
 
 ---
 
