@@ -3,7 +3,6 @@ src/jarvis_modular2.py
 
 RETIRED — legacy experimental copy. Use ``src/jarvis_modular.py`` instead.
 This module remains for reference only and must not be used as a runtime authority.
-"""
 
 Design goals
 ------------

@@ -1,3 +1,5 @@
+![Project Infinity flagship vessel](docs/assets/project-infinity-flagship.png)
+
 # Project Infinity — AAIS
 
 > **Adaptive Authority Intelligence System (AAIS)** — a law-governed Jarvis runtime with inspectable Universal Language (UL) structure, Project Infi admission, and operator-facing surfaces.
