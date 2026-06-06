@@ -19,14 +19,8 @@ Claims here are descriptive, not proof of release readiness — see `REPO_PROOF_
 Per [`HUMAN_AI_CO_COLLABORATION_CHARTER.md`](HUMAN_AI_CO_COLLABORATION_CHARTER.md), AI agents may be credited for
 implementation work when a human maintainer accepts the contribution.
 
-**AI collaborator provenance pattern**
-
-Each AI collaborator entry should record:
-
-- **Scope of influence:** what the AI helped shape or verify
-- **Bounded authority:** what remained under human authority and review
-- **Proof of contribution:** commits, artifacts, tests, gates, or accepted session output
-- **Governance notes:** caveats, limits, skip reasons, or claim posture
+AI contributor records follow the [`AI Collaborator Provenance Charter`](AI_COLLABORATOR_PROVENANCE_CHARTER.md):
+scope of influence, bounded authority, proof of contribution, and governance notes.
 
 - **Cursor Agent (Auto)** — AI implementation collaborator (Cursor IDE)
   - **Scope:** UL/CISIV phased rollout (Phases 1–5), chat-turn and forge/repo governance modules, CISIV
