@@ -46,9 +46,11 @@ desktop = [
 [project.scripts]
 aais = "aais.launcher:main"
 lab = "lab.cli:main"
+nova = "nova.cli:main"
+nova-api = "nova.api:main"
 
 [tool.setuptools.packages.find]
-include = ["aais*", "app*", "src*", "scorpion*", "forge*", "ai_factory*", "lab*", "mechanic*", "slingshot*", "triangulation*", "tools*"]
+include = ["aais*", "app*", "src*", "scorpion*", "forge*", "ai_factory*", "lab*", "mechanic*", "slingshot*", "triangulation*", "tools*", "nova*"]
 
 [tool.setuptools.package-data]
 app = ["static/*", "static/**/*"]

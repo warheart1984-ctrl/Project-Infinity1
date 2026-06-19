@@ -52,6 +52,24 @@ def test_lawful_llm_executes_prompt_through_all_declared_parts(tmp_path, monkeyp
     assert turn.receipt["verified"] is True
 
     receipt_payload = json.loads(turn.receipt["payload"])
+    assert receipt_payload["identity"]["instance_id"] == receipt_payload["instance_id"]
+    assert receipt_payload["identity"]["tenant_id"] == "tenant-alpha"
+    assert receipt_payload["trace"]["trace_id"].startswith("nova-turn-")
+    assert receipt_payload["trace"]["stages"] == [
+        "rsl.validate",
+        "api_kernel.route",
+        "nova_cortex.think",
+        "voss.execute",
+    ]
+    assert receipt_payload["authority_boundary"] == {
+        "operator_authority": "external",
+        "runtime_authority": "execute_after_rsl",
+        "rsl_decision": "SATISFIED",
+        "tool_boundary": "api_kernel",
+    }
+    assert receipt_payload["reproducibility"]["prompt_sha256"] == receipt_payload["prompt_sha256"]
+    assert receipt_payload["reproducibility"]["output_sha256"] == receipt_payload["output_sha256"]
+    assert receipt_payload["reproducibility"]["deterministic_core"] is True
     assert receipt_payload["tenant_id"] == "tenant-alpha"
     assert receipt_payload["capability"] == "reason"
     assert receipt_payload["decision"] == "EXECUTED"
