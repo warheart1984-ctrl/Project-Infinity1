@@ -7,7 +7,9 @@ Related contracts:
 
 - [`CONTINUITY_PROOF_CVR.md`](CONTINUITY_PROOF_CVR.md) — implementation contract
 - [`CCS_CORE_SCHEMA.md`](CCS_CORE_SCHEMA.md) — CCS object schema
+- [`CAB_CONTINUITY_ARCHITECTURE_BLUEPRINT.md`](CAB_CONTINUITY_ARCHITECTURE_BLUEPRINT.md) — fifth-pillar continuity lineage (intent, decision, succession)
 - [`../../schemas/continuity_governance.v1.json`](../../schemas/continuity_governance.v1.json)
+- [`../../schemas/cab.v1.json`](../../schemas/cab.v1.json)
 
 Executable harness:
 
@@ -247,3 +249,20 @@ Environment:
 Tests: `test_lawful_turn_recomputes_cvr`, `test_cvr_accumulates_across_turns` in `test_lawful_nova_lsg.py`.
 
 Schema: `ContinuityGovernanceReceipt`, `ContinuityTraceV1`, and `ContinuityMetrics` in [`../../schemas/continuity_governance.v1.json`](../../schemas/continuity_governance.v1.json).
+
+## 10. CAB — Continuity Architecture Blueprint
+
+CAB is the **fifth pillar** above CCS/Proof/CVR: it preserves intent, decisions, assumptions, evidence, and organizational memory so governance remains reconstructable across generations.
+
+| Layer | Module |
+|-------|--------|
+| Ontology + ledger | [`../../src/continuity/cab.py`](../../src/continuity/cab.py) |
+| Invariants (RC, CL, TI, SU, NE) | [`../../src/continuity/cab_invariants.py`](../../src/continuity/cab_invariants.py) |
+| Schema | [`../../schemas/cab.v1.json`](../../schemas/cab.v1.json) |
+| Contract | [`CAB_CONTINUITY_ARCHITECTURE_BLUEPRINT.md`](CAB_CONTINUITY_ARCHITECTURE_BLUEPRINT.md) |
+
+Nova `continuity_governance` receipts ingest into CAB via `ingest_nova_continuity_governance()`. Set `CAB_AUTO_INGEST=1` to append each lawful turn to the CAB ledger (`CAB_STORE`, default `~/.cab/ledger.jsonl`).
+
+Demo fixture: [`../../fixtures/cab/governance_lineage_demo.v1.yaml`](../../fixtures/cab/governance_lineage_demo.v1.yaml)
+
+Tests: [`../../tests/test_cab_blueprint.py`](../../tests/test_cab_blueprint.py)

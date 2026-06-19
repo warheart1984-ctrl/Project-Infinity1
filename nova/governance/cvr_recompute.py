@@ -418,6 +418,34 @@ def reset_cvr_registry_for_tests() -> None:
     _registry = CVRRegistry()
 
 
+def _maybe_ingest_cab_receipt(
+    *,
+    identity: NovaIdentity,
+    trace_id: str,
+    tenant_id: str,
+    capability: str,
+    timestamp: str,
+    turn_result: TurnCVRResult,
+) -> None:
+    if os.environ.get("CAB_AUTO_INGEST", "").strip().lower() not in {"1", "true", "yes"}:
+        return
+    from src.continuity.cab import CABLedger, ingest_nova_continuity_governance
+
+    ingest_nova_continuity_governance(
+        trace_id=trace_id,
+        identity_context={
+            "instance_id": identity.instance_id,
+            "tenant_id": tenant_id,
+            "capability": capability,
+            "tier": identity.tier,
+        },
+        continuity_governance=turn_result.to_receipt_dict(),
+        event_description=f"Lawful Nova turn {trace_id}",
+        created_at=timestamp,
+        ledger=CABLedger.open(),
+    )
+
+
 def recompute_cvr_for_lawful_turn(
     *,
     identity: NovaIdentity,
@@ -432,7 +460,7 @@ def recompute_cvr_for_lawful_turn(
     registry: CVRRegistry | None = None,
 ) -> TurnCVRResult:
     active = registry or get_cvr_registry()
-    return active.record_lawful_turn(
+    result = active.record_lawful_turn(
         identity=identity,
         trace_id=trace_id,
         tenant_id=tenant_id,
@@ -443,6 +471,15 @@ def recompute_cvr_for_lawful_turn(
         timestamp=timestamp,
         nova_ugr_report=nova_ugr_report,
     )
+    _maybe_ingest_cab_receipt(
+        identity=identity,
+        trace_id=trace_id,
+        tenant_id=tenant_id,
+        capability=capability,
+        timestamp=timestamp,
+        turn_result=result,
+    )
+    return result
 
 
 def _nova_ugr_passed(report: dict[str, dict[str, str]]) -> bool:

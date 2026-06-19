@@ -1,4 +1,20 @@
-"""Continuity governance stack: CCS, Proof, CVR, and substrate."""
+"""Continuity governance stack: CCS, Proof, CVR, CAB, and substrate."""
+
+from src.continuity.cab import (
+    CABLedger,
+    ContinuityReceipt as CABContinuityReceipt,
+    DecisionRecord,
+    EvidenceChain,
+    FounderKnowledgeSnapshot,
+    IntentRecord,
+    ReconstructionPlan,
+    SuccessionProtocol,
+    AssumptionRecord,
+    ingest_nova_continuity_governance,
+    load_cab_scenario,
+    populate_ledger_from_scenario,
+)
+from src.continuity.cab_invariants import CABInvariantReport, evaluate_cab_invariants
 
 from src.continuity.ccs import (
     CCSStore,
@@ -26,14 +42,24 @@ from src.continuity.substrate import ContinuitySubstrate, substrate_from_store, 
 from src.continuity.ugr_trace import evaluate_trace_ugr_invariants, valid_continuity_trace
 
 __all__ = [
+    "AssumptionRecord",
+    "CABContinuityReceipt",
+    "CABInvariantReport",
+    "CABLedger",
     "CCSStore",
     "ContinuityReputation",
     "ContinuitySubstrate",
     "ContinuityTrace",
     "ContinuityValidatedReputation",
+    "DecisionRecord",
+    "EvidenceChain",
+    "FounderKnowledgeSnapshot",
+    "IntentRecord",
     "PODDecision",
     "Proof",
     "ProofStatus",
+    "ReconstructionPlan",
+    "SuccessionProtocol",
     "build_store_from_scenario",
     "compute_cvr",
     "compute_derived_score",
@@ -42,6 +68,10 @@ __all__ = [
     "ReputationWeights",
     "DEFAULT_REPUTATION_WEIGHTS",
     "EXAMPLE_REPUTATION_WEIGHTS",
+    "evaluate_cab_invariants",
+    "ingest_nova_continuity_governance",
+    "load_cab_scenario",
+    "populate_ledger_from_scenario",
     "project_trace_v1",
     "continuity_trace_fingerprint",
     "create_proof",
