@@ -1,0 +1,30 @@
+{
+  "demo_version": "1.0",
+  "authority": "docs/contracts/URG_MISSION_CONTRACT.md",
+  "mission": {
+    "operator_id": "operator-demo",
+    "tenant_id": "tenant:acme",
+    "aais_instance_id": "aais-local-1",
+    "region_id": "local-primary",
+    "intent": "governed_super_router_demo",
+    "objective": "Single-step Lawful Nova organ — UGR invariants, LSG, and CVR continuity receipt.",
+    "constraints": {
+      "max_total_cost_units": 10,
+      "risk_ceiling": "low",
+      "required_region": "local-primary"
+    },
+    "context": {
+      "forbid_express": true,
+      "step_deliberation_mode": "llm_bridge",
+      "force_execute": true
+    },
+    "steps": [
+      {
+        "step_id": "nova-lawful",
+        "objective": "Lawful Nova governed turn with continuity proof",
+        "organ_id": "organ-nova-lawful"
+      }
+    ],
+    "halt_on_failure": true
+  }
+}

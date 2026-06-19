@@ -103,6 +103,40 @@
         "allowed_domains": ["general_qa", "governed_super_router_demo"],
         "admissible_rails": ["SAFE", "NORMAL"]
       }
+    },
+    "organ-nova-lawful": {
+      "tenant_scope": "global",
+      "status": "admitted",
+      "governance_tier": "standard",
+      "trust_score": 0.85,
+      "identity": {
+        "organ_id": "organ-nova-lawful",
+        "organ_class": "llm_provider",
+        "tier": "lawful",
+        "label": "Lawful Nova — UGR Continuity"
+      },
+      "envelope": {
+        "execution_backend": "nova_lawful",
+        "proposal_only": false,
+        "response_mode": "observe"
+      },
+      "function": {
+        "capabilities": ["general_qa", "governed_super_router_demo", "continuity_proof"],
+        "max_tokens": 1024
+      },
+      "contract": {
+        "provider": "nova_lawful",
+        "max_cost_units": 3,
+        "cost_contract": {
+          "cost_per_call": 2.0,
+          "cost_per_token": 0.00005,
+          "region_multiplier": { "tenant-us": 1.0, "tenant-eu": 1.0, "local-primary": 1.0 }
+        },
+        "risk_ceiling": "low",
+        "allowed_regions": ["local-primary", "tenant-us", "tenant-eu"],
+        "allowed_domains": ["general_qa", "explain", "governed_super_router_demo", "continuity_proof"],
+        "admissible_rails": ["SAFE", "NORMAL"]
+      }
     }
   }
 }

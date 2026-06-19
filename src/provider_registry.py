@@ -11,6 +11,7 @@ from src.jarvis_provider_registry import ProviderConfig, ProviderRegistry as Bas
 from src.logger import get_logger
 from src.providers.claude_provider import ClaudeProvider
 from src.providers.local_provider import LocalProvider
+from src.providers.nova_lawful_provider import NovaLawfulProvider
 from src.providers.openrouter_provider import OpenRouterProvider
 
 logger = get_logger(__name__)
@@ -52,6 +53,66 @@ class ProviderRegistry(BaseProviderRegistry):
             ),
             adapter=LocalProvider(),
         )
+
+        nova_lawful_enabled = os.getenv("NOVA_LAWFUL_ENABLED", "1").strip().lower() not in {
+            "0",
+            "false",
+            "no",
+        }
+        if nova_lawful_enabled:
+            try:
+                nova_adapter = NovaLawfulProvider()
+                self.register(
+                    ProviderConfig(
+                        name="nova_lawful",
+                        display_name="Lawful Nova",
+                        enabled=True,
+                        supports_stream=False,
+                        meta={
+                            "kind": "local",
+                            "summary": "UGR-governed Nova runtime with LSG, proof gate, and CVR receipts.",
+                            "reason": "Lawful Nova runtime is bundled in URG.",
+                            "model": "lawful-nova",
+                            "activation_hint": "Set NOVA_LAWFUL_ENABLED=0 to disable.",
+                        },
+                    ),
+                    adapter=nova_adapter,
+                )
+            except Exception as exc:  # pragma: no cover - import/bootstrap failures
+                logger.warning(f"Lawful Nova provider unavailable: {exc}")
+                self.register(
+                    ProviderConfig(
+                        name="nova_lawful",
+                        display_name="Lawful Nova",
+                        enabled=False,
+                        supports_stream=False,
+                        meta={
+                            "kind": "local",
+                            "summary": "UGR-governed Nova runtime with LSG, proof gate, and CVR receipts.",
+                            "reason": str(exc),
+                            "model": "lawful-nova",
+                            "activation_hint": "Bootstrap LSG via scripts/nova-bootstrap-lsg.ps1 or .sh.",
+                        },
+                    ),
+                    adapter=None,
+                )
+        else:
+            self.register(
+                ProviderConfig(
+                    name="nova_lawful",
+                    display_name="Lawful Nova",
+                    enabled=False,
+                    supports_stream=False,
+                    meta={
+                        "kind": "local",
+                        "summary": "UGR-governed Nova runtime with LSG, proof gate, and CVR receipts.",
+                        "reason": "NOVA_LAWFUL_ENABLED is off.",
+                        "model": "lawful-nova",
+                        "activation_hint": "Set NOVA_LAWFUL_ENABLED=1 to activate.",
+                    },
+                ),
+                adapter=None,
+            )
 
         openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
         openrouter_model = os.getenv("AAIS_OPENROUTER_MODEL", "").strip() or DEFAULT_OPENROUTER_MODEL
