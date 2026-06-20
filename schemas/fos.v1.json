@@ -14,6 +14,42 @@
     }
   },
   "$defs": {
+    "ContinuityThread": {
+      "type": "object",
+      "required": ["thread_id", "event_ids"],
+      "properties": {
+        "thread_id": { "type": "string" },
+        "parent_thread_id": { "type": ["string", "null"] },
+        "event_ids": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "ContinuityEvent": {
+      "type": "object",
+      "required": ["event_id", "thread_id", "type", "payload", "timestamp", "lineage"],
+      "properties": {
+        "event_id": { "type": "string" },
+        "thread_id": { "type": "string" },
+        "type": { "type": "string" },
+        "payload": { "type": "object" },
+        "timestamp": { "type": "string" },
+        "lineage": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "LineagePointer": {
+      "type": "object",
+      "required": ["from_event_id", "to_event_id"],
+      "properties": {
+        "from_event_id": { "type": "string" },
+        "to_event_id": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "EventType": {
+      "type": "string",
+      "enum": ["Concept", "Architecture", "Governance", "Decision", "Evidence"]
+    },
     "MemoryType": {
       "type": "string",
       "enum": [

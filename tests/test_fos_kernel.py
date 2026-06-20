@@ -38,8 +38,8 @@ def test_compile_architecture_blueprint_emits_continuity_event():
         )
     )
     event = kernel.compile_architecture_blueprint("thread-fos-v0.1")
-    assert event["kind"] == "blueprint:architecture"
-    assert event["thread"] == "thread-fos-v0.1"
+    assert event["type"] == "Blueprint"
+    assert event["thread_id"] == "thread-fos-v0.1"
 
 
 def test_validation_rejects_empty_definition():

@@ -7,7 +7,9 @@ from datetime import datetime, timezone
 from typing import Any
 
 from src.continuity.cab import CABLedger, DecisionRecord, default_cab_store_path
+from src.fos.continuity import ContinuityEngine
 from src.fos.memory_core import MemoryCore
+from src.fos.primitives import EventType
 from src.fos.types import MemoryObject, MemoryType
 
 
@@ -38,13 +40,32 @@ class FosDecision:
 
 
 class DecisionLedger:
-    def __init__(self, memory: MemoryCore) -> None:
+    def __init__(self, memory: MemoryCore, continuity: ContinuityEngine | None = None) -> None:
         self.memory = memory
+        self.continuity = continuity or memory.continuity
         self._decisions: dict[str, FosDecision] = {}
 
     def record(self, decision: FosDecision) -> MemoryObject:
         obj = decision.to_memory_object()
-        self.memory.upsert(obj)
+        self.memory.objects[obj.id] = obj
+        self.memory._persist(obj)
+        self.continuity.create_thread(obj.continuity_thread)
+        payload = {
+            **obj.to_dict(),
+            "rationale": decision.rationale,
+            "chosen_option": decision.chosen_option,
+            "alternatives": list(decision.alternatives),
+            "tradeoffs": list(decision.tradeoffs),
+            "evidence_refs": list(decision.evidence_refs),
+        }
+        if self.continuity.get_event(obj.id) is None:
+            self.continuity.append_event(
+                obj.continuity_thread,
+                EventType.DECISION.value,
+                payload,
+                lineage=list(decision.lineage),
+                event_id=obj.id,
+            )
         self._decisions[decision.id] = decision
         return obj
 

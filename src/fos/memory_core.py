@@ -1,4 +1,4 @@
-"""FOS Founder Memory Core."""
+"""FOS Founder Memory Core — projection layer over ContinuityEngine."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 
+from src.fos.continuity import ContinuityEngine
 from src.fos.types import ContinuityThreadId, Id, MemoryObject
 
 
@@ -21,8 +22,15 @@ def default_fos_store_path() -> Path:
 
 
 class MemoryCore:
-    def __init__(self, store_path: Path | None = None) -> None:
+    """Memory vault projection — persists MemoryObject and mirrors as continuity events."""
+
+    def __init__(
+        self,
+        store_path: Path | None = None,
+        continuity: ContinuityEngine | None = None,
+    ) -> None:
         self.store_path = store_path or default_fos_store_path()
+        self.continuity = continuity or ContinuityEngine()
         self.objects: dict[Id, MemoryObject] = {}
         if self.store_path.exists():
             self._load()
@@ -30,6 +38,15 @@ class MemoryCore:
     def upsert(self, obj: MemoryObject) -> None:
         self.objects[obj.id] = obj
         self._persist(obj)
+        self.continuity.create_thread(obj.continuity_thread)
+        if self.continuity.get_event(obj.id) is None:
+            self.continuity.append_event(
+                obj.continuity_thread,
+                obj.mtype.value,
+                obj.to_dict(),
+                lineage=list(obj.lineage),
+                event_id=obj.id,
+            )
 
     def get(self, object_id: Id) -> MemoryObject | None:
         return self.objects.get(object_id)

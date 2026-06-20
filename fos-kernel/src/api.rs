@@ -6,12 +6,14 @@ use crate::validation::ValidationLayer;
 
 pub struct FosKernel {
     pub memory: MemoryCore,
+    pub continuity: ContinuityEngine,
 }
 
 impl FosKernel {
     pub fn new() -> Self {
         Self {
             memory: MemoryCore::new(),
+            continuity: ContinuityEngine::new(),
         }
     }
 
@@ -24,17 +26,19 @@ impl FosKernel {
         }
     }
 
-    pub fn compile_architecture_blueprint(&self, thread: &str) -> serde_json::Value {
+    pub fn compile_architecture_blueprint(&mut self, thread: &str) -> serde_json::Value {
         let sources = BlueprintCompiler::select_architecture_sources(self.memory.all());
         let bp = BlueprintCompiler::from_memory(
             thread.to_string(),
             &sources,
             BlueprintKind::Architecture,
         );
-        let evt = ContinuityEngine::emit(
-            "blueprint:architecture",
-            &bp.continuity_thread,
+        let evt = self.continuity.append_event(
+            thread.to_string(),
+            "Blueprint".into(),
             serde_json::to_value(&bp).unwrap(),
+            bp.source_ids.clone(),
+            None,
         );
         serde_json::to_value(evt).unwrap()
     }
@@ -53,6 +57,6 @@ mod tests {
             continuity_thread: "thread-1".into(),
         });
         let event = kernel.compile_architecture_blueprint("thread-1");
-        assert_eq!(event["kind"], "blueprint:architecture");
+        assert_eq!(event["type"], "Blueprint");
     }
 }

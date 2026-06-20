@@ -34,7 +34,38 @@ RawConversation
   → ControlTower console (readout)
 ```
 
-## Core components (v0.1)
+## Minimal kernel (bedrock)
+
+The irreducible FOS kernel is **three primitives**. Everything else is a projection.
+
+| Primitive | Module | Fields |
+|-----------|--------|--------|
+| ContinuityThread | `src/fos/primitives.py` | `thread_id`, `parent_thread_id?`, `event_ids[]` |
+| ContinuityEvent | `src/fos/primitives.py` | `event_id`, `thread_id`, `type`, `payload`, `timestamp`, `lineage[]` |
+| LineagePointer | `src/fos/primitives.py` | `from_event_id` → `to_event_id` |
+
+**ContinuityEngine** (`src/fos/continuity.py`) implements Step 1:
+
+- `create_thread`
+- `append_event`
+- `query_thread`
+- `query_lineage`
+
+**Event types** (Step 2): Concept, Architecture, Governance, Decision, Evidence.
+
+**Projections** (Steps 3–5, above the kernel):
+
+| Projection | Module | Role |
+|------------|--------|------|
+| Decision Reconstruction Engine | `src/fos/reconstruction.py` | Given event ID → lineage, rationale, evidence, alternatives |
+| Lineage Graph | `src/fos/projections.py` | Event graph from lineage pointers |
+| Founder Memory Vault | `src/fos/projections.py` | Filtered continuity events |
+| Continuity Thread Explorer | `src/fos/projections.py` | Decision → Architecture → Governance → Evidence chain |
+
+Legacy modules (MemoryCore, registries, blueprint compiler) remain as **compatibility projections**
+that write through `ContinuityEngine`.
+
+## Core components (projections + compatibility)
 
 | Component | Module | Role |
 |-----------|--------|------|

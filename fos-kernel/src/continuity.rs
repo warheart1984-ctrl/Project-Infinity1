@@ -1,29 +1,101 @@
-use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
 use uuid::Uuid;
 
-use crate::types::{ContinuityThreadId, Id};
+use crate::primitives::{ContinuityEvent, ContinuityThread, Id, LineagePointer, ThreadId};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct ContinuityEvent {
-    pub thread: ContinuityThreadId,
-    pub event_id: Id,
-    pub kind: String,
-    pub payload: serde_json::Value,
+pub struct ContinuityEngine {
+    threads: HashMap<ThreadId, ContinuityThread>,
+    events: HashMap<Id, ContinuityEvent>,
 }
 
-pub struct ContinuityEngine;
-
 impl ContinuityEngine {
-    pub fn emit(
-        kind: &str,
-        thread: &ContinuityThreadId,
-        payload: serde_json::Value,
-    ) -> ContinuityEvent {
-        ContinuityEvent {
-            thread: thread.clone(),
-            event_id: format!("evt-{}", Uuid::new_v4()),
-            kind: kind.to_string(),
-            payload,
+    pub fn new() -> Self {
+        Self {
+            threads: HashMap::new(),
+            events: HashMap::new(),
         }
+    }
+
+    pub fn create_thread(
+        &mut self,
+        thread_id: ThreadId,
+        parent_thread_id: Option<ThreadId>,
+    ) -> ContinuityThread {
+        if let Some(existing) = self.threads.get(&thread_id) {
+            return existing.clone();
+        }
+        let thread = ContinuityThread {
+            thread_id: thread_id.clone(),
+            parent_thread_id,
+            event_ids: Vec::new(),
+        };
+        self.threads.insert(thread_id, thread.clone());
+        thread
+    }
+
+    pub fn append_event(
+        &mut self,
+        thread_id: ThreadId,
+        event_type: String,
+        payload: serde_json::Value,
+        lineage: Vec<Id>,
+        event_id: Option<Id>,
+    ) -> ContinuityEvent {
+        self.create_thread(thread_id.clone(), None);
+        let resolved_id = event_id.unwrap_or_else(|| format!("evt-{}", Uuid::new_v4()));
+        let event = ContinuityEvent {
+            event_id: resolved_id.clone(),
+            thread_id: thread_id.clone(),
+            event_type,
+            payload,
+            timestamp: "v0.1.0".into(),
+            lineage,
+        };
+        self.events.insert(resolved_id.clone(), event.clone());
+        if let Some(thread) = self.threads.get_mut(&thread_id) {
+            thread.event_ids.push(resolved_id);
+        }
+        event
+    }
+
+    pub fn query_thread(&self, thread_id: &ThreadId) -> Vec<ContinuityEvent> {
+        self.threads
+            .get(thread_id)
+            .map(|thread| {
+                thread
+                    .event_ids
+                    .iter()
+                    .filter_map(|id| self.events.get(id).cloned())
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    pub fn lineage_pointers(&self, event_id: &Id) -> Vec<LineagePointer> {
+        self.events
+            .get(event_id)
+            .map(|event| LineagePointer::from_lineage(event_id, &event.lineage))
+            .unwrap_or_default()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::primitives::EventType;
+
+    #[test]
+    fn append_and_query_thread() {
+        let mut engine = ContinuityEngine::new();
+        engine.create_thread("thread-1".into(), None);
+        engine.append_event(
+            "thread-1".into(),
+            format!("{:?}", EventType::Concept),
+            serde_json::json!({"definition": "test"}),
+            vec![],
+            None,
+        );
+        assert_eq!(engine.query_thread(&"thread-1".into()).len(), 1);
     }
 }
