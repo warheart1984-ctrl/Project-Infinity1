@@ -164,10 +164,12 @@ reconstruction_plans:
       DAR-Z: darz-kernel/
       GOVERN: src/ugr/, deploy/ugr/provider-organs.json
       CAB: src/continuity/cab.py
+      FOS: src/fos/
       Nova: nova/lawful_llm.py, nova/governance/cvr_recompute.py
+      NeoMundi: src/neomundi/
+      SymbolicOrganism: src/symbolic_organism/
     known_gaps:
-      - NeoMundi adapter not yet wired to EvidenceChain auto-ingest
-      - CIEMS transformation decisions not yet linked
+      - Surface FOS institutional memory in ControlTower (Phase B follow-on)
     steward_recommendations:
       - Extend CAB_AUTO_INGEST for live Nova turns
       - Surface CAB links in ControlTower telemetry

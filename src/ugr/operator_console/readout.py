@@ -15,6 +15,8 @@ def build_operator_readout(snapshot: dict[str, Any]) -> dict[str, Any]:
     mesh = dict(snapshot.get("mesh_health") or {})
     traces = dict(snapshot.get("deliberation_traces") or {})
     platform = dict(snapshot.get("forge_platform") or {})
+    cab = dict(snapshot.get("cab") or {})
+    cab_counts = dict(cab.get("object_counts") or {})
     summary_parts = [
         f"UGR deployment={ugr.get('deployment_mode') or 'unknown'}",
         f"embryo={((ugr.get('embryo') or {}).get('status') or 'unknown')}",
@@ -24,6 +26,8 @@ def build_operator_readout(snapshot: dict[str, Any]) -> dict[str, Any]:
         f"mesh={mesh.get('poll_status') or 'unknown'}",
         f"traces={traces.get('trace_count', 0)}",
         f"forge_platform={platform.get('status') or 'unknown'}",
+        f"cab_decisions={cab_counts.get('DecisionRecord', 0)}",
+        f"cab_receipts={cab_counts.get('ContinuityReceipt', 0)}",
     ]
     return {
         "contract_version": "1.0",
@@ -35,4 +39,5 @@ def build_operator_readout(snapshot: dict[str, Any]) -> dict[str, Any]:
         "cloud_forge": forge,
         "trust_bundle": trust,
         "debt_register": debt,
+        "cab": cab,
     }

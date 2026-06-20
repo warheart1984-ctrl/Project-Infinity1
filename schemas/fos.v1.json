@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://urg.local/schemas/fos.v1.json",
+  "title": "Founder Operating System v0.1",
+  "type": "object",
+  "properties": {
+    "memory_objects": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/MemoryObject" }
+    },
+    "blueprints": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Blueprint" }
+    }
+  },
+  "$defs": {
+    "MemoryType": {
+      "type": "string",
+      "enum": [
+        "Concept",
+        "Pattern",
+        "Invariant",
+        "Architecture",
+        "GovernanceContract",
+        "Decision",
+        "Evidence",
+        "ContinuityThread",
+        "SystemModel",
+        "Blueprint",
+        "FieldDefinition"
+      ]
+    },
+    "MemoryObject": {
+      "type": "object",
+      "required": ["id", "mtype", "definition", "evidence_refs", "lineage", "version", "continuity_thread"],
+      "properties": {
+        "id": { "type": "string" },
+        "mtype": { "$ref": "#/$defs/MemoryType" },
+        "definition": { "type": "string", "minLength": 1 },
+        "evidence_refs": { "type": "array", "items": { "type": "string" } },
+        "lineage": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "continuity_thread": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "Blueprint": {
+      "type": "object",
+      "required": ["id", "source_ids", "kind", "content", "version", "continuity_thread"],
+      "properties": {
+        "id": { "type": "string" },
+        "source_ids": { "type": "array", "items": { "type": "string" } },
+        "kind": { "type": "string", "enum": ["Architecture", "Governance"] },
+        "content": { "type": "object" },
+        "version": { "type": "string" },
+        "continuity_thread": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

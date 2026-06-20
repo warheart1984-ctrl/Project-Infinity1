@@ -388,6 +388,9 @@ class MutationEngine:
                 "mutation_audit.jsonl",
                 {"action": "mutation_apply", "gene": gene, "mp_id": mp_id, "kind": "linguistic_layer"},
             )
+            from src.continuity.cab_ciems_bridge import maybe_link_mutation_decision
+
+            maybe_link_mutation_decision(proposal, result)
             return result
 
         backup = self._backup_genome(gene)
@@ -440,6 +443,9 @@ class MutationEngine:
             "mutation_audit.jsonl",
             {"action": "mutation_apply", "gene": gene, "mp_id": mp_id, "backup": str(backup)},
         )
+        from src.continuity.cab_ciems_bridge import maybe_link_mutation_decision
+
+        maybe_link_mutation_decision(proposal, result)
         return result
 
     def rollback(self, gene: str, mp_id: str) -> bool:

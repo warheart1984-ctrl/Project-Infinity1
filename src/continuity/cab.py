@@ -471,7 +471,32 @@ def ingest_nova_continuity_governance(
     )
     active = ledger or CABLedger()
     active.append(receipt)
+    _maybe_sync_fos_from_nova(receipt, continuity_governance)
     return receipt
+
+
+def _fos_nova_sync_enabled() -> bool:
+    return os.environ.get("FOS_NOVA_SYNC", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+def _maybe_sync_fos_from_nova(
+    receipt: ContinuityReceipt,
+    continuity_governance: dict[str, Any],
+) -> None:
+    if not _fos_nova_sync_enabled():
+        return
+    from src.fos.cab_bridge import map_nova_continuity_fields, receipt_to_evidence_memory
+    from src.fos.memory_core import MemoryCore
+
+    thread = str(map_nova_continuity_fields(continuity_governance).get("trace_id") or receipt.trace_id)
+    memory = MemoryCore()
+    evidence = receipt_to_evidence_memory(receipt, thread=thread)
+    memory.upsert(evidence)
 
 
 def load_cab_scenario(path: Path) -> dict[str, Any]:

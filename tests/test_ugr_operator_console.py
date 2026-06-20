@@ -24,7 +24,8 @@ class TestOperatorConsoleSnapshot(unittest.TestCase):
         self.assertIn("mesh_health", snapshot)
         self.assertIn("deliberation_traces", snapshot)
         self.assertIn("forge_platform", snapshot)
-        self.assertEqual(snapshot.get("console_version"), "1.3")
+        self.assertEqual(snapshot.get("console_version"), "1.4")
+        self.assertIn("cab", snapshot)
         self.assertIn("otem_ceiling", snapshot)
         ceiling = snapshot.get("otem_ceiling") or {}
         self.assertIn("authority_band", ceiling)

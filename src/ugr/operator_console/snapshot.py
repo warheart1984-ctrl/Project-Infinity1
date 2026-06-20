@@ -17,7 +17,7 @@ from src.ugr.operator_console.readout import build_operator_readout
 from src.ugr.operator_console.trace_viewer import load_deliberation_traces
 
 
-CONSOLE_VERSION = "1.3"
+CONSOLE_VERSION = "1.4"
 CONSOLE_ID = "aais.operator.ugr_cloud_console"
 
 GATE_COMMANDS = [
@@ -201,6 +201,13 @@ def build_operator_console_snapshot(*, runtime: Any | None = None) -> dict[str, 
     except Exception as exc:
         otem_ceiling_status = {"status": "error", "summary": str(exc)}
 
+    try:
+        from src.continuity.cab_console import build_cab_console_section
+
+        cab = build_cab_console_section(limit=10)
+    except Exception as exc:
+        cab = {"status": "error", "summary": str(exc), "runtime_effect": "readout_only"}
+
     snapshot = {
         "console_id": CONSOLE_ID,
         "console_version": CONSOLE_VERSION,
@@ -217,6 +224,7 @@ def build_operator_console_snapshot(*, runtime: Any | None = None) -> dict[str, 
         "trust_bundle": trust,
         "debt_register": debt,
         "operator_rewards": _build_rewards_snapshot(),
+        "cab": cab,
         "gates": GATE_COMMANDS + ["make ugr-rewards-gate"],
         "verification_command": "make ugr-operator-console-gate",
     }

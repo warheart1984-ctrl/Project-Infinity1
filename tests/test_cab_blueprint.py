@@ -127,3 +127,30 @@ def test_orphan_decision_fails_causal_linkage_invariant():
     report = evaluate_cab_invariants(ledger)
     cl = next(item for item in report.results if item.invariant_id == "CL")
     assert cl.status == "fail"
+
+
+def test_ciems_bridge_records_decision_when_enabled(monkeypatch):
+    from src.continuity.cab_ciems_bridge import record_mutation_decision
+    from src.governance_organs.mutation_engine import MutationProposal, MutationResult
+
+    ledger = CABLedger()
+    proposal = MutationProposal(
+        mp_id="MP-TEST-001",
+        gene="test_gene",
+        status="proposed",
+        backward_compatible=True,
+        schema_delta_ref="schemas/deltas/test.json",
+        path=ROOT / "docs/_future/mutations/MP-TEST-001.md",
+        raw={"mutation_kind": "schema"},
+    )
+    result = MutationResult(mp_id="MP-TEST-001", gene="test_gene", passed=True)
+    decision = record_mutation_decision(
+        proposal,
+        result,
+        intent_ref="cab.intent.nova-in-urg",
+        ledger=ledger,
+    )
+    assert decision.decision_id == "cab.decision.ciems.test_gene.MP-TEST-001"
+    assert decision.chosen_option == "apply"
+    assert ledger.get_latest(decision.decision_id) is not None
+
