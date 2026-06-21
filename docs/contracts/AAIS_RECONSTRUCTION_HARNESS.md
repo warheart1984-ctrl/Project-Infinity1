@@ -85,3 +85,5 @@ Fixture: [`../../fixtures/fos/aais_lineage_reconstruction.v1.json`](../../fixtur
 DAR-Z integration fixture: [`../../fixtures/fos/darz_lineage_reconstruction.v1.json`](../../fixtures/fos/darz_lineage_reconstruction.v1.json)
 
 FOS cross-thread fixture: [`../../fixtures/fos/fos_cross_thread_reconstruction.v1.json`](../../fixtures/fos/fos_cross_thread_reconstruction.v1.json) (merges AAIS + DAR-Z + FOS on one wire)
+
+NexusOS civilization fixture: [`../../fixtures/fos/nexusos_lineage_reconstruction.v1.json`](../../fixtures/fos/nexusos_lineage_reconstruction.v1.json) (full four-thread civilization wire)

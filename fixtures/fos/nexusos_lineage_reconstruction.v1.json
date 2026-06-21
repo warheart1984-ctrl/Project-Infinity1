@@ -1,0 +1,163 @@
+{
+  "harness_id": "nexusos.reconstruction.v1",
+  "thread_id": "nexusos",
+  "parent_thread_id": "fos",
+  "description": "NexusOS civilization-grade continuity — URG missions, cloud invariants, and operator substrate over FOS wire.",
+  "composed_from": [
+    "fixtures/fos/aais_lineage_reconstruction.v1.json",
+    "fixtures/fos/darz_lineage_reconstruction.v1.json",
+    "fixtures/fos/fos_cross_thread_reconstruction.v1.json"
+  ],
+  "ground_truth": {
+    "threads": ["aais", "dar-z", "fos", "nexusos"],
+    "governance_event_ids": ["NX002", "NX003", "NX005", "NX009"],
+    "architecture_event_ids": ["NX004"],
+    "evidence_event_ids": ["NX006", "NX008"],
+    "decision_event_ids": ["NX007", "NX010"],
+    "civilization_charter_event_id": "NX005",
+    "anchor_decision_id": "NX010",
+    "upstream_anchors": {
+      "aais": "E010",
+      "dar-z": "DZ010",
+      "fos": "FOS003"
+    },
+    "cross_thread_lineage": [
+      { "from_event_id": "NX008", "to_event_id": "FOS003", "to_thread_id": "fos" },
+      { "from_event_id": "NX008", "to_event_id": "E010", "to_thread_id": "aais" },
+      { "from_event_id": "NX008", "to_event_id": "DZ010", "to_thread_id": "dar-z" },
+      { "from_event_id": "NX010", "to_event_id": "FOS003", "to_thread_id": "fos" },
+      { "from_event_id": "NX010", "to_event_id": "NX008", "to_thread_id": "nexusos" }
+    ]
+  },
+  "events": [
+    {
+      "event_id": "NX001",
+      "thread_id": "nexusos",
+      "type": "Concept",
+      "timestamp": "2026-06-23T00:00:00Z",
+      "lineage": [],
+      "payload": {
+        "name": "NexusOS Genesis",
+        "definition": "Civilization-grade governed runtime — URG missions, operator shell, continuity fabric over FOS.",
+        "platform": "URG-Cloud-Platform"
+      }
+    },
+    {
+      "event_id": "NX002",
+      "thread_id": "nexusos",
+      "type": "Governance",
+      "timestamp": "2026-06-24T00:00:00Z",
+      "lineage": ["NX001"],
+      "payload": {
+        "name": "URG Mission Ingress Law",
+        "authority_scope": "cloud_mission",
+        "invariants": ["if_not_through_urg_it_does_not_exist", "mission_receipt_required"],
+        "constraints": ["no_bypass_provider_registry"]
+      }
+    },
+    {
+      "event_id": "NX003",
+      "thread_id": "nexusos",
+      "type": "Governance",
+      "timestamp": "2026-07-01T00:00:00Z",
+      "lineage": ["NX002"],
+      "payload": {
+        "name": "Cloud Invariant Set v1",
+        "authority_scope": "urg_cloud_invariants",
+        "invariants": ["identity", "boundary", "continuity", "causality", "mutation", "composite"],
+        "constraints": ["cross_organ_enforcement"]
+      }
+    },
+    {
+      "event_id": "NX004",
+      "thread_id": "nexusos",
+      "type": "Architecture",
+      "timestamp": "2026-07-15T00:00:00Z",
+      "lineage": ["NX001", "NX003"],
+      "payload": {
+        "name": "NexusOS v0.1",
+        "version": "0.1.0",
+        "definition": "Mission router + operator console + continuity wire authority",
+        "components": ["ugr_mission", "operator_console", "continuity_fabric", "provider_organs"]
+      }
+    },
+    {
+      "event_id": "NX005",
+      "thread_id": "nexusos",
+      "type": "Governance",
+      "timestamp": "2026-08-01T00:00:00Z",
+      "lineage": ["NX002", "NX004"],
+      "payload": {
+        "name": "Governed Civilization Charter v1",
+        "authority_scope": "civilization_envelope",
+        "invariants": ["charter_monotonicity", "no_auto_epoch_promotion"],
+        "constraints": ["dual_gate_adoption"]
+      }
+    },
+    {
+      "event_id": "NX006",
+      "thread_id": "nexusos",
+      "type": "Evidence",
+      "timestamp": "2026-08-15T00:00:00Z",
+      "lineage": ["NX004", "NX005"],
+      "payload": {
+        "source": "ugr-mission-gate",
+        "summary": "Composite mission demo: three organs, cost/risk/region constraints, ledgered receipt.",
+        "mission_id": "demo-mission-001"
+      }
+    },
+    {
+      "event_id": "NX007",
+      "thread_id": "nexusos",
+      "type": "Decision",
+      "timestamp": "2026-09-01T00:00:00Z",
+      "lineage": ["NX002", "NX004", "NX006"],
+      "payload": {
+        "title": "Adopt URG as composite invariant layer",
+        "rationale": "Cloud-scale work must decompose, assign, enforce, and receipt through missions.",
+        "chosen_architecture": "NX004",
+        "evidence_refs": ["NX006"]
+      }
+    },
+    {
+      "event_id": "NX008",
+      "thread_id": "nexusos",
+      "type": "Evidence",
+      "timestamp": "2026-09-15T00:00:00Z",
+      "lineage": ["FOS003", "E010", "DZ010"],
+      "payload": {
+        "source": "nexusos-continuity-harness",
+        "summary": "Civilization wire spans AAIS, DAR-Z, and FOS anchor decisions on one JSONL authority.",
+        "fos_anchor": "FOS003",
+        "aais_anchor": "E010",
+        "darz_anchor": "DZ010"
+      }
+    },
+    {
+      "event_id": "NX009",
+      "thread_id": "nexusos",
+      "type": "Governance",
+      "timestamp": "2026-10-01T00:00:00Z",
+      "lineage": ["NX005", "NX007"],
+      "payload": {
+        "name": "Epoch Boundary Regime v1",
+        "authority_scope": "federated_epoch",
+        "invariants": ["epoch_id_pinned", "frozen_epoch_blocks_amendments"],
+        "constraints": ["external_witness_quorum_on_adopt"]
+      }
+    },
+    {
+      "event_id": "NX010",
+      "thread_id": "nexusos",
+      "type": "Decision",
+      "timestamp": "2026-10-15T00:00:00Z",
+      "lineage": ["FOS003", "NX008", "NX009"],
+      "payload": {
+        "title": "Adopt civilization-grade continuity wire",
+        "rationale": "NexusOS continuity must reconstruct across substrate threads without FFI.",
+        "fos_anchor": "FOS003",
+        "evidence_refs": ["NX008"]
+      }
+    }
+  ]
+}
