@@ -1,0 +1,204 @@
+{
+  "harness_id": "darz.reconstruction.v1",
+  "thread_id": "dar-z",
+  "subject_ref": "darz.kernel.v1",
+  "description": "Canonical DAR-Z governance + execution continuity thread — Phase 2 integration test.",
+  "ground_truth": {
+    "concept_event_ids": ["DZ001"],
+    "governance_event_ids": ["DZ002", "DZ003", "DZ008"],
+    "architecture_event_ids": ["DZ004"],
+    "invariant_event_ids": ["DZ005"],
+    "evidence_event_ids": ["DZ006", "DZ009", "DZ011"],
+    "decision_event_ids": ["DZ007", "DZ010", "DZ012"],
+    "execute_decision_ids": ["DZ010"],
+    "block_decision_ids": ["DZ012"],
+    "policy_bundle_event_id": "DZ003",
+    "anchor_decision_id": "DZ010",
+    "lineage_pointers": [
+      { "from_event_id": "DZ002", "to_event_id": "DZ001" },
+      { "from_event_id": "DZ003", "to_event_id": "DZ002" },
+      { "from_event_id": "DZ004", "to_event_id": "DZ001" },
+      { "from_event_id": "DZ004", "to_event_id": "DZ003" },
+      { "from_event_id": "DZ005", "to_event_id": "DZ002" },
+      { "from_event_id": "DZ006", "to_event_id": "DZ004" },
+      { "from_event_id": "DZ006", "to_event_id": "DZ005" },
+      { "from_event_id": "DZ007", "to_event_id": "DZ002" },
+      { "from_event_id": "DZ007", "to_event_id": "DZ004" },
+      { "from_event_id": "DZ007", "to_event_id": "DZ006" },
+      { "from_event_id": "DZ008", "to_event_id": "DZ002" },
+      { "from_event_id": "DZ008", "to_event_id": "DZ007" },
+      { "from_event_id": "DZ009", "to_event_id": "DZ004" },
+      { "from_event_id": "DZ009", "to_event_id": "DZ008" },
+      { "from_event_id": "DZ010", "to_event_id": "DZ008" },
+      { "from_event_id": "DZ010", "to_event_id": "DZ009" },
+      { "from_event_id": "DZ011", "to_event_id": "DZ004" },
+      { "from_event_id": "DZ011", "to_event_id": "DZ008" },
+      { "from_event_id": "DZ012", "to_event_id": "DZ008" },
+      { "from_event_id": "DZ012", "to_event_id": "DZ011" }
+    ]
+  },
+  "events": [
+    {
+      "event_id": "DZ001",
+      "thread_id": "dar-z",
+      "type": "Concept",
+      "timestamp": "2026-01-01T00:00:00Z",
+      "lineage": [],
+      "payload": {
+        "name": "DAR-Z Genesis",
+        "definition": "Deterministic execution kernel at the cognition→mutation boundary.",
+        "authority_model": "governed_mutation_only"
+      }
+    },
+    {
+      "event_id": "DZ002",
+      "thread_id": "dar-z",
+      "type": "Governance",
+      "timestamp": "2026-01-15T00:00:00Z",
+      "lineage": ["DZ001"],
+      "payload": {
+        "name": "DAR-Z Execution Gate v1",
+        "authority_scope": "state_mutation",
+        "invariants": ["no_execute_without_receipt", "audit_append_only"],
+        "constraints": ["block_on_axis_failure", "require_replay_hash"]
+      }
+    },
+    {
+      "event_id": "DZ003",
+      "thread_id": "dar-z",
+      "type": "Governance",
+      "timestamp": "2026-02-01T00:00:00Z",
+      "lineage": ["DZ002"],
+      "payload": {
+        "name": "LiSCAL Policy Bundle v1",
+        "authority_scope": "darz_policy_bundle",
+        "regime_id": "liscal-egl-v1",
+        "invariants": ["policy_monotonicity", "regime_id_pinned_at_eval"],
+        "constraints": ["reject_stale_bundle"]
+      }
+    },
+    {
+      "event_id": "DZ004",
+      "thread_id": "dar-z",
+      "type": "Architecture",
+      "timestamp": "2026-02-15T00:00:00Z",
+      "lineage": ["DZ001", "DZ003"],
+      "payload": {
+        "name": "DAR-Z v0.1",
+        "version": "0.1.0",
+        "definition": "proposal → axis validation → replay hash → Execute|Block receipt",
+        "components": ["proposal_adapter", "axis_validator", "replay_engine", "audit_sink"]
+      }
+    },
+    {
+      "event_id": "DZ005",
+      "thread_id": "dar-z",
+      "type": "Invariant",
+      "timestamp": "2026-03-01T00:00:00Z",
+      "lineage": ["DZ002"],
+      "payload": {
+        "name": "Deterministic Replay",
+        "statement": "Same proposal + policy bundle → identical replay_hash.",
+        "enforced_by": "DZ002"
+      }
+    },
+    {
+      "event_id": "DZ006",
+      "thread_id": "dar-z",
+      "type": "Evidence",
+      "timestamp": "2026-03-15T00:00:00Z",
+      "lineage": ["DZ004", "DZ005"],
+      "payload": {
+        "source": "darz-replay-harness-baseline",
+        "summary": "Baseline replay suite: 1000 proposals → stable replay_hash under pinned bundle.",
+        "replay_hash": "baseline-7f3a2c"
+      }
+    },
+    {
+      "event_id": "DZ007",
+      "thread_id": "dar-z",
+      "type": "Decision",
+      "timestamp": "2026-04-01T00:00:00Z",
+      "lineage": ["DZ002", "DZ004", "DZ006"],
+      "payload": {
+        "title": "Adopt DAR-Z v0.1 execution gate",
+        "rationale": "Deterministic gate is the correct seam before any state mutation.",
+        "chosen_architecture": "DZ004",
+        "evidence_refs": ["DZ006"]
+      }
+    },
+    {
+      "event_id": "DZ008",
+      "thread_id": "dar-z",
+      "type": "Governance",
+      "timestamp": "2026-04-10T00:00:00Z",
+      "lineage": ["DZ002", "DZ007"],
+      "payload": {
+        "name": "Override Authority Regime v1",
+        "authority_scope": "darz_override",
+        "invariants": ["override_requires_acknowledged_decision"],
+        "constraints": ["dual_control_for_block_lift"]
+      }
+    },
+    {
+      "event_id": "DZ009",
+      "thread_id": "dar-z",
+      "type": "Evidence",
+      "timestamp": "2026-05-01T00:00:00Z",
+      "lineage": ["DZ004", "DZ008"],
+      "payload": {
+        "source": "darz-kernel",
+        "subsystem": "execution-audit",
+        "trace_id": "proposal-001",
+        "allowed": true,
+        "replay_hash": "exec-a1b2c3d4",
+        "reasons": ["all_axes_pass", "bundle_pinned"]
+      }
+    },
+    {
+      "event_id": "DZ010",
+      "thread_id": "dar-z",
+      "type": "Decision",
+      "timestamp": "2026-05-02T00:00:00Z",
+      "lineage": ["DZ008", "DZ009"],
+      "payload": {
+        "title": "DAR-Z Execute: proposal-001",
+        "rationale": "all_axes_pass; bundle_pinned",
+        "source_message_id": "proposal-001",
+        "allowed": true,
+        "replay_hash": "exec-a1b2c3d4",
+        "evidence_refs": ["DZ009"]
+      }
+    },
+    {
+      "event_id": "DZ011",
+      "thread_id": "dar-z",
+      "type": "Evidence",
+      "timestamp": "2026-05-15T00:00:00Z",
+      "lineage": ["DZ004", "DZ008"],
+      "payload": {
+        "source": "darz-kernel",
+        "subsystem": "execution-audit",
+        "trace_id": "proposal-002",
+        "allowed": false,
+        "replay_hash": "block-e5f6g7h8",
+        "reasons": ["axis_failure:policy_monotonicity", "bundle_stale"]
+      }
+    },
+    {
+      "event_id": "DZ012",
+      "thread_id": "dar-z",
+      "type": "Decision",
+      "timestamp": "2026-05-16T00:00:00Z",
+      "lineage": ["DZ008", "DZ011"],
+      "payload": {
+        "title": "DAR-Z Block: proposal-002",
+        "rationale": "axis_failure:policy_monotonicity; bundle_stale",
+        "source_message_id": "proposal-002",
+        "allowed": false,
+        "replay_hash": "block-e5f6g7h8",
+        "evidence_refs": ["DZ011"]
+      }
+    }
+  ]
+}

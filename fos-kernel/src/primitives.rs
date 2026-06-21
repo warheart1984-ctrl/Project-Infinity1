@@ -39,20 +39,13 @@ pub struct LineagePointer {
 
 impl LineagePointer {
     pub fn from_lineage(event_id: &Id, lineage: &[Id]) -> Vec<LineagePointer> {
-        if lineage.is_empty() {
-            return Vec::new();
-        }
-        let mut pointers = vec![LineagePointer {
-            from_event_id: event_id.clone(),
-            to_event_id: lineage[0].clone(),
-        }];
-        for window in lineage.windows(2) {
-            pointers.push(LineagePointer {
-                from_event_id: window[0].clone(),
-                to_event_id: window[1].clone(),
-            });
-        }
-        pointers
+        lineage
+            .iter()
+            .map(|parent| LineagePointer {
+                from_event_id: event_id.clone(),
+                to_event_id: parent.clone(),
+            })
+            .collect()
     }
 }
 
@@ -61,12 +54,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn lineage_pointers_chain() {
+    fn lineage_pointers_direct() {
         let pointers = LineagePointer::from_lineage(
             &"evt-3".into(),
             &["evt-2".into(), "evt-1".into()],
         );
         assert_eq!(pointers.len(), 2);
+        assert_eq!(pointers[0].from_event_id, "evt-3");
         assert_eq!(pointers[0].to_event_id, "evt-2");
+        assert_eq!(pointers[1].to_event_id, "evt-1");
     }
 }

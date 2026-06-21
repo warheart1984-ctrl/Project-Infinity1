@@ -81,7 +81,15 @@ that write through `ContinuityEngine`.
 | Symbolic bridge | `src/fos/symbolic_bridge.py` | Symbolic organism coherence → CAB/FOS |
 | Kernel | `src/fos/kernel.py` | Orchestrator API |
 
-Parallel Rust skeleton: `fos-kernel/` (types, memory, translation, blueprint, validation, api).
+Parallel Rust kernels:
+
+- **`civilization-stack/`** — canonical FOS continuity substrate (threads, events, lineage, reconstruction). Gate: `make civilization-stack-gate`.
+- **`darz-kernel/`** — DAR-Z validator + FOS wire coupling. Gate: `make darz-kernel-gate`.
+
+AAIS reconstruction harness (Python):
+
+- **`src/aais/reconstruction/`** — reads `continuity.jsonl`, emits `ContinuityProof.reconstruction`. Gate: `make aais-reconstruction-gate`.
+- Contract: [`docs/contracts/AAIS_RECONSTRUCTION_HARNESS.md`](AAIS_RECONSTRUCTION_HARNESS.md)
 
 ## Constitutional charter (summary)
 
@@ -172,9 +180,12 @@ $env:PYTHONPATH = "e:\urg-wt"
 e:\urg-wt\tools\bin\python3.cmd -m pytest tests/test_fos_kernel.py tests/test_cab_blueprint.py tests/test_neomundi_cab_ingest.py tests/test_cab_console.py tests/test_symbolic_organism_vm.py tests/test_symbolic_bridge.py -q
 ```
 
-Rust kernel:
+Rust kernels:
 
 ```powershell
+cd civilization-stack
+cargo test
+
 cd fos-kernel
 cargo test
 ```

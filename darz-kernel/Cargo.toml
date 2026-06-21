@@ -10,3 +10,10 @@ name = "darz_kernel"
 path = "src/lib.rs"
 
 [dependencies]
+anyhow = "1"
+civilization-stack = { path = "../civilization-stack" }
+serde_json = "1"
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+uuid = { version = "1", features = ["v4"] }

@@ -15,10 +15,12 @@ pub mod validator;
 
 pub mod integration {
     pub mod aais;
+    pub mod fos;
     pub mod infinity;
 }
 
 pub use integration::aais;
+pub use integration::fos::{CouplingRecord, DarzContinuityCoupling, DEFAULT_DARZ_THREAD};
 pub use ledger::{AuditSink, InMemoryAuditSink};
 pub use policy::{AxisPolicy, KernelPolicy, OiwlPolicy};
 pub use types::{

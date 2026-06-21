@@ -36,3 +36,7 @@ pub fn hash_metadata(prefix: &str, metadata: &MetaMap) -> Hash256 {
 pub fn zero_hash() -> Hash256 {
     [0; 32]
 }
+
+pub fn hash_to_hex(hash: Hash256) -> String {
+    hash.iter().map(|byte| format!("{byte:02x}")).collect()
+}

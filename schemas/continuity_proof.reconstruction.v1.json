@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://urg.local/schemas/continuity_proof.reconstruction.v1.json",
+  "title": "ContinuityProof.reconstruction v1",
+  "description": "AAIS-native typed proof — what actually happened after replaying continuity wire.",
+  "type": "object",
+  "required": ["version", "generated_at", "source_wire", "threads", "global"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": "v1" },
+    "generated_at": { "type": "string", "minLength": 1 },
+    "source_wire": { "type": "string", "minLength": 1 },
+    "threads": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ThreadProof" }
+    },
+    "global": { "$ref": "#/$defs/GlobalProof" }
+  },
+  "$defs": {
+    "StringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "ThreadInvariants": {
+      "type": "object",
+      "required": [
+        "no_orphaned_events",
+        "no_broken_lineage",
+        "no_unbacked_decisions"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "no_orphaned_events": { "type": "boolean" },
+        "no_broken_lineage": { "type": "boolean" },
+        "no_unbacked_decisions": { "type": "boolean" }
+      }
+    },
+    "GlobalInvariants": {
+      "type": "object",
+      "required": ["no_orphaned_events", "no_broken_lineage"],
+      "additionalProperties": false,
+      "properties": {
+        "no_orphaned_events": { "type": "boolean" },
+        "no_broken_lineage": { "type": "boolean" }
+      }
+    },
+    "ThreadSummary": {
+      "type": "object",
+      "required": [
+        "first_event",
+        "last_event",
+        "decision_count",
+        "evidence_count"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "first_event": { "type": ["string", "null"] },
+        "last_event": { "type": ["string", "null"] },
+        "decision_count": { "type": "integer", "minimum": 0 },
+        "evidence_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "Finding": {
+      "type": "object",
+      "required": ["kind", "code", "message", "event_ids"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "enum": ["Warning", "Error", "Info"] },
+        "code": { "type": "string", "minLength": 1 },
+        "message": { "type": "string" },
+        "event_ids": { "$ref": "#/$defs/StringArray" }
+      }
+    },
+    "ThreadProof": {
+      "type": "object",
+      "required": [
+        "thread_id",
+        "events_replayed",
+        "lineage_ok",
+        "evidence_ok",
+        "decisions_ok",
+        "invariants",
+        "summary",
+        "findings"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "thread_id": { "type": "string", "minLength": 1 },
+        "events_replayed": { "type": "integer", "minimum": 0 },
+        "lineage_ok": { "type": "boolean" },
+        "evidence_ok": { "type": "boolean" },
+        "decisions_ok": { "type": "boolean" },
+        "invariants": { "$ref": "#/$defs/ThreadInvariants" },
+        "summary": { "$ref": "#/$defs/ThreadSummary" },
+        "findings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Finding" }
+        }
+      }
+    },
+    "GlobalProof": {
+      "type": "object",
+      "required": ["threads_analyzed", "invariants"],
+      "additionalProperties": false,
+      "properties": {
+        "threads_analyzed": { "type": "integer", "minimum": 0 },
+        "invariants": { "$ref": "#/$defs/GlobalInvariants" }
+      }
+    }
+  }
+}

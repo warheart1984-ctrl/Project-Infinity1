@@ -278,6 +278,15 @@ ugr-operator-console-gate:
 fos-kernel-gate:
 	cd fos-kernel && cargo test
 
+civilization-stack-gate:
+	cd civilization-stack && cargo test
+
+darz-kernel-gate:
+	cd darz-kernel && cargo test
+
+aais-reconstruction-gate:
+	pytest tests/test_aais_reconstruction_harness.py tests/test_darz_reconstruction_harness.py tests/test_fos_cross_thread_reconstruction.py tests/test_darz_fos_wire_coupling.py -q
+
 SPEC ?= factory/specs/nova-default.yaml
 
 ai-factory-build:

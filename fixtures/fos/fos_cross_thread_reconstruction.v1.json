@@ -1,0 +1,65 @@
+{
+  "harness_id": "fos.cross_thread.reconstruction.v1",
+  "thread_id": "fos",
+  "parent_thread_id": null,
+  "description": "FOS cross-thread continuity — single wire spans AAIS + DAR-Z anchor decisions.",
+  "composed_from": [
+    "fixtures/fos/aais_lineage_reconstruction.v1.json",
+    "fixtures/fos/darz_lineage_reconstruction.v1.json"
+  ],
+  "ground_truth": {
+    "threads": ["aais", "dar-z", "fos"],
+    "cross_thread_lineage": [
+      { "from_event_id": "FOS002", "to_event_id": "E010", "to_thread_id": "aais" },
+      { "from_event_id": "FOS002", "to_event_id": "DZ010", "to_thread_id": "dar-z" },
+      { "from_event_id": "FOS003", "to_event_id": "E010", "to_thread_id": "aais" },
+      { "from_event_id": "FOS003", "to_event_id": "DZ010", "to_thread_id": "dar-z" }
+    ],
+    "anchor_decision_ids": {
+      "aais": "E010",
+      "dar-z": "DZ010",
+      "fos": "FOS003"
+    },
+    "fos_event_ids": ["FOS001", "FOS002", "FOS003"]
+  },
+  "events": [
+    {
+      "event_id": "FOS001",
+      "thread_id": "fos",
+      "type": "Concept",
+      "timestamp": "2026-06-20T00:00:00Z",
+      "lineage": [],
+      "payload": {
+        "name": "FOS Continuity Substrate",
+        "definition": "One universal wire; AAIS proves, DAR-Z executes, FOS reconstructs across threads."
+      }
+    },
+    {
+      "event_id": "FOS002",
+      "thread_id": "fos",
+      "type": "Evidence",
+      "timestamp": "2026-06-21T00:00:00Z",
+      "lineage": ["E010", "DZ010"],
+      "payload": {
+        "source": "fos-cross-thread-harness",
+        "summary": "AAIS anchor E010 and DAR-Z anchor DZ010 co-exist on one continuity wire.",
+        "aais_anchor": "E010",
+        "darz_anchor": "DZ010"
+      }
+    },
+    {
+      "event_id": "FOS003",
+      "thread_id": "fos",
+      "type": "Decision",
+      "timestamp": "2026-06-22T00:00:00Z",
+      "lineage": ["E010", "DZ010", "FOS002"],
+      "payload": {
+        "title": "Adopt universal continuity wire as FOS authority",
+        "rationale": "Cross-thread reconstruction holds when AAIS and DAR-Z anchors align on one JSONL.",
+        "aais_anchor": "E010",
+        "darz_anchor": "DZ010",
+        "evidence_refs": ["FOS002"]
+      }
+    }
+  ]
+}

@@ -90,9 +90,4 @@ class LineagePointer:
 
     @classmethod
     def from_lineage(cls, event_id: Id, lineage: list[Id]) -> list[LineagePointer]:
-        if not lineage:
-            return []
-        return [cls(from_event_id=event_id, to_event_id=lineage[0])] + [
-            cls(from_event_id=lineage[index], to_event_id=lineage[index + 1])
-            for index in range(len(lineage) - 1)
-        ]
+        return [cls(from_event_id=event_id, to_event_id=parent) for parent in lineage]

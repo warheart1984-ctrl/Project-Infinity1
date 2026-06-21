@@ -1,0 +1,3 @@
+[workspace]
+members = ["civilization-stack", "darz-kernel", "fos-kernel"]
+resolver = "2"

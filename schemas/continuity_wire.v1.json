@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://urg.local/schemas/continuity_wire.v1.json",
+  "title": "FOS Continuity Wire v1",
+  "description": "Universal language for continuity substrate — bootstraps Python, Rust, and any future runtime via append-only JSONL.",
+  "oneOf": [
+    { "$ref": "#/$defs/ThreadRecord" },
+    { "$ref": "#/$defs/EventRecord" }
+  ],
+  "$defs": {
+    "ThreadRecord": {
+      "type": "object",
+      "required": ["record_type", "thread_id"],
+      "properties": {
+        "record_type": { "const": "thread" },
+        "thread_id": { "type": "string", "minLength": 1 },
+        "parent_thread_id": { "type": ["string", "null"] },
+        "event_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    },
+    "EventRecord": {
+      "type": "object",
+      "required": ["record_type", "event_id", "thread_id", "type", "timestamp"],
+      "properties": {
+        "record_type": { "const": "event" },
+        "event_id": { "type": "string", "minLength": 1 },
+        "thread_id": { "type": "string", "minLength": 1 },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Concept",
+            "Invariant",
+            "Architecture",
+            "Governance",
+            "Decision",
+            "Evidence",
+            "Note",
+            "Legacy",
+            "Error",
+            "Correction",
+            "Override"
+          ]
+        },
+        "payload": { "type": "object", "default": {} },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "lineage": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

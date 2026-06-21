@@ -1,0 +1,172 @@
+{
+  "harness_id": "aais.reconstruction.v1",
+  "thread_id": "aais",
+  "subject_ref": "aais.genesis.v1",
+  "description": "Canonical AAIS technical continuity thread — Phase 1 kernel validation (unit test).",
+  "ground_truth": {
+    "architecture_event_ids": ["E003", "E007"],
+    "governance_event_ids": ["E004", "E008"],
+    "decision_event_ids": ["E006", "E010"],
+    "evidence_event_ids": ["E002", "E005", "E009"],
+    "legacy_event_ids": ["E011"],
+    "concept_event_ids": ["E001"],
+    "lineage_pointers": [
+      { "from_event_id": "E003", "to_event_id": "E001" },
+      { "from_event_id": "E003", "to_event_id": "E002" },
+      { "from_event_id": "E004", "to_event_id": "E001" },
+      { "from_event_id": "E005", "to_event_id": "E003" },
+      { "from_event_id": "E006", "to_event_id": "E003" },
+      { "from_event_id": "E006", "to_event_id": "E004" },
+      { "from_event_id": "E006", "to_event_id": "E005" },
+      { "from_event_id": "E007", "to_event_id": "E006" },
+      { "from_event_id": "E008", "to_event_id": "E004" },
+      { "from_event_id": "E008", "to_event_id": "E006" },
+      { "from_event_id": "E009", "to_event_id": "E007" },
+      { "from_event_id": "E010", "to_event_id": "E007" },
+      { "from_event_id": "E010", "to_event_id": "E008" },
+      { "from_event_id": "E010", "to_event_id": "E009" },
+      { "from_event_id": "E011", "to_event_id": "E010" }
+    ],
+    "anchor_decision_id": "E010"
+  },
+  "events": [
+    {
+      "event_id": "E001",
+      "thread_id": "aais",
+      "type": "Concept",
+      "timestamp": "2026-01-01T00:00:00Z",
+      "lineage": [],
+      "payload": {
+        "name": "AAIS Genesis",
+        "definition": "Autonomous institutional AI substrate with governed mutation boundary.",
+        "diagram": "docs/diagrams/aais-genesis.mermaid",
+        "narrative": "Founder session notes — not part of structural replay."
+      }
+    },
+    {
+      "event_id": "E002",
+      "thread_id": "aais",
+      "type": "Evidence",
+      "timestamp": "2026-01-15T00:00:00Z",
+      "lineage": ["E001"],
+      "payload": {
+        "source": "aais-prototype-2026-01",
+        "summary": "Early pipeline prototype validates LTS → trajectory projection.",
+        "doc_ref": "docs/archive/aais-prototype-report.pdf"
+      }
+    },
+    {
+      "event_id": "E003",
+      "thread_id": "aais",
+      "type": "Architecture",
+      "timestamp": "2026-02-01T00:00:00Z",
+      "lineage": ["E001", "E002"],
+      "payload": {
+        "name": "AAIS v0.1",
+        "version": "0.1.0",
+        "definition": "Omega → LTS → T(S) → OIWL → Forge → IG → LiSCAL → EGL → SDAF → SSAGL → SCIL → SCOL",
+        "components": ["proposal_adapter", "mutation_gate", "audit_sink"],
+        "explanation": "Full prose architecture doc — stripped at replay."
+      }
+    },
+    {
+      "event_id": "E004",
+      "thread_id": "aais",
+      "type": "Governance",
+      "timestamp": "2026-02-10T00:00:00Z",
+      "lineage": ["E001"],
+      "payload": {
+        "name": "AAIS Mutation Gate v1",
+        "authority_scope": "state_mutation",
+        "invariants": ["no_execute_without_receipt", "audit_append_only"],
+        "constraints": ["block_on_axis_failure"]
+      }
+    },
+    {
+      "event_id": "E005",
+      "thread_id": "aais",
+      "type": "Evidence",
+      "timestamp": "2026-03-01T00:00:00Z",
+      "lineage": ["E003"],
+      "payload": {
+        "source": "aais-determinism-suite",
+        "summary": "Same message + policy → same ExecutionDecision replay hash."
+      }
+    },
+    {
+      "event_id": "E006",
+      "thread_id": "aais",
+      "type": "Decision",
+      "timestamp": "2026-03-15T00:00:00Z",
+      "lineage": ["E003", "E004", "E005"],
+      "payload": {
+        "title": "Adopt AAIS v0.1 kernel boundary",
+        "rationale": "Deterministic execution gate is the correct cognition→mutation seam.",
+        "chosen_architecture": "E003",
+        "evidence_refs": ["E005"]
+      }
+    },
+    {
+      "event_id": "E007",
+      "thread_id": "aais",
+      "type": "Architecture",
+      "timestamp": "2026-04-01T00:00:00Z",
+      "lineage": ["E006"],
+      "payload": {
+        "name": "AAIS v0.2",
+        "version": "0.2.0",
+        "definition": "AAIS proposals route through DAR-Z validator before mutation runtime.",
+        "components": ["aais_proposal", "darz_validator", "voss_runtime"]
+      }
+    },
+    {
+      "event_id": "E008",
+      "thread_id": "aais",
+      "type": "Governance",
+      "timestamp": "2026-04-10T00:00:00Z",
+      "lineage": ["E004", "E006"],
+      "payload": {
+        "name": "LiSCAL/EGL Regime v1",
+        "authority_scope": "darz_policy_bundle",
+        "invariants": ["policy_monotonicity"],
+        "constraints": ["regime_id_pinned_at_eval"]
+      }
+    },
+    {
+      "event_id": "E009",
+      "thread_id": "aais",
+      "type": "Evidence",
+      "timestamp": "2026-05-01T00:00:00Z",
+      "lineage": ["E007"],
+      "payload": {
+        "source": "aais-darz-replay-harness",
+        "summary": "AAIS proposal → DAR-Z evaluate → mutation gate mapping verified."
+      }
+    },
+    {
+      "event_id": "E010",
+      "thread_id": "aais",
+      "type": "Decision",
+      "timestamp": "2026-06-01T00:00:00Z",
+      "lineage": ["E007", "E008", "E009"],
+      "payload": {
+        "title": "Wire FOS continuity as AAIS institutional memory substrate",
+        "rationale": "Continuity wire (JSONL) bootstraps Python and Rust without FFI.",
+        "chosen_architecture": "E007",
+        "evidence_refs": ["E009"]
+      }
+    },
+    {
+      "event_id": "E011",
+      "thread_id": "aais",
+      "type": "Legacy",
+      "timestamp": "2026-06-15T00:00:00Z",
+      "lineage": ["E010"],
+      "payload": {
+        "name": "Founder continuity handoff",
+        "definition": "AAIS lineage must remain reconstructable across epochs without identity entanglement.",
+        "epoch": "genesis"
+      }
+    }
+  ]
+}
