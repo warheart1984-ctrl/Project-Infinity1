@@ -1,0 +1,171 @@
+{
+  "harness_id": "neomundi.reconstruction.v1",
+  "thread_id": "neomundi",
+  "parent_thread_id": "nexusos",
+  "description": "NeoMundi epoch continuity — measurement signals, epoch boundaries, and closure proof over civilization wire.",
+  "composed_from": [
+    "fixtures/fos/aais_lineage_reconstruction.v1.json",
+    "fixtures/fos/darz_lineage_reconstruction.v1.json",
+    "fixtures/fos/fos_cross_thread_reconstruction.v1.json",
+    "fixtures/fos/nexusos_lineage_reconstruction.v1.json"
+  ],
+  "ground_truth": {
+    "threads": ["aais", "dar-z", "fos", "nexusos", "neomundi"],
+    "epoch_id": "epoch-2026-q3",
+    "governance_event_ids": ["NM002", "NM008"],
+    "architecture_event_ids": ["NM004"],
+    "invariant_event_ids": ["NM003"],
+    "measurement_event_ids": ["NM005", "NM006", "NM009"],
+    "decision_event_ids": ["NM007", "NM010"],
+    "epoch_boundary_decision_id": "NM007",
+    "anchor_decision_id": "NM010",
+    "upstream_anchors": {
+      "nexusos": "NX010"
+    },
+    "cross_thread_lineage": [
+      { "from_event_id": "NM007", "to_event_id": "NX009", "to_thread_id": "nexusos" },
+      { "from_event_id": "NM009", "to_event_id": "NX010", "to_thread_id": "nexusos" },
+      { "from_event_id": "NM009", "to_event_id": "NM005", "to_thread_id": "neomundi" },
+      { "from_event_id": "NM009", "to_event_id": "NM006", "to_thread_id": "neomundi" },
+      { "from_event_id": "NM010", "to_event_id": "NX010", "to_thread_id": "nexusos" },
+      { "from_event_id": "NM010", "to_event_id": "NM009", "to_thread_id": "neomundi" }
+    ]
+  },
+  "events": [
+    {
+      "event_id": "NM001",
+      "thread_id": "neomundi",
+      "type": "Concept",
+      "timestamp": "2026-10-16T00:00:00Z",
+      "lineage": [],
+      "payload": {
+        "name": "NeoMundi Genesis",
+        "definition": "Measurement pillar — epoch signals that prove continuity holds in the world and on the wire."
+      }
+    },
+    {
+      "event_id": "NM002",
+      "thread_id": "neomundi",
+      "type": "Governance",
+      "timestamp": "2026-10-17T00:00:00Z",
+      "lineage": ["NM001"],
+      "payload": {
+        "name": "Epoch Measurement Protocol v1",
+        "authority_scope": "neomundi_epoch",
+        "invariants": ["measurement_id_unique", "signal_type_required"],
+        "constraints": ["integrity_label_required"]
+      }
+    },
+    {
+      "event_id": "NM003",
+      "thread_id": "neomundi",
+      "type": "Invariant",
+      "timestamp": "2026-10-20T00:00:00Z",
+      "lineage": ["NM002"],
+      "payload": {
+        "name": "Measurement Determinism",
+        "statement": "Same signal + epoch window → reproducible measurement hash.",
+        "enforced_by": "NM002"
+      }
+    },
+    {
+      "event_id": "NM004",
+      "thread_id": "neomundi",
+      "type": "Architecture",
+      "timestamp": "2026-11-01T00:00:00Z",
+      "lineage": ["NM001", "NM003"],
+      "payload": {
+        "name": "NeoMundi v0.1",
+        "version": "0.1.0",
+        "definition": "measurement ingest → continuity Evidence → epoch closure Decision",
+        "components": ["measurement_adapter", "signal_registry", "epoch_scheduler"]
+      }
+    },
+    {
+      "event_id": "NM005",
+      "thread_id": "neomundi",
+      "type": "Evidence",
+      "timestamp": "2026-11-15T00:00:00Z",
+      "lineage": ["NM004"],
+      "payload": {
+        "source": "neomundi",
+        "measurement_id": "nm.reconstruction.gate-pass-2026-q3",
+        "signal_type": "continuity_invariant",
+        "integrity": "verified",
+        "epoch_id": "epoch-2026-q3",
+        "summary": "aais-reconstruction-gate: 21/21 tests pass."
+      }
+    },
+    {
+      "event_id": "NM006",
+      "thread_id": "neomundi",
+      "type": "Evidence",
+      "timestamp": "2026-11-16T00:00:00Z",
+      "lineage": ["NM004", "NM005"],
+      "payload": {
+        "source": "neomundi",
+        "measurement_id": "nm.cross_thread.invariant-2026-q3",
+        "signal_type": "cross_thread_lineage",
+        "integrity": "verified",
+        "epoch_id": "epoch-2026-q3",
+        "summary": "Four-thread civilization wire: global no_broken_lineage holds."
+      }
+    },
+    {
+      "event_id": "NM007",
+      "thread_id": "neomundi",
+      "type": "Decision",
+      "timestamp": "2026-12-01T00:00:00Z",
+      "lineage": ["NX009", "NM005"],
+      "payload": {
+        "title": "Pin epoch-2026-q3 measurement boundary",
+        "rationale": "Baseline reconstruction measurements captured under NX009 epoch regime.",
+        "epoch_id": "epoch-2026-q3",
+        "evidence_refs": ["NM005"]
+      }
+    },
+    {
+      "event_id": "NM008",
+      "thread_id": "neomundi",
+      "type": "Governance",
+      "timestamp": "2026-12-10T00:00:00Z",
+      "lineage": ["NM002", "NM007"],
+      "payload": {
+        "name": "Epoch Closure Regime v1",
+        "authority_scope": "epoch_closure",
+        "invariants": ["dual_measurement_required", "frozen_epoch_blocks_new_signals"],
+        "constraints": ["closure_requires_civilization_anchor"]
+      }
+    },
+    {
+      "event_id": "NM009",
+      "thread_id": "neomundi",
+      "type": "Evidence",
+      "timestamp": "2026-12-15T00:00:00Z",
+      "lineage": ["NX010", "NM005", "NM006"],
+      "payload": {
+        "source": "neomundi",
+        "measurement_id": "nm.epoch.closure-bundle-2026-q3",
+        "signal_type": "epoch_closure",
+        "integrity": "audited",
+        "epoch_id": "epoch-2026-q3",
+        "summary": "Epoch closure bundle ties NexusOS anchor NX010 to reconstruction measurements.",
+        "nexusos_anchor": "NX010"
+      }
+    },
+    {
+      "event_id": "NM010",
+      "thread_id": "neomundi",
+      "type": "Decision",
+      "timestamp": "2026-12-31T23:59:59Z",
+      "lineage": ["NX010", "NM008", "NM009"],
+      "payload": {
+        "title": "Close epoch-2026-q3 with continuity proof",
+        "rationale": "Measurement bundle NM009 satisfies dual-signal closure under NM008.",
+        "epoch_id": "epoch-2026-q3",
+        "nexusos_anchor": "NX010",
+        "evidence_refs": ["NM009"]
+      }
+    }
+  ]
+}
