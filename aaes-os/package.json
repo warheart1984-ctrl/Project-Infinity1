@@ -14,6 +14,7 @@
   "scripts": {
     "build:architect-agent": "npm --prefix ../packages/architect-agent run build",
     "build": "npm run build:architect-agent && node ./node_modules/typescript/bin/tsc",
+    "test:model": "npm run build:architect-agent && node ./node_modules/typescript/bin/tsc -p tsconfig.model.json && node --test dist/model-test/tests/OllamaProvider.test.js",
     "test": "npm run build && node --test dist/tests/*.test.js",
     "start": "node dist/src/server.js",
     "serve": "node dist/src/server.js"
