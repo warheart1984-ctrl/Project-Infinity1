@@ -119,6 +119,17 @@ Affected collection targets:
 
 No architect-agent TypeScript module is imported by these tests.
 
+### GitHub Actions account lock
+
+PR #13 triggered the CoGOS Forge Gate and Documentation Baseline Gate, but
+GitHub assigned no runner and executed zero steps. Each failed check contains
+the annotation:
+
+`The job was not started because your account is locked due to a billing issue.`
+
+This is an external GitHub account state, not a repository test result. The
+Buildkite check on the same PR passed.
+
 ## Filesystem Constraint
 
 The primary `E:` workspace is formatted as exFAT. pnpm workspace installation
