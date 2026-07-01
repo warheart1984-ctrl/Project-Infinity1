@@ -146,6 +146,9 @@ Current feature matrix:
 
 - architect-agent package: 28 tests
 - AAES root compatibility adapter: 1 test
+- AAES standalone runtime: 27 tests
+- governance-genome gate: 199 genomes valid
+- formerly blocked API modules: 251 tests passed
 - strict TypeScript package build
 - live `qwen2.5-coder:3b` proposal generation
 - whitespace validation
@@ -204,13 +207,11 @@ attestation, deployment hardening, and operational monitoring.
 ## Repository Baseline
 
 The feature-specific tests pass after rebasing onto current `origin/main`.
-Repository-wide verification still exposes unrelated baseline failures:
+The standalone AAES public export is restored, and all genome proof paths are
+repository-relative. Strict genome validation passes for 199 genomes, and the
+four previously blocked API modules pass all 251 tests.
 
-- standalone AAES-OS compilation references a missing
-  `SqliteTraceStoreStub` export,
-- full Python collection stops on four governance-genome boot validation
-  errors.
-
-These failures are documented in
-`docs/baseline-debt/local-ollama-architect-agent.md` and are not represented as
-architect-agent guarantees.
+GitHub Actions remains externally blocked by the account billing lock, and npm
+publication remains blocked until the local npm client is authenticated. These
+constraints are documented in
+`docs/baseline-debt/local-ollama-architect-agent.md`.

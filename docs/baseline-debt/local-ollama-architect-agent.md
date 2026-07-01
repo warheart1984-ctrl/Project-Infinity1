@@ -27,9 +27,10 @@ Current feature results:
 - architect-agent: 28 tests passed
 - AAES compatibility adapter: 1 test passed
 - architect-agent TypeScript build passed
-- AAES full build blocked by one pre-existing missing export
-- root pytest collection blocked by four pre-existing governance-genome boot
-  validation errors
+- AAES full build and 27-test suite passed after restoring the public
+  `SqliteTraceStoreStub`
+- governance-genome gate passed with 199 genomes
+- the four previously blocked pytest modules pass successfully (251 tests)
 
 The old pnpm workspace and its four failures described below are no longer
 present on current `origin/main`. They remain recorded as historical
@@ -94,32 +95,39 @@ The following checks pass:
 
 No baseline failure is in an architect-agent file.
 
-## Post-Rebase Baseline Failures
+## Post-Rebase Baseline Corrections
 
-### Standalone AAES-OS missing export
+### Standalone AAES-OS missing export: corrected
 
 `aaes-os/src/index.ts` exports `SqliteTraceStoreStub`, while
-`aaes-os/src/storage/trace_store.ts` defines only `InMemoryTraceStore`.
+`aaes-os/src/storage/trace_store.ts` previously defined only
+`InMemoryTraceStore`.
 
-This defect exists on `origin/main` and stops the full standalone AAES
-TypeScript build. The architect-agent package build and targeted compatibility
-test pass independently.
+The fail-closed v1 stub has been restored with adversarial read and write tests.
+The complete standalone AAES build and test suite now pass.
 
-### Governance-genome boot validation
+### Governance-genome boot validation: corrected
 
-Full root pytest collection stops while importing `src.api` because
-`Alt4Runtime.boot_validate()` raises `GenomeValidationError`.
+Fifty-nine genome manifests contained workstation-specific absolute proof paths
+under `E:\project-infi`. Those paths escaped the NTFS worktree and caused
+`Alt4Runtime.boot_validate()` to raise `GenomeValidationError`.
 
-Affected collection targets:
+The paths are now repository-relative, and the conformance suite asserts that
+Windows and POSIX absolute proof paths are forbidden.
+
+Previously affected collection targets:
 
 1. `tests/otem/test_otem_stabilization.py`
 2. `tests/test_api.py`
 3. `tests/test_api_mechanic_slingshot.py`
 4. `tests/test_api_operator_training_adapters.py`
 
-No architect-agent TypeScript module is imported by these tests.
+All four modules now pass successfully. The strict genome gate reports 199
+valid genomes.
 
-### GitHub Actions account lock
+## External Release Blockers
+
+### GitHub Actions account lock: unresolved
 
 PR #13 triggered the CoGOS Forge Gate and Documentation Baseline Gate, but
 GitHub assigned no runner and executed zero steps. Each failed check contains
@@ -129,6 +137,13 @@ the annotation:
 
 This is an external GitHub account state, not a repository test result. The
 Buildkite check on the same PR passed.
+
+### npm authentication: unresolved
+
+`npm whoami` returns `ENEEDAUTH`. The
+`@aaes-os/architect-agent@0.1.0` package passes `npm pack --dry-run`, but
+publication requires an authenticated npm account with permission to publish
+the `@aaes-os` scope.
 
 ## Filesystem Constraint
 
@@ -142,10 +157,9 @@ This filesystem constraint is independent of the four baseline test failures.
 
 ## Disposition
 
-- Keep the failures documented as baseline debt.
+- Keep the historical pre-rebase failures documented as baseline debt.
 - Do not modify missing fixtures or Theta governance artifacts in this feature.
-- Do not modify the missing AAES export or governance-genome registry in this
-  feature.
-- Publish the rebased architect-agent branch for review with the baseline
-  failures disclosed.
+- Keep the AAES export and portable genome-path corrections covered by
+  conformance tests.
+- Resolve the GitHub billing lock and npm authentication outside the repository.
 - Do not create an Infinity release tag until repository-wide gates pass.

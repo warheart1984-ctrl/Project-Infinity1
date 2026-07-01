@@ -160,6 +160,12 @@ class OtemCeilingController:
     def state_path(self) -> Path:
         return self._runtime_dir / STATE_FILENAME
 
+    def configure_runtime_dir(self, runtime_dir: Path | str) -> None:
+        """Point the controller at an isolated runtime directory and reload state."""
+        with self._lock:
+            self._runtime_dir = Path(runtime_dir).expanduser()
+            self._state = self._load_state()
+
     def _load_state(self) -> dict[str, Any]:
         path = self._runtime_dir / STATE_FILENAME
         if not path.exists():
