@@ -18,6 +18,23 @@ Pre-rebase result at commit `efdee491`:
 - 4 tests failed
 - all 22 package and service builds passed
 
+Post-rebase base commit:
+
+`6280e45a` (`origin/main`)
+
+Current feature results:
+
+- architect-agent: 28 tests passed
+- AAES compatibility adapter: 1 test passed
+- architect-agent TypeScript build passed
+- AAES full build blocked by one pre-existing missing export
+- root pytest collection blocked by four pre-existing governance-genome boot
+  validation errors
+
+The old pnpm workspace and its four failures described below are no longer
+present on current `origin/main`. They remain recorded as historical
+pre-rebase evidence.
+
 ## Baseline Failures
 
 ### Missing recent-document coverage fixture
@@ -77,6 +94,31 @@ The following checks pass:
 
 No baseline failure is in an architect-agent file.
 
+## Post-Rebase Baseline Failures
+
+### Standalone AAES-OS missing export
+
+`aaes-os/src/index.ts` exports `SqliteTraceStoreStub`, while
+`aaes-os/src/storage/trace_store.ts` defines only `InMemoryTraceStore`.
+
+This defect exists on `origin/main` and stops the full standalone AAES
+TypeScript build. The architect-agent package build and targeted compatibility
+test pass independently.
+
+### Governance-genome boot validation
+
+Full root pytest collection stops while importing `src.api` because
+`Alt4Runtime.boot_validate()` raises `GenomeValidationError`.
+
+Affected collection targets:
+
+1. `tests/otem/test_otem_stabilization.py`
+2. `tests/test_api.py`
+3. `tests/test_api_mechanic_slingshot.py`
+4. `tests/test_api_operator_training_adapters.py`
+
+No architect-agent TypeScript module is imported by these tests.
+
 ## Filesystem Constraint
 
 The primary `E:` workspace is formatted as exFAT. pnpm workspace installation
@@ -91,6 +133,8 @@ This filesystem constraint is independent of the four baseline test failures.
 
 - Keep the failures documented as baseline debt.
 - Do not modify missing fixtures or Theta governance artifacts in this feature.
-- Rebase only architect-agent commits onto current `origin/main`.
-- Re-run the full matrix in the NTFS worktree.
-- Update this report with post-rebase evidence before publication.
+- Do not modify the missing AAES export or governance-genome registry in this
+  feature.
+- Publish the rebased architect-agent branch for review with the baseline
+  failures disclosed.
+- Do not create an Infinity release tag until repository-wide gates pass.

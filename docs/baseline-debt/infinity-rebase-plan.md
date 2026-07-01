@@ -19,20 +19,32 @@ debt during the rebase.
 The older AAES production-sweep and Theta-profile commits preceding
 `4520a1e7` remain outside this feature branch.
 
-## Procedure
+## Executed Procedure
 
 1. Fetch and prune `origin`.
 2. Confirm the NTFS worktree is clean.
 3. Rebase commits after `4520a1e7` onto `origin/main`.
 4. Resolve conflicts only for architect-agent-owned files.
-5. Run `corepack pnpm install --frozen-lockfile`.
-6. Run the architect-agent and root-adapter tests.
-7. Run the recursive workspace build.
-8. Run `corepack pnpm test`.
+5. Adapt the compatibility layer to the standalone `aaes-os/` runtime that
+   replaced the old root pnpm workspace on current main.
+6. Run `npm ci` in `packages/architect-agent` and `aaes-os`.
+7. Run the architect-agent and AAES compatibility-adapter tests.
+8. Run the standalone AAES build and full root pytest collection.
 9. Record the post-rebase pass/failure counts in the debt report.
 10. Run whitespace and credential-pattern scans.
 11. Push only after the feature checks remain green and all residual failures
     are identified as baseline debt.
+
+## Rebase Outcome
+
+- Rebased successfully onto `origin/main` commit `6280e45a`.
+- Dropped the unrelated AAES production-sweep and Theta commits.
+- Kept the standalone architect-agent package.
+- Moved the compatibility adapter from the deleted root TypeScript workspace
+  to `aaes-os/src/model`.
+- Added a targeted `aaes-os` model test that does not depend on the unrelated
+  full-runtime compile path.
+- Recorded the new main-branch baseline blockers in the debt report.
 
 ## Publication Gate
 
