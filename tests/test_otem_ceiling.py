@@ -51,6 +51,18 @@ class TestOtemCeilingController(unittest.TestCase):
         self.assertEqual(status.get("pipeline_state"), "diagnostic")
         self.assertIn("operator_invoke", status.get("activation_triggers") or [])
 
+    def test_configure_runtime_dir_reloads_isolated_state(self):
+        self.controller.evaluate_trigger(
+            trigger_type="operator_invoke",
+            summary="isolation source",
+        )
+        isolated_runtime = self._temp_root / "isolated-runtime"
+
+        self.controller.configure_runtime_dir(isolated_runtime)
+
+        self.assertFalse(self.controller.containment_active())
+        self.assertEqual(self.controller.state_path, isolated_runtime / "otem_ceiling_state.json")
+
     def test_preview_rejects_unknown_decision(self):
         self.controller.evaluate_trigger(trigger_type="operator_invoke", summary="preview gate")
         with self.assertRaises(OtemCeilingError):

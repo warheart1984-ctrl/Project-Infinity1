@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist/model-test"
+  },
+  "include": [
+    "src/model/**/*.ts",
+    "tests/OllamaProvider.test.ts"
+  ]
+}

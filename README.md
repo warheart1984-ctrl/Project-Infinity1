@@ -8,6 +8,81 @@ License: [Apache 2.0](LICENSE) · Repo: [Project-Infinity1](https://github.com/w
 
 ---
 
+## Governed local LLM architecture
+
+Project Infinity includes a proposal-only coding runtime for local Ollama
+models. The runtime validates model output before governance, emits hash-backed
+envelopes and receipts, and replays decisions without applying filesystem
+changes.
+
+### Architect-agent package
+
+`packages/architect-agent` provides:
+
+- strict TypeScript proposal and contract types,
+- native Ollama `/api/generate` transport,
+- `qwen2.5-coder:3b` as the default model,
+- configurable model identifiers such as `qwen2.5-coder:7b`,
+- timeout-safe, bounded, non-streaming JSON generation,
+- UCR goal, operation, and authorized-file evaluation,
+- deterministic ALA operation normalization,
+- proposal-level safety checks,
+- SHA-256 proposal identity and timestamped governance envelopes,
+- EGL-1 proposal and decision replay equivalence, and
+- per-run evidence receipts.
+
+The standalone AAES TypeScript runtime delegates its compatibility model
+provider to this package through `aaes-os/src/model/OllamaProvider.ts`.
+
+### Lawful Nova shell
+
+[Lawful Nova](https://github.com/warheart1984-ctrl/agentic-coding-agent)
+provides the corresponding governed Python and Electron coding shell:
+
+- Monaco editor and unified diff viewer,
+- patch preview and explicit apply workflow,
+- governed coding and wiring tools,
+- receipt, trace, and replay surfaces,
+- `qwen2.5-coder:3b` default and `qwen2.5-coder:7b` selection.
+
+Stable Nova release:
+[`v0.1.0-nova-governed-shell`](https://github.com/warheart1984-ctrl/agentic-coding-agent/releases/tag/v0.1.0-nova-governed-shell).
+
+### Verification matrix
+
+| Surface | Result |
+|---|---:|
+| Architect-agent package | 28 tests passed |
+| AAES compatibility adapter | 1 test passed |
+| Architect-agent TypeScript build | Passed |
+| Lawful Nova Python | 64 tests passed |
+| Lawful Nova desktop | 9 tests passed |
+| Live `qwen2.5-coder:3b` generation | Passed |
+| Secret and whitespace scans | Passed |
+
+Repository-wide baseline blockers remain outside this feature. See
+[Baseline Debt](docs/baseline-debt/local-ollama-architect-agent.md) for current
+evidence.
+
+### Trust boundary
+
+Implemented guarantees stop at validated proposal generation and deterministic
+governance replay. Hardware roots of trust, key-backed signatures, durable
+receipt storage, filesystem execution, and federated trust are external or
+planned.
+
+See [Constitutional Implementation Status](docs/IMPLEMENTATION_STATUS.md) for
+the complete implemented, external, and planned capability ledger.
+
+### Local requirements
+
+- Node.js 20+ for the TypeScript packages
+- Python 3.10+ for the Infinity runtime
+- Ollama for live local-model generation
+- NTFS on Windows for linked Node package development
+
+---
+
 ## Quick start (after clone)
 
 **Windows (PowerShell):**

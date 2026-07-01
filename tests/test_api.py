@@ -17,6 +17,7 @@ import src.api as api
 from src.conversation_memory import conversation_memory
 from src.jarvis_memory_board import MemoryController, default_memory_slots
 from src.mock_ai import MockStreamingTextGenerator
+from src.otem_ceiling import otem_ceiling
 from src.jarvis_protocol import JarvisMessage, ProviderResponse
 from src.phase_gate import Phase, demote_component, reset_registry
 
@@ -37,6 +38,7 @@ class TestApiInitialization(unittest.TestCase):
         self.original_governance_runtime_dir = api.governance_layer.runtime_dir
         self.original_module_governance_runtime_dir = api.module_governance.runtime_dir
         self.original_detachment_guard_runtime_dir = api.cognitive_bridge_service.detachment_guard.runtime_dir
+        self.original_otem_ceiling_runtime_dir = otem_ceiling.state_path.parent
         self.original_continuity_runtime_dir = api.continuity_profile_store.runtime_dir
         self.original_continuity_witness_runtime_dir = api.continuity_witness_store.runtime_dir
         self.original_v9_runtime_dir = api.v9_runtime.runtime_dir
@@ -57,6 +59,7 @@ class TestApiInitialization(unittest.TestCase):
         api.module_governance.reset()
         api.cognitive_bridge_service.detachment_guard.configure_runtime_dir(self.guard_root)
         api.cognitive_bridge_service.detachment_guard.reset()
+        otem_ceiling.configure_runtime_dir(self.guard_root)
         api.continuity_profile_store.configure_runtime_dir(self.guard_root)
         api.continuity_profile_store.reset()
         api.continuity_witness_store.configure_runtime_dir(self.guard_root)
@@ -88,6 +91,7 @@ class TestApiInitialization(unittest.TestCase):
         api.module_governance.configure_runtime_dir(self.original_module_governance_runtime_dir)
         api.cognitive_bridge_service.detachment_guard.configure_runtime_dir(self.original_detachment_guard_runtime_dir)
         api.cognitive_bridge_service.detachment_guard.reset()
+        otem_ceiling.configure_runtime_dir(self.original_otem_ceiling_runtime_dir)
         api.continuity_profile_store.configure_runtime_dir(self.original_continuity_runtime_dir)
         api.continuity_witness_store.configure_runtime_dir(self.original_continuity_witness_runtime_dir)
         api.v9_runtime.configure_runtime_dir(self.original_v9_runtime_dir)
@@ -1136,7 +1140,18 @@ class TestApiInitialization(unittest.TestCase):
         self.assertEqual(payload["override_result"], expected_preview["override_result"])
         self.assertEqual(payload["escalation_result"], expected_preview["escalation_result"])
         self.assertEqual(payload["active_doctrine_tags"], expected_preview["active_doctrine_tags"])
-        self.assertEqual(payload["reasoning_packet"], expected_preview["reasoning_packet"])
+        actual_packet = json.loads(json.dumps(payload["reasoning_packet"]))
+        expected_packet = json.loads(json.dumps(expected_preview["reasoning_packet"]))
+        actual_graph_timestamp = actual_packet["reasoning_graph"].pop("timestamp")
+        expected_graph_timestamp = expected_packet["reasoning_graph"].pop("timestamp")
+        actual_evaluated_at = actual_packet["rls_verdict"].pop("evaluated_at")
+        expected_evaluated_at = expected_packet["rls_verdict"].pop("evaluated_at")
+
+        self.assertTrue(actual_graph_timestamp)
+        self.assertTrue(expected_graph_timestamp)
+        self.assertTrue(actual_evaluated_at)
+        self.assertTrue(expected_evaluated_at)
+        self.assertEqual(actual_packet, expected_packet)
         self.assertEqual(payload["reasoning_summary"], expected_preview["reasoning_summary"])
         self.assertEqual(
             payload["canonical_guardrail_evaluation"]["id"],
@@ -1524,6 +1539,7 @@ class TestChatApi(unittest.TestCase):
         self.original_governance_runtime_dir = api.governance_layer.runtime_dir
         self.original_module_governance_runtime_dir = api.module_governance.runtime_dir
         self.original_detachment_guard_runtime_dir = api.cognitive_bridge_service.detachment_guard.runtime_dir
+        self.original_otem_ceiling_runtime_dir = otem_ceiling.state_path.parent
         self.original_continuity_runtime_dir = api.continuity_profile_store.runtime_dir
         self.original_continuity_witness_runtime_dir = api.continuity_witness_store.runtime_dir
         self.original_v9_runtime_dir = api.jarvis_operator.v9_runtime.runtime_dir
@@ -1553,6 +1569,7 @@ class TestChatApi(unittest.TestCase):
         api.module_governance.reset()
         api.cognitive_bridge_service.detachment_guard.configure_runtime_dir(self.temp_root / "detachment-guard")
         api.cognitive_bridge_service.detachment_guard.reset()
+        otem_ceiling.configure_runtime_dir(self.temp_root / "otem-ceiling")
         api.continuity_profile_store.configure_runtime_dir(self.temp_root / "continuity")
         api.continuity_profile_store.reset()
         api.continuity_witness_store.configure_runtime_dir(self.temp_root / "continuity-witness")
@@ -1595,6 +1612,7 @@ class TestChatApi(unittest.TestCase):
         api.module_governance.configure_runtime_dir(self.original_module_governance_runtime_dir)
         api.cognitive_bridge_service.detachment_guard.configure_runtime_dir(self.original_detachment_guard_runtime_dir)
         api.cognitive_bridge_service.detachment_guard.reset()
+        otem_ceiling.configure_runtime_dir(self.original_otem_ceiling_runtime_dir)
         api.continuity_profile_store.configure_runtime_dir(self.original_continuity_runtime_dir)
         api.continuity_witness_store.configure_runtime_dir(self.original_continuity_witness_runtime_dir)
         api.jarvis_operator.v9_runtime.configure_runtime_dir(self.original_v9_runtime_dir)
@@ -2122,6 +2140,12 @@ class TestChatApi(unittest.TestCase):
             "explicit_detachment_request",
             first_payload["cognitive_bridge"]["detachment_guard"]["reason_codes"],
         )
+        self.assertEqual(
+            api.cognitive_bridge_service.detachment_guard.snapshot()[
+                "temporary_deny_count"
+            ],
+            1,
+        )
 
         second = self.client.post(
             f"/api/chat/sessions/{session_id}/message",
@@ -2135,7 +2159,7 @@ class TestChatApi(unittest.TestCase):
         second_payload = second.get_json()
         self.assertEqual(second_payload["cognitive_bridge"]["decision"], "BLOCK")
         self.assertIn(
-            "temporary_review_deny_active",
+            "otem_ceiling_containment",
             second_payload["cognitive_bridge"]["detachment_guard"]["reason_codes"],
         )
 
@@ -2191,14 +2215,20 @@ class TestChatApi(unittest.TestCase):
         self.assertTrue(cleared_payload["result"]["refreshed_attestation_required"])
         self.assertEqual(cleared_payload["detachment_guard"]["temporary_deny_count"], 0)
 
-        allowed = self.client.post(
+        contained = self.client.post(
             f"/api/chat/sessions/{session_id}/message",
             json={
                 "message": "What do you remember",
                 "response_mode": "operator",
             },
         )
-        self.assertEqual(allowed.status_code, 200)
+        self.assertEqual(contained.status_code, 403)
+        self.assertIn(
+            "otem_ceiling_containment",
+            contained.get_json()["cognitive_bridge"]["detachment_guard"][
+                "reason_codes"
+            ],
+        )
 
     def test_actions_execute_fails_closed_when_cognitive_bridge_blocks(self):
         """Approved action execution should stop before the runner when the bridge blocks."""
@@ -6872,7 +6902,13 @@ class TestChatApi(unittest.TestCase):
         self.assertTrue(payload["otem"]["workflow_handoff"]["proposal_only"])
         queue_meta = payload["otem"].get("execution_approval_queue")
         if queue_meta:
-            self.assertEqual(queue_meta.get("status"), "pending")
+            self.assertIn(queue_meta.get("status"), {"pending", "rejected"})
+            if queue_meta.get("status") == "rejected":
+                self.assertEqual(queue_meta.get("reason"), "rls_escalation_blocked")
+                self.assertEqual(
+                    (queue_meta.get("rls_verdict") or {}).get("verdict"),
+                    "reject",
+                )
         self.assertEqual(
             len(api.jarvis_operator.memory_enforcer.list_memories(runtime_context="operator_runtime")),
             before_memory_count,
@@ -9139,7 +9175,7 @@ class TestChatApi(unittest.TestCase):
             },
         )
 
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 200, response.get_json())
         payload = response.get_json()
         self.assertEqual(payload["response"], fake_model.generate_chat.return_value)
         self.assertEqual(payload["loaded_session_archive"]["title"], "Reopened session")

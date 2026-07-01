@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 import pytest
 
@@ -22,6 +22,20 @@ def test_genome_registry_valid():
     reg = GenomeEngine.validate_registry(REPO)
     assert reg.ok, reg.errors
     assert len(reg.genomes) >= 6
+
+
+def test_genome_proof_bundles_are_repository_relative():
+    absolute_bundles: list[str] = []
+
+    for genome_path in sorted(
+        (REPO / "governance/subsystem_genomes").glob("*.genome.v1.json")
+    ):
+        genome = json.loads(genome_path.read_text(encoding="utf-8"))
+        for bundle in (genome.get("proof") or {}).get("bundles") or []:
+            if PureWindowsPath(bundle).is_absolute() or PurePosixPath(bundle).is_absolute():
+                absolute_bundles.append(f"{genome_path.name}: {bundle}")
+
+    assert not absolute_bundles, absolute_bundles
 
 
 def test_genome_boot_warn_mode(monkeypatch):
