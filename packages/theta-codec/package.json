@@ -1,6 +1,6 @@
 {
   "name": "@aaes-os/theta-codec",
-  "version": "0.2.0",
+  "version": "0.0.1",
   "description": "Theta glyph codec and entropy bridge for AAES-OS",
   "type": "module",
   "main": "./dist/index.js",
