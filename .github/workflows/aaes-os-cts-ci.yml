@@ -1,0 +1,58 @@
+name: AAES-OS CTS and Determinism
+
+on:
+  push:
+    branches: [main, codex/aaes-os-production-sweep]
+    paths:
+      - 'aaes-os/**'
+      - 'docs/aaes-os/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'aaes-os/**'
+
+jobs:
+  aaes-os-spine:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aaes-os
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Run unit and integration tests (CTS spine)
+        run: pnpm test
+
+  release-gatekeeper-advisory:
+    runs-on: ubuntu-latest
+    needs: [aaes-os-spine]
+    if: github.event_name == 'workflow_dispatch'
+    defaults:
+      run:
+        working-directory: aaes-os
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Write CI gate results
+        run: pnpm run release:ci-results
+        continue-on-error: true
+      - name: Release gatekeeper (advisory)
+        run: node ../.github/scripts/release_gatekeeper.js
+        continue-on-error: true

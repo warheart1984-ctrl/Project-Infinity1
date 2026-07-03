@@ -1,27 +1,45 @@
 {
-  "name": "@aais/aaes-os",
-  "version": "1.0.0",
-  "description": "AAES-OS v1 — governed cognitive runtime (TypeScript)",
+  "name": "@aaes-os/aaes-os-workspace",
+  "version": "0.2.0",
+  "private": true,
+  "description": "AAES-OS monorepo — UCR runtime spine packages (TypeScript)",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
   "scripts": {
-    "build": "node ./node_modules/typescript/bin/tsc",
-    "test": "npm run build && node --test dist/tests/*.test.js",
-    "start": "node dist/src/server.js",
-    "serve": "node dist/src/server.js"
+    "build": "corepack pnpm -r run build",
+    "test": "corepack pnpm -r run build && corepack pnpm exec vitest run",
+    "test:packages": "corepack pnpm -r run test",
+    "test:cts": "corepack pnpm exec vitest run tests/cts",
+    "smoke:architect-agent": "corepack pnpm --filter @aaes-os/architect-agent run smoke:dist",
+    "sdk:generate": "corepack pnpm exec tsx sdk/scripts/generate-sdk-types.ts",
+    "test:determinism": "corepack pnpm -r run build && corepack pnpm exec tsx tools/validateDeterministicReplay.ts",
+    "cdp1": "corepack pnpm -r run build && corepack pnpm exec tsx -e \"import { runMinimalCDP1 } from './benchmarks/cdp1/runMinimalCDP1.ts'; runMinimalCDP1().then(r => console.log(JSON.stringify(r, null, 2)));\"",
+    "cep:minimal": "corepack pnpm -r run build && corepack pnpm exec tsx -e \"import { CEPOrchestrator } from './cep/experimentOrchestrator.ts'; new CEPOrchestrator().runMinimalExperiment().then(r => console.log(JSON.stringify(r, null, 2)));\"",
+    "release:notes": "node scripts/generate-release-notes.js",
+    "release:ci-results": "node scripts/write-ci-results.mjs",
+    "build:legacy": "tsc -p tsconfig.json",
+    "test:legacy": "npm run build:legacy && node --test dist/tests/*.test.js",
+    "drift-demo": "tsx tools/scripts/drift-demo.ts",
+    "patch-demo": "tsx tools/patch-effectiveness-demo.ts",
+    "telemetry": "tsx tools/telemetry-cli.ts",
+    "coverage:docs": "tsx tools/check-doc-coverage.ts",
+    "ops-console": "corepack pnpm --filter @aaes-os/ops-console start"
   },
   "engines": {
     "node": ">=20"
   },
   "devDependencies": {
     "@types/node": "^22.19.21",
-    "typescript": "^5.9.3"
-  }
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "openapi-fetch": "^0.14.0",
+    "openapi-typescript": "^7.8.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "packageManager": "pnpm@10.15.0"
 }
