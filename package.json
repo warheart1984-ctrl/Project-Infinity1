@@ -9,26 +9,26 @@
     "services/*"
   ],
   "scripts": {
-    "build": "corepack pnpm -r run build",
-    "test": "corepack pnpm -r run build && corepack pnpm exec vitest run",
-    "lint": "corepack pnpm exec eslint \"packages/**/*.{js,jsx,ts,tsx,mjs,cjs}\" \"services/**/*.{js,jsx,ts,tsx,mjs,cjs}\" --max-warnings 0",
-    "test:packages": "corepack pnpm -r run test",
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run build && pnpm exec vitest run",
+    "lint": "pnpm exec eslint \"packages/**/*.{js,jsx,ts,tsx,mjs,cjs}\" \"services/**/*.{js,jsx,ts,tsx,mjs,cjs}\" --max-warnings 0",
+    "test:packages": "pnpm -r run test",
     "release:build": "node release/build-release.ts",
     "release:package": "node release/package-release.ts",
     "release:sign": "node release/sign-release.ts",
     "release:verify": "node release/verify-release.ts",
-    "release": "corepack pnpm run release:build && corepack pnpm run release:package && corepack pnpm run release:sign && corepack pnpm run release:verify",
+    "release": "pnpm build && pnpm run release:build && pnpm run release:package && pnpm run release:sign && pnpm run release:verify",
     "build:legacy": "tsc -p tsconfig.json",
     "test:legacy": "npm run build:legacy && node --test dist/tests/*.test.js",
     "drift-demo": "tsx tools/scripts/drift-demo.ts",
     "patch-demo": "tsx tools/patch-effectiveness-demo.ts",
     "telemetry": "tsx tools/telemetry-cli.ts",
     "coverage:docs": "tsx tools/check-doc-coverage.ts",
-    "ops-console": "corepack pnpm --filter @aaes-os/ops-console start",
-    "platform-api": "corepack pnpm --filter @aaes-os/platform-api start",
-    "platform-web": "corepack pnpm --filter @aaes-os/platform-web dev",
-    "organism": "corepack pnpm --filter @aaes-os/platform-cli exec organism",
-    "mesh:simulate": "corepack pnpm --filter @aaes-os/mesh-simulator run simulate",
+    "ops-console": "pnpm --filter @aaes-os/ops-console start",
+    "platform-api": "pnpm --filter @aaes-os/platform-api start",
+    "platform-web": "pnpm --filter @aaes-os/platform-web dev",
+    "organism": "pnpm --filter @aaes-os/platform-cli exec organism",
+    "mesh:simulate": "pnpm --filter @aaes-os/mesh-simulator run simulate",
     "free-coding": "tsx tools/free-coding-cli.ts"
   },
   "engines": {
@@ -48,5 +48,12 @@
     "typescript-eslint": "^8.63.0",
     "vitest": "^3.2.4"
   },
-  "packageManager": "pnpm@10.15.0"
+  "packageManager": "pnpm@10.15.0",
+  "pnpm": {
+    "overrides": {
+      "undici": "6.27.0",
+      "postcss": "8.5.10",
+      "uuid": "11.1.1"
+    }
+  }
 }
