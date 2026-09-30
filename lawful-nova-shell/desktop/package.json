@@ -13,7 +13,7 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "electron": "^42.5.0",
+    "electron": "^42.10.0",
     "electron-builder": "^26.15.3",
     "monaco-editor": "^0.45.0"
   },
